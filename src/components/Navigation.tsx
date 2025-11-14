@@ -1,0 +1,48 @@
+import { Button } from "@/components/ui/button";
+import { Ship } from "lucide-react";
+
+const Navigation = () => {
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    element?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border-border">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Ship className="h-8 w-8 text-accent" />
+            <div>
+              <h2 className="text-xl font-bold text-primary">Kyle Manson</h2>
+              <p className="text-xs text-muted-foreground">Naval Architecture & Marine Engineering</p>
+            </div>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-6">
+            <button 
+              onClick={() => scrollToSection("services")}
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              Services
+            </button>
+            <button 
+              onClick={() => scrollToSection("about")}
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              About
+            </button>
+            <Button 
+              onClick={() => scrollToSection("contact")}
+              variant="default"
+            >
+              Contact
+            </Button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default Navigation;
