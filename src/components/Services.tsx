@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card";
-import { Ship, Cog, Anchor } from "lucide-react";
+import { Sailboat, Cog, Anchor } from "lucide-react";
 
 const services = [
   {
-    icon: Ship,
+    icon: Sailboat,
     title: "Naval Architecture",
     description: "Comprehensive vessel design and analysis, from concept through construction. Specializing in hull form optimization, stability analysis, and regulatory compliance.",
     features: [
@@ -15,24 +15,13 @@ const services = [
   },
   {
     icon: Cog,
-    title: "Marine Engineering",
-    description: "Expert marine systems design and integration. Propulsion systems, power generation, and auxiliary systems engineered for reliability and efficiency.",
+    title: "Marine and Mechanical Engineering",
+    description: "Expert vessel systems design and integration. Propulsion systems, power generation, and auxiliary systems engineered for reliability and efficiency.",
     features: [
       "Propulsion system design",
       "Power and electrical systems",
       "HVAC and auxiliary systems",
-      "System integration"
-    ]
-  },
-  {
-    icon: Anchor,
-    title: "Mechanical Engineering",
-    description: "Advanced mechanical engineering solutions for marine and industrial applications. From machinery selection to custom system design.",
-    features: [
-      "Machinery design and selection",
-      "System optimization",
-      "Technical specifications",
-      "Performance analysis"
+      "Vessel systems"
     ]
   }
 ];
@@ -50,7 +39,7 @@ const Services = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {services.map((service, index) => (
             <Card 
               key={index} 

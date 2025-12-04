@@ -57,7 +57,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Email</h4>
-                      <p className="text-muted-foreground">contact@kylemanson.com</p>
+                      <p className="text-muted-foreground">kylemanson7@gmail.com</p>
                     </div>
                   </div>
 
@@ -77,7 +77,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">Location</h4>
-                      <p className="text-muted-foreground">British Columbia, Canada</p>
+                      <p className="text-muted-foreground">Vancouver, British Columbia</p>
                     </div>
                   </div>
                 </div>
