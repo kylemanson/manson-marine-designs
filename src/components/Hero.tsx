@@ -3,11 +3,6 @@ import { ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-maritime.jpg";
 
 const Hero = () => {
-  const scrollToContact = () => {
-    const element = document.getElementById("contact");
-    element?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -30,28 +25,20 @@ const Hero = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-            Kyle Manson Naval Architecture and Marine Engineering
+            Kyle Manson, P.Eng.
           </h1>
+          <h2 className="text-2xl md:text-4xl font-semibold text-primary-foreground/90 mb-8">
+            Naval Architect and Mechanical Engineer
+          </h2>
           
-          <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Professional engineering solutions for vessel design, marine systems, and mechanical engineering projects
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Button 
               size="lg" 
-              onClick={scrollToContact}
+              onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
               className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-lg px-8"
             >
-              Get in Touch
+              Learn More
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button 
-              size="lg" 
-              onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-lg px-8"
-            >
-              View Services
             </Button>
           </div>
         </div>
