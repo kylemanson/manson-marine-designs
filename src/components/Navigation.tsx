@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Ship } from "lucide-react";
 
 const Navigation = () => {
@@ -21,23 +20,11 @@ const Navigation = () => {
           
           <div className="hidden md:flex items-center gap-6">
             <button 
-              onClick={() => scrollToSection("services")}
-              className="text-foreground hover:text-accent transition-colors"
-            >
-              Services
-            </button>
-            <button 
               onClick={() => scrollToSection("about")}
               className="text-foreground hover:text-accent transition-colors"
             >
               About
             </button>
-            <Button 
-              onClick={() => scrollToSection("contact")}
-              variant="default"
-            >
-              Contact
-            </Button>
           </div>
         </div>
       </div>
