@@ -4,7 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  base: "/manson-marine-designs/",
+  base: "/", // ✅ REQUIRED for custom domain kylemanson.com
+
   server: {
     host: "::",
     port: 8080,
