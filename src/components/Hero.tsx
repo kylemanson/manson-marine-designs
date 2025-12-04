@@ -30,7 +30,7 @@ const Hero = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
-            Expert Naval Architecture & Marine Engineering
+            Kyle Manson Naval Architecture and Marine Engineering
           </h1>
           
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -48,9 +48,8 @@ const Hero = () => {
             </Button>
             <Button 
               size="lg" 
-              variant="outline"
               onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-lg px-8"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-lg px-8"
             >
               View Services
             </Button>
