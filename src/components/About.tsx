@@ -1,39 +1,52 @@
 import { Card } from "@/components/ui/card";
-import { GraduationCap, Briefcase, Wrench, Heart } from "lucide-react";
+import { GraduationCap, Briefcase, Scale, Heart } from "lucide-react";
 
 const About = () => {
   return (
     <section id="about" className="py-24 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Education Section */}
+          {/* Projects Section */}
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
-              <GraduationCap className="w-8 h-8 text-accent" />
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Education</h2>
+              <Scale className="w-8 h-8 text-accent" />
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Projects</h2>
             </div>
             
             <div className="space-y-6">
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Naval Architecture and Marine Engineering M.Eng.</h3>
-                <p className="text-muted-foreground mb-2">University of British Columbia • September 2020</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Graduate Academic Achievement Award</li>
-                  <li>Naval Architecture & Marine Engineering Design Award (PHK-20 Team)</li>
-                  <li>NAME Peer Mentorship Award</li>
+                <h3 className="text-xl font-bold text-foreground">Hydrogen Dinner Cruise Vessel (H2Ocean)</h3>
+                <p className="text-muted-foreground mb-4">Capilano Maritime Design</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
+                  <li>Led a three-person team for the preliminary design of a hydrogen powered dinner cruise vessel</li>
+                  <li>Designed layout of hydrogen fuel cell powered electric propulsion system with help from project sponsors such as Ballard Power Systems, HTEC, and Lloyd's Register</li>
+                  <li>Designed the structure for the vessel based on Lloyd's Register class rules</li>
+                  <li>3D modeled the vessel and renderings in Rhinoceros</li>
+                  <li>Created a general arrangement, midship section, and hydrogen electric propulsion system plan for the vessel</li>
                 </ul>
               </Card>
 
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Mechanical Engineering Degree</h3>
-                <p className="text-muted-foreground">British Columbia Institute of Technology • May 2019</p>
+                <h3 className="text-xl font-bold text-foreground">Performance Offshore Sailboat (PHK-20)</h3>
+                <p className="text-muted-foreground mb-4">UBC NAME Program Capstone Project</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
+                  <li>Worked in a three-person team to design a performance offshore expedition sailing yacht</li>
+                  <li>Won the Naval Architecture and Marine Engineering Design Award for best final ship design project</li>
+                  <li>Generated a hull form for the yacht in MAXSURF</li>
+                  <li>Designed the carbon fiber structure for the yacht based on DNV-GL Rules for Yachts and Principles of Yacht Design by Lars Larsson</li>
+                  <li>Met stability criterion of OSR1 regulations for offshore racing vessels</li>
+                  <li>Created a 3D model, general arrangement, structural layout, and rig plan</li>
+                </ul>
               </Card>
 
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Mechanical Engineering Technology Diploma, Design Option</h3>
-                <p className="text-muted-foreground mb-2">British Columbia Institute of Technology • May 2017</p>
-                <ul className="list-disc list-inside text-muted-foreground">
-                  <li>BCIT President's Entrance Scholarship</li>
+                <h3 className="text-xl font-bold text-foreground">Automated Conveyor System</h3>
+                <p className="text-muted-foreground mb-4">Mechanical Engineering 4th Year Capstone Project</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
+                  <li>Worked in a three-person engineering team to design a conveyor automation system</li>
+                  <li>Fully assembled, wired, and initialized a PLC control box</li>
+                  <li>Programmed the microcontroller in C and the PLC with human interface touchpad using ladder logic</li>
+                  <li>Designed and built a physical level sensor to measure volume flowrate on a conveyor</li>
                 </ul>
               </Card>
             </div>
@@ -77,47 +90,34 @@ const About = () => {
             </div>
           </div>
 
-          {/* Projects & Skills Section */}
+          {/* Education Section */}
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
-              <Wrench className="w-8 h-8 text-accent" />
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Projects & Skills</h2>
+              <GraduationCap className="w-8 h-8 text-accent" />
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Education</h2>
             </div>
             
             <div className="space-y-6">
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Hydrogen Dinner Cruise Vessel (H2Ocean)</h3>
-                <p className="text-muted-foreground mb-4">Capilano Maritime Design</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
-                  <li>Led a three-person team for the preliminary design of a hydrogen powered dinner cruise vessel</li>
-                  <li>Designed layout of hydrogen fuel cell powered electric propulsion system with help from project sponsors such as Ballard Power Systems, HTEC, and Lloyd's Register</li>
-                  <li>Designed the structure for the vessel based on Lloyd's Register class rules</li>
-                  <li>3D modeled the vessel and renderings in Rhinoceros</li>
-                  <li>Created a general arrangement, midship section, and hydrogen electric propulsion system plan for the vessel</li>
+                <h3 className="text-xl font-bold text-foreground">Naval Architecture and Marine Engineering M.Eng.</h3>
+                <p className="text-muted-foreground mb-2">University of British Columbia • September 2020</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                  <li>Graduate Academic Achievement Award</li>
+                  <li>Naval Architecture & Marine Engineering Design Award (PHK-20 Team)</li>
+                  <li>NAME Peer Mentorship Award</li>
                 </ul>
               </Card>
 
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Performance Offshore Sailboat (PHK-20)</h3>
-                <p className="text-muted-foreground mb-4">UBC NAME Program Capstone Project</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
-                  <li>Worked in a three-person team to design a performance offshore expedition sailing yacht</li>
-                  <li>Won the Naval Architecture and Marine Engineering Design Award for best final ship design project</li>
-                  <li>Generated a hull form for the yacht in MAXSURF</li>
-                  <li>Designed the carbon fiber structure for the yacht based on DNV-GL Rules for Yachts and Principles of Yacht Design by Lars Larsson</li>
-                  <li>Met stability criterion of OSR1 regulations for offshore racing vessels</li>
-                  <li>Created a 3D model, general arrangement, structural layout, and rig plan</li>
-                </ul>
+                <h3 className="text-xl font-bold text-foreground">Mechanical Engineering Degree</h3>
+                <p className="text-muted-foreground">British Columbia Institute of Technology • May 2019</p>
               </Card>
 
               <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground">Automated Conveyor System</h3>
-                <p className="text-muted-foreground mb-4">Mechanical Engineering 4th Year Capstone Project</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 text-sm">
-                  <li>Worked in a three-person engineering team to design a conveyor automation system</li>
-                  <li>Fully assembled, wired, and initialized a PLC control box</li>
-                  <li>Programmed the microcontroller in C and the PLC with human interface touchpad using ladder logic</li>
-                  <li>Designed and built a physical level sensor to measure volume flowrate on a conveyor</li>
+                <h3 className="text-xl font-bold text-foreground">Mechanical Engineering Technology Diploma, Design Option</h3>
+                <p className="text-muted-foreground mb-2">British Columbia Institute of Technology • May 2017</p>
+                <ul className="list-disc list-inside text-muted-foreground">
+                  <li>BCIT President's Entrance Scholarship</li>
                 </ul>
               </Card>
             </div>
