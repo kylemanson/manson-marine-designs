@@ -20,16 +20,16 @@ const Hero = () => {
       {/* Content */}
       <div className="container mx-auto px-4 z-10 pt-20">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block mb-6 px-4 py-2 bg-accent/10 border border-accent/20 rounded-full">
-            <span className="text-accent font-semibold text-sm">BC P.Eng | Professional Engineer</span>
-          </div>
-          
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
             Kyle Manson, P.Eng.
           </h1>
-          <h2 className="text-2xl md:text-4xl font-semibold text-primary-foreground/90 mb-8">
+          <h2 className="text-2xl md:text-4xl font-semibold text-primary-foreground/90 mb-6">
             Naval Architect and Mechanical Engineer
           </h2>
+          
+          <div className="inline-block mb-8 px-4 py-2 bg-accent/10 border border-accent/20 rounded-full">
+            <span className="text-accent font-semibold text-sm">BC P.Eng | Professional Engineer</span>
+          </div>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
