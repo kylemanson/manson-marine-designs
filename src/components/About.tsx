@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { GraduationCap, Briefcase, Scale, Heart, Mail, Linkedin } from "lucide-react";
+import { GraduationCap, Briefcase, Scale, Heart } from "lucide-react";
 
 const About = () => {
   return (
@@ -124,7 +124,7 @@ const About = () => {
           </div>
 
           {/* Interests Section */}
-          <div className="mb-16">
+          <div>
             <div className="flex items-center gap-3 mb-8">
               <Heart className="w-8 h-8 text-accent" />
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">Interests</h2>
@@ -144,35 +144,6 @@ const About = () => {
                 <p className="text-muted-foreground text-sm">Skiing, Muay Thai</p>
               </Card>
             </div>
-          </div>
-
-          {/* Contact Section */}
-          <div id="contact">
-            <div className="flex items-center gap-3 mb-8">
-              <Mail className="w-8 h-8 text-accent" />
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">Contact</h2>
-            </div>
-            
-            <Card className="p-6 border-border">
-              <div className="flex flex-col sm:flex-row gap-6">
-                <a 
-                  href="mailto:kylemanson7@gmail.com" 
-                  className="flex items-center gap-3 text-muted-foreground hover:text-accent transition-colors"
-                >
-                  <Mail className="w-5 h-5" />
-                  <span>kylemanson7@gmail.com</span>
-                </a>
-                <a 
-                  href="https://www.linkedin.com/in/kylemanson" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-muted-foreground hover:text-accent transition-colors"
-                >
-                  <Linkedin className="w-5 h-5" />
-                  <span>LinkedIn</span>
-                </a>
-              </div>
-            </Card>
           </div>
         </div>
       </div>
