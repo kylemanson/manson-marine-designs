@@ -42,9 +42,8 @@ const Hero = () => {
             </Button>
             <Button 
               size="lg" 
-              variant="outline"
               onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold text-lg px-8"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-lg px-8"
             >
               <Mail className="mr-2 h-5 w-5" />
               Contact
