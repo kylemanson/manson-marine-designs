@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import heroImage from "@/assets/hero-maritime.jpg";
 
 const Hero = () => {
@@ -31,7 +31,7 @@ const Hero = () => {
             Naval Architect and Mechanical Engineer
           </h2>
           
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button 
               size="lg" 
               onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
@@ -39,6 +39,15 @@ const Hero = () => {
             >
               Learn More
               <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold text-lg px-8"
+            >
+              <Mail className="mr-2 h-5 w-5" />
+              Contact
             </Button>
           </div>
         </div>
