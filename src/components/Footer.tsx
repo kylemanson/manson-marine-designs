@@ -9,7 +9,7 @@ const Footer = () => {
             <Ship className="h-6 w-6 text-accent" />
             <div>
               <h3 className="font-bold">Kyle Manson, P.Eng</h3>
-              <p className="text-sm text-primary-foreground/80">Naval Architecture & Marine Engineering</p>
+              <p className="text-sm text-primary-foreground/80">Naval Architect and Marine Engineer</p>
             </div>
           </div>
           
