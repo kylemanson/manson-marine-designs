@@ -25,6 +25,12 @@ const Navigation = () => {
             >
               About
             </button>
+            <button 
+              onClick={() => scrollToSection("contact")}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-md font-medium transition-colors"
+            >
+              Contact
+            </button>
           </div>
         </div>
       </div>
