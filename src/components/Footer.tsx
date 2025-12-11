@@ -7,7 +7,7 @@ const Footer = () => {
             <img 
               src="/favicon.png" 
               alt="Kyle Manson Logo" 
-              className="h-6 w-6"
+              className="h-8 w-8"
               style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(80%) saturate(800%) hue-rotate(175deg) brightness(100%) contrast(95%)' }}
             />
             <div>
