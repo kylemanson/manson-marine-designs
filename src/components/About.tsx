@@ -1,5 +1,23 @@
 import { Card } from "@/components/ui/card";
-import { GraduationCap, Briefcase, Scale, Heart } from "lucide-react";
+import { GraduationCap, Briefcase, Heart } from "lucide-react";
+
+const TriangularScale = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+  >
+    {/* Triangular prism cross-section */}
+    <polygon points="12,3 3,21 21,21" />
+    {/* Inner detail lines for engineering scale look */}
+    <line x1="12" y1="3" x2="12" y2="21" />
+    <line x1="7.5" y1="12" x2="16.5" y2="12" />
+  </svg>
+);
 
 const About = () => {
   return (
@@ -9,7 +27,7 @@ const About = () => {
           {/* Projects Section */}
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
-              <Scale className="w-8 h-8 text-accent" />
+              <TriangularScale className="w-8 h-8 text-accent" />
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">Projects</h2>
             </div>
             
