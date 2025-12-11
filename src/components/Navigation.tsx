@@ -1,5 +1,3 @@
-import { Ship } from "lucide-react";
-
 const Navigation = () => {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -11,7 +9,7 @@ const Navigation = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Ship className="h-8 w-8 text-accent" />
+            <img src="/favicon.png" alt="Kyle Manson Logo" className="h-8 w-8" />
             <div>
               <h2 className="text-xl font-bold text-primary">Kyle Manson</h2>
               <p className="text-xs text-muted-foreground">Naval Architecture & Marine Engineering</p>
