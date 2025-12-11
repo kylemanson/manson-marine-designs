@@ -9,7 +9,12 @@ const Navigation = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/favicon.png" alt="Kyle Manson Logo" className="h-8 w-8" />
+            <img 
+              src="/favicon.png" 
+              alt="Kyle Manson Logo" 
+              className="h-8 w-8"
+              style={{ filter: 'brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%) hue-rotate(175deg) brightness(95%) contrast(90%)' }}
+            />
             <div>
               <h2 className="text-xl font-bold text-primary">Kyle Manson</h2>
               <p className="text-xs text-muted-foreground">Naval Architecture & Marine Engineering</p>
