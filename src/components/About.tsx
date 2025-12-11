@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { GraduationCap, Briefcase, Heart } from "lucide-react";
+import { GraduationCap, Briefcase, Sailboat } from "lucide-react";
 
 const TriangularScale = ({ className }: { className?: string }) => (
   <svg 
@@ -144,7 +144,7 @@ const About = () => {
           {/* Interests Section */}
           <div>
             <div className="flex items-center gap-3 mb-8">
-              <Heart className="w-8 h-8 text-accent" />
+              <Sailboat className="w-8 h-8 text-accent" />
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">Interests</h2>
             </div>
             
