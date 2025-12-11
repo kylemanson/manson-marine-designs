@@ -13,7 +13,7 @@ const Navigation = () => {
               src="/favicon.png" 
               alt="Kyle Manson Logo" 
               className="h-8 w-8"
-              style={{ filter: 'brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%) hue-rotate(175deg) brightness(95%) contrast(90%)' }}
+              style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(80%) saturate(800%) hue-rotate(175deg) brightness(100%) contrast(95%)' }}
             />
             <div>
               <h2 className="text-xl font-bold text-primary">Kyle Manson</h2>
