@@ -1,5 +1,14 @@
+import { Link, useLocation } from "react-router-dom";
+
 const Navigation = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
   const scrollToSection = (id: string) => {
+    if (!isHomePage) {
+      window.location.href = `/#${id}`;
+      return;
+    }
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: "smooth" });
   };
@@ -8,7 +17,7 @@ const Navigation = () => {
     <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b border-border">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img 
               src="/favicon.png" 
               alt="Kyle Manson Logo" 
@@ -19,7 +28,7 @@ const Navigation = () => {
               <h2 className="text-xl font-bold text-primary">Kyle Manson</h2>
               <p className="text-xs text-muted-foreground">Naval Architecture & Marine Engineering</p>
             </div>
-          </div>
+          </Link>
           
           <div className="hidden md:flex items-center gap-6">
             <button 
@@ -28,6 +37,12 @@ const Navigation = () => {
             >
               About
             </button>
+            <Link 
+              to="/blog"
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              Blog
+            </Link>
             <button 
               onClick={() => scrollToSection("contact")}
               className="text-foreground hover:text-accent transition-colors"
