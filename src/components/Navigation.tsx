@@ -37,18 +37,40 @@ const Navigation = () => {
             >
               About
             </button>
-            <Link 
-              to="/blog"
-              className="text-foreground hover:text-accent transition-colors"
-            >
-              Blog
-            </Link>
             <button 
               onClick={() => scrollToSection("contact")}
               className="text-foreground hover:text-accent transition-colors"
             >
               Contact
             </button>
+            <Link 
+              to="/blog"
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              Blog
+            </Link>
+            <Link 
+              to="/auth"
+              className="text-foreground hover:text-accent transition-colors"
+            >
+              Login
+            </Link>
+          </div>
+          
+          {/* Mobile menu */}
+          <div className="flex md:hidden items-center gap-4">
+            <Link 
+              to="/blog"
+              className="text-foreground hover:text-accent transition-colors text-sm"
+            >
+              Blog
+            </Link>
+            <Link 
+              to="/auth"
+              className="text-foreground hover:text-accent transition-colors text-sm"
+            >
+              Login
+            </Link>
           </div>
         </div>
       </div>
