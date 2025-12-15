@@ -49,12 +49,6 @@ const Navigation = () => {
             >
               Blog
             </Link>
-            <Link 
-              to="/auth"
-              className="text-foreground hover:text-accent transition-colors"
-            >
-              Login
-            </Link>
           </div>
           
           {/* Mobile menu */}
@@ -64,12 +58,6 @@ const Navigation = () => {
               className="text-foreground hover:text-accent transition-colors text-sm"
             >
               Blog
-            </Link>
-            <Link 
-              to="/auth"
-              className="text-foreground hover:text-accent transition-colors text-sm"
-            >
-              Login
             </Link>
           </div>
         </div>
