@@ -20,6 +20,7 @@ interface BlogPost {
   slug: string;
   content: string | null;
   featured_image_url: string | null;
+  additional_images?: string[] | null;
   published: boolean;
   created_at: string;
 }
@@ -37,6 +38,8 @@ const Admin = () => {
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
+  const [existingAdditionalImages, setExistingAdditionalImages] = useState<string[]>([]);
   const [published, setPublished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -115,6 +118,16 @@ const Admin = () => {
         imageUrl = await uploadImage(featuredImage);
       }
 
+      // Upload additional images
+      const uploadedAdditionalUrls: string[] = [];
+      for (const file of additionalImages) {
+        const url = await uploadImage(file);
+        if (url) uploadedAdditionalUrls.push(url);
+      }
+
+      // Combine existing + new additional images
+      const allAdditionalImages = [...existingAdditionalImages, ...uploadedAdditionalUrls];
+
       if (editingPost) {
         const { error } = await supabase
           .from("blog_posts")
@@ -123,6 +136,7 @@ const Admin = () => {
             slug,
             content,
             featured_image_url: imageUrl,
+            additional_images: allAdditionalImages,
             published,
           })
           .eq("id", editingPost.id);
@@ -137,8 +151,8 @@ const Admin = () => {
             slug,
             content,
             featured_image_url: imageUrl,
+            additional_images: allAdditionalImages,
             published,
-            author_id: user.id,
           });
 
         if (error) throw error;
@@ -163,9 +177,15 @@ const Admin = () => {
     setSlug("");
     setContent("");
     setFeaturedImage(null);
+    setAdditionalImages([]);
+    setExistingAdditionalImages([]);
     setPublished(false);
     setEditingPost(null);
     setIsEditing(false);
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingAdditionalImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleEdit = (post: BlogPost) => {
@@ -173,6 +193,7 @@ const Admin = () => {
     setTitle(post.title);
     setSlug(post.slug);
     setContent(post.content || "");
+    setExistingAdditionalImages(post.additional_images || []);
     setPublished(post.published);
     setIsEditing(true);
   };
@@ -270,6 +291,46 @@ const Admin = () => {
                     accept="image/*"
                     onChange={(e) => setFeaturedImage(e.target.files?.[0] || null)}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="additional-images">Gallery Images</Label>
+                  <Input
+                    id="additional-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setAdditionalImages(Array.from(e.target.files || []))}
+                  />
+                  {additionalImages.length > 0 && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {additionalImages.length} new image(s) selected
+                    </p>
+                  )}
+                  
+                  {existingAdditionalImages.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground mb-2">Existing gallery images:</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {existingAdditionalImages.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={url} 
+                              alt={`Gallery ${index + 1}`} 
+                              className="w-full h-20 object-cover rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingImage(index)}
+                              className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-2">
