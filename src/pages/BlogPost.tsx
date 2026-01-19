@@ -104,11 +104,16 @@ const BlogPost = () => {
             </Link>
 
             {post.featured_image_url && (
-              <img
-                src={post.featured_image_url}
-                alt={post.title}
-                className="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
-              />
+              <div className="relative mb-8">
+                <img
+                  src={post.featured_image_url}
+                  alt={post.title}
+                  className="w-full h-64 md:h-96 object-cover rounded-lg"
+                />
+                <span className="absolute bottom-2 right-2 text-white text-xs opacity-80">
+                  PHK Sailboat Design - 2019
+                </span>
+              </div>
             )}
 
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
