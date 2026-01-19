@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       blog_posts: {
         Row: {
+          additional_images: string[] | null
           author_id: string | null
           content: string | null
           created_at: string
@@ -27,6 +28,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_images?: string[] | null
           author_id?: string | null
           content?: string | null
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_images?: string[] | null
           author_id?: string | null
           content?: string | null
           created_at?: string
