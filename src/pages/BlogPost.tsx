@@ -33,7 +33,7 @@ const BlogPost = () => {
         .maybeSingle();
 
       if (!error && data) {
-        setPost(data);
+        setPost(data as unknown as BlogPost);
       }
       setLoading(false);
     };
