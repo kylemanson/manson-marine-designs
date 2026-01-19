@@ -12,7 +12,6 @@ interface BlogPost {
   slug: string;
   content: string | null;
   featured_image_url: string | null;
-  additional_images?: string[] | null;
   created_at: string;
 }
 
@@ -128,29 +127,6 @@ const BlogPost = () => {
               ))}
             </div>
 
-            {/* Image Gallery */}
-            {post.additional_images && post.additional_images.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-border">
-                <h2 className="text-xl font-semibold text-foreground mb-6">Gallery</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {post.additional_images.map((imageUrl, index) => (
-                    <a 
-                      key={index}
-                      href={imageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block overflow-hidden rounded-lg group"
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={`Gallery image ${index + 1}`}
-                        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>
