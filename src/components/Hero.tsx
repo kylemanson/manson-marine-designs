@@ -16,6 +16,9 @@ const Hero = () => {
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-primary/95 via-primary/90 to-primary/85" />
+        <span className="absolute bottom-28 md:bottom-36 right-4 text-white/60 text-xs">
+          PHK Sailboat Design - 2019
+        </span>
       </div>
 
       {/* Content */}
