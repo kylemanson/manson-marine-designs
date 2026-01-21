@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Edit, Plus, LogOut } from "lucide-react";
+import { Trash2, Edit, Plus, LogOut, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface BlogPost {
   id: string;
@@ -41,6 +44,7 @@ const Admin = () => {
   const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [existingAdditionalImages, setExistingAdditionalImages] = useState<string[]>([]);
   const [published, setPublished] = useState(false);
+  const [postDate, setPostDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -138,6 +142,7 @@ const Admin = () => {
             featured_image_url: imageUrl,
             additional_images: allAdditionalImages,
             published,
+            created_at: postDate.toISOString(),
           })
           .eq("id", editingPost.id);
 
@@ -153,6 +158,7 @@ const Admin = () => {
             featured_image_url: imageUrl,
             additional_images: allAdditionalImages,
             published,
+            created_at: postDate.toISOString(),
           });
 
         if (error) throw error;
@@ -180,6 +186,7 @@ const Admin = () => {
     setAdditionalImages([]);
     setExistingAdditionalImages([]);
     setPublished(false);
+    setPostDate(new Date());
     setEditingPost(null);
     setIsEditing(false);
   };
@@ -195,6 +202,7 @@ const Admin = () => {
     setContent(post.content || "");
     setExistingAdditionalImages(post.additional_images || []);
     setPublished(post.published);
+    setPostDate(new Date(post.created_at));
     setIsEditing(true);
   };
 
@@ -333,6 +341,33 @@ const Admin = () => {
                   )}
                 </div>
                 
+                <div>
+                  <Label>Post Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !postDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {postDate ? format(postDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={postDate}
+                        onSelect={(date) => date && setPostDate(date)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Switch
                     id="published"
