@@ -25,8 +25,10 @@ const About = () => {
     <section id="about" className="py-24 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Bio Section with Headshot */}
+          {/* About Me Section */}
           <div className="mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">About Me</h2>
+            
             {/* Headshot - floated left */}
             <div className="float-left mr-8 mb-4">
               <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-accent shadow-lg">
@@ -39,11 +41,18 @@ const About = () => {
               </div>
             </div>
             
-            {/* Bio */}
-            <div className="space-y-4 text-muted-foreground text-left">
-              <p>
+            {/* Bio - first paragraph beside photo */}
+            <div className="text-muted-foreground text-left">
+              <p className="mb-4">
                 Hi, I'm Kyle, a Naval Architect based in Vancouver, BC. My passion for sailing and boat design began growing up at Pigeon Lake in Alberta, where my dad first taught me to sail on our family Laser. As I gained confidence, I ventured farther across the lake in increasingly challenging conditions, eventually sailing solo in heavy winds.
               </p>
+            </div>
+            
+            {/* Clear the float before remaining paragraphs */}
+            <div className="clear-both"></div>
+            
+            {/* Remaining bio paragraphs - full width */}
+            <div className="space-y-4 text-muted-foreground text-left mt-4">
               <p>
                 After my family moved to Vancouver in 2009, my interest in boat building took off. I constructed a small wooden sailboat from two sheets of plywood and sailed it at Vanier Park. That project inspired me to build a 20 foot sailboat called The Interceptor, which I built over two summer breaks and launched in 2014. I spent many seasons cruising and refining the design to improve its performance and I still enjoy sailing her today.
               </p>
@@ -60,7 +69,6 @@ const About = () => {
                 Since graduating from UBC, I have worked as a full-time Project Naval Architect at Capilano Maritime Design. My experience includes designing barges built in China and deployed worldwide, conducting vessel surveys (including two 86 m heavy deck barges), performing inclining experiments, lightship surveys, and on/off-hire insurance surveys, and producing stability booklets for vessels ranging from crane barges to small workboats.
               </p>
             </div>
-            <div className="clear-both"></div>
           </div>
 
           {/* Projects Section */}
