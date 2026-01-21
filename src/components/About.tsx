@@ -25,15 +25,40 @@ const About = () => {
     <section id="about" className="py-24 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Headshot */}
-          <div className="flex justify-center mb-12">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-accent shadow-lg">
-              <img 
-                src={kyleHeadshot} 
-                alt="Kyle Manson, P.Eng" 
-                className="w-full h-full object-cover object-top"
-                style={{ objectPosition: 'center 15%' }}
-              />
+          {/* Bio Section with Headshot */}
+          <div className="flex flex-col md:flex-row gap-8 mb-16">
+            {/* Headshot */}
+            <div className="flex-shrink-0">
+              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-accent shadow-lg">
+                <img 
+                  src={kyleHeadshot} 
+                  alt="Kyle Manson, P.Eng" 
+                  className="w-full h-full object-cover object-top"
+                  style={{ objectPosition: 'center 15%' }}
+                />
+              </div>
+            </div>
+            
+            {/* Bio */}
+            <div className="flex-1 space-y-4 text-muted-foreground">
+              <p>
+                Hi, I'm Kyle, a Naval Architect based in Vancouver, BC. My passion for sailing and boat design began growing up at Pigeon Lake in Alberta, where my dad first taught me to sail on our family Laser. As I gained confidence, I ventured farther across the lake in increasingly challenging conditions, eventually sailing solo in heavy winds.
+              </p>
+              <p>
+                After my family moved to Vancouver in 2009, my interest in boat building took off. I constructed a small wooden sailboat from two sheets of plywood and sailed it at Vanier Park. That project inspired me to build a 20 foot sailboat called The Interceptor, which I built over two summer breaks and launched in 2014. I spent many seasons cruising and refining the design to improve its performance and I still enjoy sailing her today.
+              </p>
+              <p>
+                Following high school, I enrolled in the Mechanical Engineering program at BCIT, completing both the Designer's Diploma and the Bachelor's Degree. The program challenged me with hands-on design projects, including a conveyor control system, and gave me valuable industry experience through two internships with FVB Energy in the district energy sector, where I developed strong skills in piping systems and heat transfer.
+              </p>
+              <p>
+                Wanting to focus on marine engineering, I later joined Capilano Maritime Design as a Naval Architecture intern. There, I worked on ship design fundamentals and produced general arrangements for dredge vessels.
+              </p>
+              <p>
+                I went on to earn a Master's degree in Naval Architecture and Marine Engineering from the University of British Columbia, specializing in ship stability, hull forms, structures, and propulsion systems. My team's offshore sailboat design won the program's Design Project of the Year award, and I received an academic excellence award for my coursework. During my master's internship, I returned to Capilano Maritime Design to lead the preliminary design of a hydrogen battery-powered dinner cruise vessel (H2Ocean). I managed two Naval Architecture students on the project and received the UBC NAME Peer Mentorship Award.
+              </p>
+              <p>
+                Since graduating from UBC, I have worked as a full-time Project Naval Architect at Capilano Maritime Design. My experience includes designing barges built in China and deployed worldwide, conducting vessel surveys (including two 86 m heavy deck barges), performing inclining experiments, lightship surveys, and on/off-hire insurance surveys, and producing stability booklets for vessels ranging from crane barges to small workboats.
+              </p>
             </div>
           </div>
 
