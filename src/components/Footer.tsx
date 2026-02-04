@@ -21,7 +21,7 @@ const Footer = () => {
               © {new Date().getFullYear()} Kyle Manson. All rights reserved.
             </p>
             <p className="text-xs text-primary-foreground/60 mt-1">
-              Professional Engineering Services | British Columbia, Canada
+              Professional Engineer | British Columbia, Canada
             </p>
           </div>
         </div>
