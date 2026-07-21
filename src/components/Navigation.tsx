@@ -44,20 +44,20 @@ const Navigation = () => {
               Contact
             </button>
             <Link 
-              to="/blog"
+              to="/designs"
               className="text-foreground hover:text-accent transition-colors"
             >
-              Blog
+              Designs
             </Link>
           </div>
           
           {/* Mobile menu */}
           <div className="flex md:hidden items-center gap-4">
             <Link 
-              to="/blog"
+              to="/designs"
               className="text-foreground hover:text-accent transition-colors text-sm"
             >
-              Blog
+              Designs
             </Link>
           </div>
         </div>

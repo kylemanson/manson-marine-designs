@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Mail, BookOpen } from "lucide-react";
+import { ArrowRight, Mail, Ship } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-sailboat.jpg";
 
@@ -57,9 +57,9 @@ const Hero = () => {
               asChild
               className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold text-lg px-8"
             >
-              <Link to="/blog">
-                <BookOpen className="mr-2 h-5 w-5" />
-                Blog
+              <Link to="/designs">
+                <Ship className="mr-2 h-5 w-5" />
+                Designs
               </Link>
             </Button>
           </div>
