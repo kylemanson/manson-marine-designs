@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { GraduationCap, Briefcase, Sailboat } from "lucide-react";
-import kyleHeadshot from "@/assets/kyle-headshot-boat.jpg.asset.json";
+import kyleHeadshot from "@/assets/kyle-headshot-boat.jpg";
 
 const TriangularScale = ({ className }: { className?: string }) => (
   <svg 
@@ -33,7 +33,7 @@ const About = () => {
             <div className="float-left mr-8 mb-4">
               <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-accent shadow-lg">
                 <img 
-                  src={kyleHeadshot.url} 
+                  src={kyleHeadshot} 
                   alt="Kyle Manson, P.Eng" 
                   className="w-full h-full object-cover object-top"
                   style={{ objectPosition: 'center 30%' }}
