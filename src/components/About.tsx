@@ -36,7 +36,7 @@ const About = () => {
                   src={kyleHeadshot} 
                   alt="Kyle Manson, P.Eng" 
                   className="w-full h-full object-cover object-top"
-                  style={{ objectPosition: 'center 15%' }}
+                  style={{ objectPosition: 'center 30%' }}
                 />
               </div>
             </div>
