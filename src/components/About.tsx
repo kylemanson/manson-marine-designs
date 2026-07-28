@@ -31,9 +31,9 @@ const About = () => {
             
             {/* Headshot - floated left */}
             <div className="float-left mr-8 mb-4">
-              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-accent shadow-lg">
+              <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-accent shadow-lg">
                 <img 
-                  src={kyleHeadshot} 
+                  src={kyleHeadshot.url} 
                   alt="Kyle Manson, P.Eng" 
                   className="w-full h-full object-cover object-top"
                   style={{ objectPosition: 'center 30%' }}
