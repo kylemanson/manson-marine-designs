@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { GraduationCap, Briefcase, Sailboat } from "lucide-react";
-import kyleHeadshot from "@/assets/kyle-headshot.jpg";
+import kyleHeadshot from "@/assets/kyle-headshot-boat.jpg.asset.json";
 
 const TriangularScale = ({ className }: { className?: string }) => (
   <svg 
