@@ -10,7 +10,9 @@
 <meta name="author" content="Kyle Manson">
 <meta name="copyright" content="© 2026 Kyle Manson. All rights reserved.">
 <meta name="robots" content="noindex">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Powder Days Ski Game (Beta)</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA+0lEQVR4AeySsQ3CMBBFbXoWSBk6JMQITMAMjECbEdIyAg0TsAhCoqN1kyGMfoFkRf46nzmgcaSnOOc739M5C/fnpwm0CVRPoO/7mEP7T1cLaBux/GqBzfnpcrBGLF4twA7UxqsF7oeVy/EzAW0jlq+ewPb4iGC5v7oc2AOs4TyuFpgf8Ol3ExAnMI5jBLWjRi1g9aIAK7SKNwH1BG6ntQfhsnM5sAdKr0gtUHpwaV4TKJ5A13UxhY04zcGa5b3jxQLvAuu3KDAMgwchBJ8yTZPPkeZgjVrAxEUBVmgVFwVwjxYwYVGAFVrFRQHcowVMWBRghVbxrwtIoi8AAAD//6My87sAAAAGSURBVAMAFjHEQUj0j8YAAAAASUVORK5CYII=">
 <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAz0lEQVR4AbSOrw7CMBCHN5IZHgAxOUuCQ+8ZeBHQqB1qnqeZYxUEgyLB1GHqSFDYsmvySy49CgHCsm+9v986yn58/iuoqopA6qIvbzBZrBrwlSC1JOvJG8yWZ7oejgZwLhcRJwV5njfj+boGnGNJnkrQti3JgTiO+0qQ+hNEcV8JMOi939wvOwM4R0+eScFpO6XbnmrAuVxE/FRQliUxGOKTc4ZjiRJYa40Y4BiEctTPlKDruj5MDp+iKHowpOGVfS4oARc/QQmcc/QO+YMHAAAA//8AzegWAAAABklEQVQDAKdkayHjYIscAAAAAElFTkSuQmCC">
@@ -22,10 +24,58 @@
   html,body { margin:0; height:100%; background:var(--bg); overflow:hidden; }
   body { display:flex; align-items:center; justify-content:center; }
   canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
+  /* ---- touch controls (phones and tablets) ---- */
+  html,body,canvas,button { touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+  .tc, .pm { display:none; }
+  body.touch .tc { display:block; }
+  body.touch.portrait { align-items:flex-start; padding-top:env(safe-area-inset-top); }
+  .tb { position:fixed; border:2px solid rgba(191,227,255,0.55); background:rgba(20,35,60,0.42); color:#e8f3ff;
+        font-family:'Press Start 2P',monospace; font-size:10px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+        padding:0; margin:0; z-index:5; }
+  .tb.on { background:rgba(255,224,102,0.55); color:#1b2333; border-color:#ffe066; }
+  .tb.big { width:78px; height:78px; font-size:22px; }
+  .tb.act { width:66px; height:66px; }
+  .tb.jump { width:84px; height:84px; font-size:11px; }
+  .tb.sm { width:46px; height:34px; border-radius:10px; font-size:9px; }
+  .tb.left  { left:calc(14px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
+  .tb.right { left:calc(102px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
+  .tb.jump  { right:calc(14px + env(safe-area-inset-right)); bottom:calc(18px + env(safe-area-inset-bottom)); }
+  .tb.stop  { right:calc(106px + env(safe-area-inset-right)); bottom:calc(12px + env(safe-area-inset-bottom)); }
+  .tb.tuck  { right:calc(52px + env(safe-area-inset-right)); bottom:calc(112px + env(safe-area-inset-bottom)); }
+  .tb.grab  { right:calc(128px + env(safe-area-inset-right)); bottom:calc(90px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:9px; }
+  .tb.menu  { left:calc(8px + env(safe-area-inset-left)); top:calc(8px + env(safe-area-inset-top)); }
+  .tb.mapb  { right:calc(8px + env(safe-area-inset-right)); top:calc(8px + env(safe-area-inset-top)); }
+  body.touch.portrait .tb.menu { top:auto; bottom:calc(196px + env(safe-area-inset-bottom)); }
+  body.touch.portrait .tb.mapb { top:auto; bottom:calc(196px + env(safe-area-inset-bottom)); }
+  .pm { position:fixed; inset:0; z-index:10; background:rgba(10,20,40,0.88); flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  .pm h2 { font-family:'Press Start 2P',monospace; color:#ffe066; font-size:14px; margin:0 0 6px; }
+  .pm button { font-family:'Press Start 2P',monospace; font-size:11px; color:#e8f3ff; background:#2a3a58; border:2px solid #bfe3ff;
+               border-radius:8px; padding:11px 14px; min-width:230px; }
+  .pm button:active { background:#ffe066; color:#1b2333; }
 </style>
 </head>
 <body>
 <canvas id="c" width="400" height="300"></canvas>
+<div class="tc" id="tc">
+  <button class="tb big left"  data-k="left"  aria-label="Steer left">&#9664;</button>
+  <button class="tb big right" data-k="right" aria-label="Steer right">&#9654;</button>
+  <button class="tb act tuck"  data-k="up">TUCK</button>
+  <button class="tb act stop"  data-k="down">STOP</button>
+  <button class="tb jump"      data-k="jump">JUMP</button>
+  <button class="tb grab"      data-k="g1">GRAB</button>
+  <button class="tb sm menu"   data-k="pause" aria-label="Menu">MENU</button>
+  <button class="tb sm mapb"   data-k="map">MAP</button>
+</div>
+<div class="pm" id="pm">
+  <h2>PAUSED</h2>
+  <button data-tap="pause">KEEP SKIING</button>
+  <button data-tap="reset">RESTART AT THE PEAK</button>
+  <button data-tap="tele">WHISTLER ROUNDHOUSE</button>
+  <button data-tap="bctele">BLACKCOMB MID-STATION</button>
+  <button data-tap="p2p">PEAK 2 PEAK GONDOLA</button>
+  <button data-tap="char">CHANGE RIDER</button>
+  <button data-tap="mute">SOUND ON / OFF</button>
+</div>
 <script>
 'use strict';
 // =====================================================================
@@ -901,11 +951,36 @@ const KEYMAP = { KeyW:'up', ArrowUp:'up', KeyS:'down', ArrowDown:'down', KeyA:'l
   KeyJ:'g1', KeyK:'g2', KeyL:'g3', KeyR:'reset', KeyT:'tele', KeyM:'map', Enter:'enter',
   Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute' };
 const keys = {}, pressed = {};
+// phones and tablets: on-screen buttons feed the same keys/pressed tables as the keyboard
+const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || navigator.maxTouchPoints>0;
 addEventListener('keydown', e => { audioInit(); const a=KEYMAP[e.code]; if(!a) return; e.preventDefault();
   if(!keys[a]) pressed[a]=true; keys[a]=true; });
 addEventListener('keyup', e => { const a=KEYMAP[e.code]; if(a) keys[a]=false; });
 addEventListener('blur', () => { for(const k in keys) keys[k]=false; });
 
+if(TOUCH){
+  document.body.classList.add('touch');
+  for(const b of document.querySelectorAll('#tc [data-k]')){ const a=b.dataset.k;
+    const down=e=>{ e.preventDefault(); audioInit(); try{ b.setPointerCapture(e.pointerId); }catch(_){} if(!keys[a]) pressed[a]=true; keys[a]=true; b.classList.add('on'); };
+    const up=()=>{ keys[a]=false; b.classList.remove('on'); };
+    b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
+    b.addEventListener('contextmenu',e=>e.preventDefault()); }
+  for(const b of document.querySelectorAll('#pm [data-tap]')) b.addEventListener('click',e=>{ e.preventDefault(); audioInit(); pressed[b.dataset.tap]=true; });
+  document.addEventListener('touchmove',e=>e.preventDefault(),{ passive:false });   // no page scroll / pull-to-refresh while playing
+  document.addEventListener('gesturestart',e=>e.preventDefault());                   // no pinch zoom on iOS
+}
+// tap the game screen: start, pick a rider (tap twice to drop in), or carry on after the finish
+document.getElementById('c').addEventListener('pointerdown',e=>{
+  audioInit(); if(!TOUCH && e.pointerType==='mouse' && game.mode!=='select') return;
+  const r=e.currentTarget.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*VW, y=(e.clientY-r.top)/r.height*VH;
+  if(game.mode==='title' || game.mode==='finish'){ pressed.enter=true; return; }
+  if(game.mode==='select'){
+    const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,376/perRow), hw=Math.floor(slot/2)-3;
+    for(let i=0;i<CHARS.length;i++){ const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
+      const cx=200+(col-(n-1)/2)*slot, y0=52+row*96;
+      if(Math.abs(x-cx)<=hw && y>=y0 && y<=y0+88){ if(game.char===i) pressed.enter=true; else game.char=i; return; } }
+    if(y>236) pressed.enter=true; }
+});
 // ---------- 5b. SOUND (soft retro effects synthesized live - no files, no music) ----------
 const AUD = { ctx:null, on:true };
 try { AUD.on = localStorage.getItem('kdawSound')!=='0'; } catch(e) {}
@@ -1710,8 +1785,10 @@ function followCam(dt){
 
 // ---------- 7. RENDER ----------
 const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
-function fit(){ const s=Math.min(innerWidth/VW, innerHeight/VH), k=s>=1?Math.floor(s):s;
+function fit(){ const port=TOUCH && innerHeight>innerWidth; document.body.classList.toggle('portrait', port);
+  const H=port ? innerHeight-250 : innerHeight, s=Math.min(innerWidth/VW, H/VH), k=(!TOUCH && s>=1)?Math.floor(s):s;
   cvs.style.width=(VW*k)+'px'; cvs.style.height=(VH*k)+'px'; }
+addEventListener('orientationchange',()=>setTimeout(fit,200));
 addEventListener('resize',fit); fit();
 
 function sprite(rows,pal){ const h=rows.length, w=rows[0].length, c=document.createElement('canvas');
@@ -1731,7 +1808,9 @@ const TREE_SM_BARE=sprite(['...g...','..ggd..','..wgd..','.ggggd.','.gwggd.','gg
 const ROCK=sprite(['..rrr...','.rlllrr.','rllrrrrd','rrrrrrdd','.dddddd.'], { r:'#7a828f', l:'#a9b1bc', d:'#545b66' });
 
 const FONT='"Press Start 2P", monospace';
+const TOUCH_WORDS=[[/HOLD S\b/g,'HOLD STOP'],[/\bSPACE\b/g,'JUMP'],[/W CLIMB/g,'TUCK CLIMB'],[/A\/D/g,'< >'],[/ARROWS: DRIVE YOURSELF/g,'TUCK/STOP/< >: DRIVE']];
 function txt(s,x,y,col,size,align,shadow){
+  if(TOUCH) for(const [re,w] of TOUCH_WORDS) s=s.replace(re,w);
   ctx.font=(size||8)+'px '+FONT; ctx.textAlign=align||'left'; ctx.textBaseline='top';
   if(shadow!==false){ ctx.fillStyle='rgba(10,20,40,0.75)'; ctx.fillText(s,x+1,y+1); }
   ctx.fillStyle=col||'#fff'; ctx.fillText(s,x,y);
@@ -2237,7 +2316,7 @@ function drawSelect(){
     txt(c.name.toUpperCase(), x, y0+68, sel?'#ffe066':'#e8eef6', 8, 'center');
     txt(c.type==='ski'?'SKIER':'BOARDER', x, y0+79, '#93a6bf', 8, 'center');
   });
-  txt('A / D  CHOOSE     ENTER  DROP IN', 200, 250, '#ffe066', 8, 'center');
+  txt(TOUCH ? 'TAP A RIDER, TAP AGAIN TO DROP IN' : 'A / D  CHOOSE     ENTER  DROP IN', 200, 250, '#ffe066', 8, 'center');
 }
 
 // ---------- 8. HUD & SCREENS ----------
@@ -2327,7 +2406,12 @@ function render(){
   if(game.mode==='select' || game.mode==='title'){ ctx.fillStyle='rgba(10,20,40,0.6)'; ctx.fillRect(0,VH-12,VW,12);
     txt('© 2026 KYLE MANSON. ALL RIGHTS RESERVED.', 200, VH-10, '#bfe3ff', 8, 'center'); }
   if(game.mode==='select') drawSelect();
-  else if(game.mode==='title'){
+  else if(game.mode==='title' && TOUCH){
+    panel(['< > ....... STEER   (AIR: SPIN)', 'TUCK ...... SPEED   (AIR: FRONTFLIP)', 'STOP ...... BRAKE   (AIR: BACKFLIP)',
+      'JUMP ...... HOP  (AT A LIP = POP!)', 'GRAB ...... GRAB IN THE AIR',
+      'MENU ...... RESTART, LIFTS, RIDER', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
+      'HOLD STOP WHEN STOPPED = SKINS', 'TURN YOUR PHONE SIDEWAYS FOR BEST VIEW', 'WATCH OUT FOR JERRY', '>TAP TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
+  } else if(game.mode==='title'){
     panel(['A / D ..... STEER   (AIR: SPIN)', 'W / UP .... TUCK    (AIR: FRONTFLIP)', 'S / DOWN .. STOP    (AIR: BACKFLIP)',
       'SPACE ..... HOP  (AT A LIP = POP!)', 'J / K / L . GRABS   SHIFT ... TUCK TOO',
       'M MAP  T MID-MOUNTAIN  R RESTART  P PAUSE', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
@@ -2337,7 +2421,7 @@ function render(){
     if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'C  CHANGE RIDER'], 'PAUSED');
     if(game.mode==='finish'){ const t=game.time;
       panel(['', 'TIME     '+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'),
-        'SCORE    '+game.score, 'CRASHES  '+game.crashes, 'BEST     '+game.best, '', '>ENTER: RIDE THE LIFT BACK UP'], 'RUN COMPLETE'); } }
+        'SCORE    '+game.score, 'CRASHES  '+game.crashes, 'BEST     '+game.best, '', TOUCH?'>TAP: RIDE THE LIFT BACK UP':'>ENTER: RIDE THE LIFT BACK UP'], 'RUN COMPLETE'); } }
 }
 
 // ---------- 9. MAIN LOOP ----------
@@ -2363,6 +2447,7 @@ function frame(now){
     if(pressed.char && game.mode==='pause') game.mode='select';
     if(pressed.p2p){ const L=LIFTS.find(l=>l.to); if(L){ const sc=game.score; newRun({ x:L.x1+4, y:L.y1+14 }); game.score=sc; boardLift(L); } }
   }
+  if(TOUCH){ const pm=document.getElementById('pm'), want=game.mode==='pause'?'flex':'none'; if(pm.style.display!==want) pm.style.display=want; }
   const s0=game.score; update(dt);
   if(WORLD.bc && WORLD.bc.double && game.mode!=='select' && game.score>s0) game.score+=game.score-s0;   // backcountry: every point counts double
   for(const k in pressed) pressed[k]=false;
