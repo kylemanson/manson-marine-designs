@@ -53,7 +53,7 @@
   .tb.grab  { right:calc(108px + env(safe-area-inset-right)); bottom:calc(108px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:9px; }
   .tb.menu  { left:calc(8px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
   .tb.mapb  { left:calc(62px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
-  .tb.fsb   { left:calc(116px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
+  .tb.fsb   { left:calc(8px + env(safe-area-inset-left)); top:calc(72px + env(safe-area-inset-top)); }
   body.nofs .tb.fsb, body.nofs #pmfull { display:none; }
   .pm { position:fixed; inset:0; z-index:10; background:rgba(10,20,40,0.88); flex-direction:column; align-items:center; justify-content:center; gap:10px; }
   .pm h2 { font-family:'Press Start 2P',monospace; color:#ffe066; font-size:14px; margin:0 0 6px; }
@@ -297,7 +297,7 @@ const DEFS = {
     world:{ w:2000, h:9000, treeline:2900, forest:3900, village:8600, finish:8750, jp:true, birch:true, sunset:true, volcano:true },
     peak:{ x:1000, y:30 },
     outline:[[40,26],[80,58],[220,210],[800,480],[2000,700],[3500,860],[5500,950],[9000,995]],   // broad cone with a flat crater top,: opens out fast below the summit
-    start:{ x:1000, y:235 }, tele:{ x:640, y:8590, name:'ニセコビレッジ' },
+    start:{ x:1000, y:235 }, tele:{ x:1000, y:235, name:'ニセコアンヌプリ' },   // arrive at the summit and ski down
     bases:[ { x1:60, x2:400, name:'アンヌプリ' }, { x1:520, x2:960, name:'ニセコビレッジ' }, { x1:1040, x2:1520, name:'グラン・ヒラフ' }, { x1:1600, x2:1860, name:'花園' } ],
     runs:[
       { id:'jumbo',   name:'ジャンボコース', grade:'green', w:120, slope:0.4,                       // Annupuri
@@ -356,7 +356,7 @@ const DEFS = {
                 { name:'hut',   x:1190, y:660,  w:40,  h:18, c:'#5a3b2a' } ],
     labels:[ ['ニセコアンヌプリ',1000,6], ['カレーハウス',1020,3070], ['ひらふ',1270,8700], ['アンヌプリ',230,8700],
              ['ニセコビレッジ',740,8700], ['花園',1730,8700], ['火口',1000,142], ['新千歳空港',1930,8370] ],
-    airport:{ x:1895, y:8690, to:'whistler', dest:'WHISTLER', arrive:{ x:640, y:8590 } },    // fly home (and arrive in Niseko Village)
+    airport:{ x:1895, y:8690, to:'whistler', dest:'WHISTLER', arrive:{ x:1000, y:235 } },    // fly home (flying in, you land on the summit)
     range:[[1720,170,330],[300,330,190],[520,420,150]],   // Mt. Yotei, the perfect cone across the valley, and the Shiribetsu hills
     clouds:[[700,50,46],[880,-10,54],[1180,40,40],[1300,-20,44],[640,140,36]]
   },
@@ -1085,10 +1085,11 @@ const isFull=()=>!!(document.fullscreenElement || document.webkitFullscreenEleme
 function toggleFull(){ const d=document.documentElement;
   try{ if(isFull()){ if(document.exitFullscreen) document.exitFullscreen().catch(()=>{}); else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); }
        else if(d.requestFullscreen) d.requestFullscreen({ navigationUI:'hide' }).catch(()=>{}); else if(d.webkitRequestFullscreen) d.webkitRequestFullscreen(); }catch(e){} }
-function fsLabels(){ const f=isFull(), a=document.getElementById('fsb'), b=document.getElementById('pmfull');
+function fsLabels(){ if(isFull() && game.mode==='play') game.holdT=3;
+  const f=isFull(), a=document.getElementById('fsb'), b=document.getElementById('pmfull');
   if(a) a.textContent=f?'EXIT':'FULL'; if(b) b.textContent=f?'EXIT FULL SCREEN':'FULL SCREEN'; setTimeout(fit,150); }
 document.addEventListener('fullscreenchange',fsLabels); document.addEventListener('webkitfullscreenchange',fsLabels);
-if(!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) document.body.classList.add('nofs');   // e.g. iPhone Safari: no full screen for web pages
+if(!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) document.body.classList.add('nofs');   // e.g. iPhone Safari: no full screen for web pages
 addEventListener('beforeinstallprompt',e=>e.preventDefault());                                                     // never offer to install / download the game
 if(TOUCH){
   document.body.classList.add('touch');
@@ -1263,7 +1264,8 @@ function resetSkier(at){
 function camTarget(){
   const near=Math.max(0,1-(P.y-START.y)/220);            // at the top, show the peak and the sky
   const x = P.state==='lift' ? P.x-VW/2 : clamp(P.x-VW/2,0,WORLD.w-VW);
-  let y=P.y-VH*(0.32+(WORLD.volcano?0.62:0.34)*near);          // Niseko: look up at the smoking crater
+  let y=P.y-VH*(0.32+0.34*near);
+  if(WORLD.volcano && near>0) y=Math.max(P.y-VH*0.78, y+(CRATER_Y-VH*0.45-y)*near);   // Niseko: look up at the smoking crater, skier still in view
   if(P.state==='air') y=Math.min(y, P.y-P.z-100);
   if(P.state==='cat') y=P.y-VH*(Math.cos(P.catH)<0?0.62:0.35);   // look the way the cat is driving
   if(P.state==='tbar' || P.state==='skintrack') y=P.y-VH*0.6;           // big air: the camera follows you up instead of racing to the landing
@@ -1353,6 +1355,7 @@ function update(dt){
   if(game.mode==='flight'){ updFlight(dt); return; }
   if(game.mode==='finish'){ P.state='ride'; P.v*=Math.pow(0.25,dt); P.x+=Math.sin(P.h)*P.v*dt; P.y+=Math.cos(P.h)*P.v*dt; followCam(dt); return; }
   if(game.mode!=='play') return;
+  if(game.holdT>0){ game.holdT-=dt; followCam(dt); return; }      // waiting for the phone's full-screen notice to clear
   game.time += dt;
   updJerry(dt);
 
@@ -2003,6 +2006,16 @@ const ROCK=sprite(['..rrr...','.rlllrr.','rllrrrrd','rrrrrrdd','.dddddd.'], { r:
 
 const FONT='"Press Start 2P", "DotGothic16", monospace';      // Japanese signs fall back to a pixel Japanese font
 const JP=/[\u3000-\u30ff\u4e00-\u9fff\uff00-\uffef]/;
+const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPURI SUMMIT', 'ニセコアンヌプリ':'MT. NISEKO ANNUPURI', 'ジャンボコース':'JUMBO COURSE',
+  'ダイナミックコース':'DYNAMIC COURSE', 'ミラージュコース':'MIRAGE COURSE', 'スーパースラローム':'SUPER SLALOM', 'センターコース':'CENTRE COURSE',
+  'ファミリーコース':'FAMILY COURSE', '花園コース':'HANAZONO COURSE', 'ストロベリーフィールズ':'STRAWBERRY FIELDS', '水野の沢':'MIZUNO GULLY',
+  '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
+  'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
+  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
+  'ひらふゴンドラ':'HIRAFU GONDOLA', 'キングリフト':'KING LIFT', '花園リフト':'HANAZONO LIFT', 'カレーハウス':'CURRY HOUSE', 'カレー':'CURRY',
+  '新千歳空港':'NEW CHITOSE AIRPORT', 'ウィスラー行き':'FLY TO WHISTLER', 'アンヌプリ':'ANNUPURI', 'ひらふ':'HIRAFU', '花園':'HANAZONO', '火口':'CRATER',
+  '温泉':'HOT SPRING', '高山帯':'ALPINE', '森林限界':'TREELINE', '白樺の森':'BIRCH FOREST', 'ようこそ ニセコへ':'' }).sort((a,b)=>b[0].length-a[0].length);
+function toEN(s){ for(const [j,e] of EN_WORDS) if(s.indexOf(j)>=0) s=s.split(j).join(e); s=s.trim(); return s && !JP.test(s) ? s : ''; }   // '' = no translation
 try{ document.fonts.load('12px "DotGothic16"','ニセコ花園ひらふアンヌプリ'); }catch(e){}
 const TOUCH_WORDS=[[/HOLD S\b/g,'HOLD STOP'],[/\bSPACE\b/g,'JUMP'],[/W CLIMB/g,'TUCK CLIMB'],[/A\/D/g,'< >'],[/ARROWS: DRIVE YOURSELF/g,'TUCK/STOP/< >: DRIVE']];
 function txt(s,x,y,col,size,align,shadow){
@@ -2014,6 +2027,9 @@ function txt(s,x,y,col,size,align,shadow){
     txt(s.slice(0,k),x,y,col,size,align,shadow); txt(s.slice(k+1),x,y+(size||8)+2,col,size,align,shadow); return; }
   if(shadow!==false){ ctx.fillStyle='rgba(10,20,40,0.75)'; ctx.fillText(s,x+1,y+1); }
   ctx.fillStyle=col||'#fff'; ctx.fillText(s,x,y);
+  if(JP.test(s)){ const en=toEN(s); if(en){                         // a small English translation under the Japanese
+    ctx.font='6px '+FONT; if(shadow!==false){ ctx.fillStyle='rgba(10,20,40,0.75)'; ctx.fillText(en,x+1,y+(size||8)+2); }
+    ctx.fillStyle=col||'#fff'; ctx.fillText(en,x,y+(size||8)+1); } }
 }
 function textW(s){ ctx.font=(JP.test(s)?12:8)+'px '+FONT; return ctx.measureText(s).width; }
 function gradeSym(g,x,y){
@@ -2380,9 +2396,9 @@ function drawCurry(o,cx,cy){
         ctx.fillStyle='rgba(255,255,255,'+(0.85*(1-tt))+')';
         ctx.fillRect(Math.round(bx+1+Math.sin(tt*6+j+bx)*2.2-sz/2), Math.round(dy-10-tt*22), sz, sz); } } }
   ctx.fillStyle='#5a3b24'; ctx.fillRect(dx,dy-9,dw,1); for(let px=dx; px<dx+dw; px+=4) ctx.fillRect(px,dy-9,1,7);   // railing
-  const sx0=x0+8, sy0=yb-o.h-12;                                                                 // big red curry sign
+  const sx0=x0+8, sy0=yb-o.h-17;                                                                 // big red curry sign
   ctx.fillStyle='#3a2618'; ctx.fillRect(sx0+4,sy0+12,2,8); ctx.fillRect(sx0+30,sy0+12,2,8);
-  ctx.fillStyle='#b8282a'; ctx.fillRect(sx0,sy0-3,36,16); ctx.fillStyle='#ffd23f'; ctx.fillRect(sx0,sy0-3,36,1); ctx.fillRect(sx0,sy0+12,36,1);
+  ctx.fillStyle='#b8282a'; ctx.fillRect(sx0,sy0-3,36,21); ctx.fillStyle='#ffd23f'; ctx.fillRect(sx0,sy0-3,36,1); ctx.fillRect(sx0,sy0+17,36,1);
   txt('カレー', sx0+18, sy0-2, '#ffffff', 8, 'center', false);
 }
 // little airport: terminal with blue glass, a control tower with a blinking beacon
@@ -2394,7 +2410,7 @@ function drawAirportBldg(o,cx,cy){
   ctx.fillStyle='#2a3a4a'; ctx.fillRect(x0+w/2-5,yb-10,10,10); ctx.fillStyle='#9fd0ff'; ctx.fillRect(x0+w/2-4,yb-9,3,8); ctx.fillRect(x0+w/2+1,yb-9,3,8);   // doors
   ctx.fillStyle='#f6f8fb'; ctx.fillRect(x0-2,ye-3,w+4,3); ctx.fillStyle='#ffffff'; for(let i=0;i<w;i+=4) ctx.fillRect(x0+i,ye,2,1+(i%3));   // snowy roof
   ctx.fillStyle='#c8402f'; ctx.fillRect(x0+6,ye-10,w-12,7); ctx.fillStyle='#ffffff'; ctx.fillRect(x0+6,ye-10,w-12,1);   // sign board
-  txt(WORLD.jp?'空港':'AIRPORT', x0+w/2, WORLD.jp?ye-12:ye-9, '#ffffff', 8, 'center', false);
+  txt('AIRPORT', x0+w/2, ye-9, '#ffffff', 8, 'center', false); if(WORLD.jp) txt('空港', x0+w/2, ye-24, '#3b6fc1', 8, 'center', false);
   const tx=x0+w+3; ctx.fillStyle='#c8ced8'; ctx.fillRect(tx,yb-46,8,46); ctx.fillStyle='#a9b0bb'; ctx.fillRect(tx+6,yb-46,2,46);   // control tower
   for(let y=yb-40;y<yb-4;y+=8){ ctx.fillStyle='#4f8fd8'; ctx.fillRect(tx+3,y,2,3); }
   ctx.fillStyle='#2a3a4a'; ctx.fillRect(tx-4,yb-58,16,12); ctx.fillStyle='#7fe0c8'; ctx.fillRect(tx-3,yb-56,14,6);   // glass cab
@@ -2690,7 +2706,7 @@ function drawHUD(){
   let py=30;
   for(const p of game.popups){ const a=Math.min(1,p.t*2); ctx.globalAlpha=a;
     const size=p.big?(p.txt.length>18?12:16):8, col=p.big && Math.floor(game.t*8)%2 ? '#ffffff' : p.col;
-    txt(p.txt, VW/2, py, col, size, 'center'); py+=size+3;
+    txt(p.txt, VW/2, py, col, size, 'center'); py+=size+3+(JP.test(p.txt) && toEN(p.txt) ? 7 : 0);
     if(p.pts){ txt('+'+p.pts, VW/2, py, '#fff', 8, 'center'); py+=11; }
     ctx.globalAlpha=1; }
   if(game.showMap){ const mx=VW-MM.w-4, my=17;
@@ -2770,6 +2786,8 @@ function render(){
       'M MAP  T MID-MOUNTAIN  R RESTART  P PAUSE', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
       'G = PEAK 2 PEAK GONDOLA TO BLACKCOMB', 'HOLD S WHEN STOPPED = SKINS (CLIMB UP)', 'N SOUND ON/OFF    WATCH OUT FOR JERRY', '>PRESS ENTER TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
   } else { drawHUD();
+    if(game.mode==='play' && game.holdT>0){ ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,VH/2-22,VW,40);
+      txt('FULL SCREEN ON', VW/2, VH/2-16, '#ffffff', 8, 'center'); txt('GET READY... '+Math.ceil(game.holdT), VW/2, VH/2-2, '#ffe066', 8, 'center'); }
     if(game.mode==='travel') panel(['', game.travelMsg||'', ''], 'LOADING');
     if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'C  CHANGE RIDER'], 'PAUSED');
     if(game.mode==='finish'){ const t=game.time;
