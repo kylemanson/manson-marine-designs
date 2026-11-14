@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Powder Days Ski Game
+  Powder Days Ski Game (Beta)
   Copyright (c) 2026 Kyle Manson. All rights reserved.
   This game and its code, artwork and sounds may not be copied, modified or redistributed without permission.
 -->
@@ -11,7 +11,7 @@
 <meta name="copyright" content="© 2026 Kyle Manson. All rights reserved.">
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Powder Days Ski Game</title>
+<title>Powder Days Ski Game (Beta)</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#1b2333; }
@@ -27,7 +27,7 @@
 <script>
 'use strict';
 // =====================================================================
-//  POWDER DAYS SKI GAME - a tiny old-school skiing game (single file)
+//  POWDER DAYS SKI GAME (BETA) - a tiny old-school skiing game (single file)
 //  Open this file in Chrome / Edge / Firefox.
 //
 //  Sections:  1 CONFIG   2 MAP DATA (Whistler + Blackcomb)   3 HELPERS
@@ -2329,7 +2329,7 @@ function render(){
     panel(['A / D ..... STEER   (AIR: SPIN)', 'W / UP .... TUCK    (AIR: FRONTFLIP)', 'S / DOWN .. STOP    (AIR: BACKFLIP)',
       'SPACE ..... HOP  (AT A LIP = POP!)', 'J / K / L . GRABS   SHIFT ... TUCK TOO',
       'M MAP  T MID-MOUNTAIN  R RESTART  P PAUSE', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
-      'G = PEAK 2 PEAK GONDOLA TO BLACKCOMB', 'HOLD S WHEN STOPPED = SKINS (CLIMB UP)', 'N SOUND ON/OFF    WATCH OUT FOR JERRY', '>PRESS ENTER TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME", 12);
+      'G = PEAK 2 PEAK GONDOLA TO BLACKCOMB', 'HOLD S WHEN STOPPED = SKINS (CLIMB UP)', 'N SOUND ON/OFF    WATCH OUT FOR JERRY', '>PRESS ENTER TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
   } else { drawHUD();
     if(game.mode==='travel') panel(['', game.travelMsg||'', ''], 'LOADING');
     if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'C  CHANGE RIDER'], 'PAUSED');

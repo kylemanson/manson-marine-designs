@@ -17,8 +17,8 @@ interface FunProject {
 
 const projects: FunProject[] = [
   {
-    title: "Powder Days Ski Game",
-    platform: "For PC (keyboard)",
+    title: "Powder Days Ski Game (Beta)",
+    platform: "Beta test version · For PC (keyboard)",
     description:
       "An old-school pixel skiing game set on Whistler and Blackcomb, with a backcountry mountain beyond. Carve groomers, drop pillow lines and cliffs, send the Big Air, skim the pond, ride the halfpipe and the lifts, and skin up to the Cham Chutes for double points.",
     image: "/ski/powder-days.png",
