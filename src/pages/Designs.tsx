@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
@@ -71,6 +72,12 @@ const Designs = () => {
                 ))}
               </div>
             )}
+
+            <p className="mt-12 text-sm text-muted-foreground">
+              <Link to="/fun-projects" className="hover:text-accent underline-offset-2 hover:underline transition-colors">
+                Fun projects &rarr;
+              </Link>
+            </p>
           </div>
         </div>
       </main>
