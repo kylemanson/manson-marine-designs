@@ -37,15 +37,17 @@
         padding:0; margin:0; z-index:5; }
   .tb.on { background:rgba(255,224,102,0.35); border-color:rgba(255,224,102,0.9); }
   .tb.big { width:78px; height:78px; font-size:22px; }
-  .tb.act { width:66px; height:66px; }
-  .tb.jump { width:84px; height:84px; font-size:11px; }
+  .tb.act { width:74px; height:74px; flex-direction:column; font-size:20px; line-height:1; }
+  .tb.act small { font-size:8px; margin-top:4px; }
+  .tb.jump { width:80px; height:80px; font-size:11px; }
   .tb.sm { width:46px; height:34px; border-radius:10px; font-size:9px; }
   .tb.left  { left:calc(14px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
   .tb.right { left:calc(102px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
-  .tb.jump  { right:calc(14px + env(safe-area-inset-right)); bottom:calc(18px + env(safe-area-inset-bottom)); }
-  .tb.stop  { right:calc(106px + env(safe-area-inset-right)); bottom:calc(12px + env(safe-area-inset-bottom)); }
-  .tb.tuck  { right:calc(52px + env(safe-area-inset-right)); bottom:calc(112px + env(safe-area-inset-bottom)); }
-  .tb.grab  { right:calc(128px + env(safe-area-inset-right)); bottom:calc(90px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:9px; }
+  /* right side: up/down arrows (tuck/stop) stacked on the outside edge, jump and grab just inside them */
+  .tb.tuck  { right:calc(12px + env(safe-area-inset-right)); bottom:calc(102px + env(safe-area-inset-bottom)); }
+  .tb.stop  { right:calc(12px + env(safe-area-inset-right)); bottom:calc(18px + env(safe-area-inset-bottom)); }
+  .tb.jump  { right:calc(98px + env(safe-area-inset-right)); bottom:calc(18px + env(safe-area-inset-bottom)); }
+  .tb.grab  { right:calc(108px + env(safe-area-inset-right)); bottom:calc(108px + env(safe-area-inset-bottom)); width:60px; height:60px; font-size:9px; }
   .tb.menu  { left:calc(8px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
   .tb.mapb  { left:calc(62px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
   .pm { position:fixed; inset:0; z-index:10; background:rgba(10,20,40,0.88); flex-direction:column; align-items:center; justify-content:center; gap:10px; }
@@ -60,8 +62,8 @@
 <div class="tc" id="tc">
   <button class="tb big left"  data-k="left"  aria-label="Steer left">&#9664;</button>
   <button class="tb big right" data-k="right" aria-label="Steer right">&#9654;</button>
-  <button class="tb act tuck"  data-k="up">TUCK</button>
-  <button class="tb act stop"  data-k="down">STOP</button>
+  <button class="tb act tuck"  data-k="up" aria-label="Tuck">&#9650;<small>TUCK</small></button>
+  <button class="tb act stop"  data-k="down" aria-label="Stop">&#9660;<small>STOP</small></button>
   <button class="tb jump"      data-k="jump">JUMP</button>
   <button class="tb grab"      data-k="g1">GRAB</button>
   <button class="tb sm menu"   data-k="pause" aria-label="Menu">MENU</button>
