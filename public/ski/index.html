@@ -314,6 +314,10 @@ const DEFS = {
         pts:[[1180,3300],[1220,3800],[1300,4300],[1460,5000],[1440,6400],[1420,7600],[1430,8750]] },
       { id:'hanazono',name:'花園コース', grade:'blue', w:110,                                        // Hanazono
         pts:[[1500,3620],[1660,4600],[1790,5800],[1840,7000],[1830,8000],[1790,8750]] },
+      { id:'hkn', name:'ノーマルヒル', grade:'black', w:40, slope:0.95, fixed:true, nobank:true,       // Hakuba-style ski jumps: in-run, table, huge landing hill
+        pts:[[155,4150],[155,4500],[155,5000],[157,5500],[160,5980]] },
+      { id:'hkl', name:'ラージヒル', grade:'black', w:44, slope:1.05, fixed:true, nobank:true,
+        pts:[[262,4100],[262,4500],[262,5000],[260,5500],[256,5980]] },
       { id:'mega',    name:'メガパーク', grade:'park', w:200, slope:0.62, fixed:true, nobank:true,     // the alpine mega park, big air to rails
         pts:[[1320,640],[1325,1200],[1330,1800],[1335,2400],[1345,2800],[1385,3200],[1420,3600],[1430,3960]] }
     ],
@@ -326,6 +330,7 @@ const DEFS = {
       { name:'ひらふの森',           type:'glade', x:1090, y:6200, rx:80,  ry:900 },
       { name:'アンヌプリ山頂', type:'alpine', x:1000, y:1300, rx:520, ry:1200 },
       { name:'ひらふ山頂駅',   type:'flat', x:1110, y:3240, rx:210, ry:130, slope:0.3 },
+      { name:'白馬ジャンプ台', type:'flat', x:208, y:6060, rx:150, ry:110, slope:0.14 },        // ski-jump outrun
       { name:'ニセコ温泉',     type:'flat', x:1555, y:8400, rx:60,  ry:50,  slope:0.15 },
       { name:'アンヌプリ',     type:'flat', x:230,  y:8850, rx:200, ry:250, slope:0.12 },
       { name:'ニセコビレッジ', type:'flat', x:740,  y:8850, rx:260, ry:250, slope:0.12 },
@@ -333,7 +338,9 @@ const DEFS = {
       { name:'花園',           type:'flat', x:1730, y:8850, rx:200, ry:250, slope:0.12 }
     ],
     moguls:[ { run:'slalom', y1:4600, y2:5300 }, { run:'dynamic', y1:3900, y2:4500 } ],
-    cliffs:[], ridges:[],
+    cliffs:[ { x1:968, x2:1008, y:4420, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:4420, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:996, x2:1036, y:4484, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1052, x2:1092, y:4484, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:968, x2:1008, y:4548, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:4548, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:996, x2:1036, y:4612, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1052, x2:1092, y:4612, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:968, x2:1008, y:4676, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:4676, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:996, x2:1036, y:4740, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1052, x2:1092, y:4740, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:968, x2:1008, y:4804, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:4804, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:996, x2:1036, y:4868, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1052, x2:1092, y:4868, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:968, x2:1008, y:4932, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:4932, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:996, x2:1036, y:4996, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1052, x2:1092, y:4996, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:968, x2:1008, y:5060, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] }, { x1:1024, x2:1064, y:5060, h:15, fence:true, line:'sg', prof:[1,1,1], lip:[0,0,0] } ],   // snow gates: rows of snow bridges to bounce down
+    clears:[ { x:1030, y:4740, rx:85, ry:380 }, { x:1120, y:350, rx:50, ry:50 } ],
+    ridges:[],
     stacks:[ [700,620,3], [600,1700,3] ],
     alpine:{ cliffs:34, cornices:6, pillowLines:6, windLips:0, stacks:2 },        // a gentle volcano: open bowls, a few rock bands, no random kickers
     pillowLines:[], gladeCliffs:{ perPx:110, pillowLines:3 }, forestPillowLines:26,  // famous Japow pillows in the birch trees
@@ -346,15 +353,18 @@ const DEFS = {
               kickers:[[null,5450,40,1.0],[null,5750,46,1.15],[null,6050,52,1.3]], boxes:[] },
             { name:'メガパーク ビッグエア', run:'mega', mega:true, comp:true, y1:640, y2:2620,           // huge competition jump with a crowd and a DJ
               kickers:[[null,1500,124,2.9]], boxes:[], dj:{ x:1470, y:2050 },
-              cat:{ x:1270, y:2640, top:{ x:1318, y:660 }, retro:true,                              // retro Japanese snowcat back up to the top
-                route:{ x:1175, amp:26, wave:170, y0:2620, y1:820, tail:[[1230,730],[1290,680]] } } },
+              cat:{ x:1300, y:4010, top:{ x:1318, y:660 }, retro:true, plant:true,                  // retro Japanese snowcat: bottom of the whole park, up through the birches
+                route:{ x:1165, amp:24, wave:130, y0:3960, y1:820, tail:[[1230,730],[1290,680]] } } },
+            { name:'ジャンプ K90', run:'hkn', mega:true, comp:true, y1:4140, y2:5980, kickers:[[null,4560,30,1.35]], boxes:[] },
+            { name:'ジャンプ K120', run:'hkl', mega:true, comp:true, y1:4090, y2:5980, kickers:[[null,4580,34,1.85]], boxes:[] },
             { name:'スーパーパイプ', run:'mega', y1:2760, y2:3320, kickers:[], boxes:[], pipe:{ w:84 } },
             { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:3960,                            // huge rails and boxes, and a jump line
               kickers:[[null,3430,80,1.6],[null,3800,96,2.0]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
     jumps:[],
+    skijumps:[ { run:'hkn', take:4560, k:90 }, { run:'hkl', take:4580, k:120 } ],
     parties:[ { x:1525, y:3040, name:'PIPE PARTY', pipe:true } ],
     lifts:[
-      { name:'アンヌプリゴンドラ', x1:180,  y1:8650, x2:330,  y2:3300, gondola:true },
+      { name:'アンヌプリゴンドラ', x1:300,  y1:8650, x2:380,  y2:3300, gondola:true },
       { name:'センターフォー',     x1:360,  y1:3380, x2:600,  y2:1450 },
       { name:'ビレッジゴンドラ',   x1:780,  y1:8650, x2:790,  y2:3200, gondola:true },
       { name:'ビレッジエクスプレス', x1:800, y1:3280, x2:920,  y2:800 },
@@ -363,9 +373,12 @@ const DEFS = {
       { name:'花園リフト',         x1:1640, y1:8650, x2:1500, y2:3540 }
     ],
     buildings:[ { name:'curry', x:1020, y:3166, w:140, h:34, c:'#5a3b2a', curry:true },      // the curry house at the top of the Hirafu gondola
-                { name:'hut',   x:1190, y:660,  w:40,  h:18, c:'#5a3b2a' } ],
+                { name:'hut',   x:1190, y:660,  w:40,  h:18, c:'#5a3b2a' },
+                { name:'ramen', x:1060, y:8380, w:124, h:32, c:'#5a3b2a', curry:true, ramen:true },  // ramen shop in the Hirafu woods
+                { name:'shrine', x:1120, y:336, w:40, h:24, c:'#8a2a1a', shrine:true } ],             // little summit shrine with its torii gate
     labels:[ ['ニセコアンヌプリ',1000,6], ['カレーハウス',1020,3070], ['ひらふ',1270,8700], ['アンヌプリ',230,8700],
-             ['ニセコビレッジ',740,8700], ['花園',1730,8700], ['火口',1000,142], ['新千歳空港',1930,8370] ],
+             ['ニセコビレッジ',740,8700], ['花園',1730,8700], ['火口',1000,142], ['新千歳空港',1930,8370], ['ラーメン',1060,8290], ['ニセコ神社',1120,286], ['スノーゲート',1030,4370],
+             ['白馬ジャンプ台',208,3975], ['ジャンプ台 <<',330,3420] ],
     airport:{ x:1895, y:8690, to:'whistler', dest:'WHISTLER', arrive:{ x:1000, y:235 } },    // fly home (flying in, you land on the summit)
     range:[[1720,170,330],[300,330,190],[520,420,150]],   // Mt. Yotei, the perfect cone across the valley, and the Shiribetsu hills
     clouds:[[700,50,46],[880,-10,54],[1180,40,40],[1300,-20,44],[640,140,36]]
@@ -622,6 +635,7 @@ function shapeCliff(c){           // irregular profile: a big drop, smaller step
 function cliffH(c,x){
   const half=(c.x2-c.x1)/2, u=(x-(c.x1+half))/half; if(Math.abs(u)>=1) return 0;
   if(c.pillow) return c.h*Math.max(0.3,Math.sqrt(1-u*u));
+  if(c.fence) return c.h;                                 // snow gate: a straight steel fence
   const j=0.92+0.16*((hash(Math.floor(x/4),c.y|0)&255)/255);
   const env=Math.pow(1-u*u, c.ridge?0.15:0.35);
   const h=c.h*interp(c.prof,(x-c.x1)/(c.x2-c.x1))*env*j;
@@ -715,6 +729,7 @@ function buildMap(def){
   RUNS=d.runs; ZONES=d.zones; MOGULS=d.moguls; CLIFFS=d.cliffs; RIDGES=d.ridges; ALPINE=d.alpine; PILLOW_LINES=d.pillowLines;
   GLADE_CLIFFS=d.gladeCliffs; FOREST_PILLOW_LINES=d.forestPillowLines; PARKS=d.parks; JUMPS=d.jumps; LIFTS=d.lifts;
   BUILDINGS=d.buildings; LABELS=d.labels; RANGE=d.range; CLOUDS=d.clouds; BANKS=d.banks; PONDS=d.ponds||[];
+  WORLD.sj=d.skijumps||null;
   WORLD.bc=d.backcountry||null; WORLD.gate=d.bcGate||null; WORLD.sx=d.skicross||null; WORLD.air=d.airport||null;
   if(WORLD.air){ const a=WORLD.air; BUILDINGS.push({ name:'airport', x:a.x-14, y:a.y+66, w:70, h:28, c:'#d9dde3', airport:true }); }   // little terminal and tower
   rng=mulberry32(d.seed);
@@ -730,7 +745,7 @@ function buildMap(def){
   KICKERS=[]; BOXES=[]; TOWERS=[]; RIDGE_CLIFFS=[]; CATPTS=[]; CATBOX=null; STEPUPS=[];
   for(const L of LIFTS){ L.dx=L.x2-L.x1; L.dy=L.y2-L.y1; L.len=Math.hypot(L.dx,L.dy); }
   prepRuns();
-  const clear=[];                                 // areas kept free of trees (Big Air arena, pond skim)
+  const clear=[...(d.clears||[])];                // areas kept free of trees (Big Air arena, pond skim)
   for(const pk of PARKS) if(pk.pipe){ const r=RUNS.find(q=>q.id===pk.run); pk.pipe.cx=[];
     for(let y=pk.y1-20; y<=pk.y2+20; y+=4){ let best=1e9, bx=0; for(const p of r.S){ const d=Math.abs(p.y-y); if(d<best){ best=d; bx=p.x; } } pk.pipe.cx.push(bx); } }
 
@@ -774,6 +789,7 @@ function buildMap(def){
         BUILDINGS.push({ name:'base', x:bx+w/2, y:WORLD.village+285+(rng()*20|0), w, h, c:cols[(rng()*cols.length)|0] });
         bx += w + 20 + rng()*30; } } }
   for(const b of BUILDINGS) addObj(Object.assign({ t:'bldg' }, b));
+  for(const b of BUILDINGS) if(b.shrine) addObj({ t:'party', kind:'torii', x:b.x, y:b.y+46 });   // torii gate in front of the shrine
   if(WORLD.air){ const a=WORLD.air; clear.push({ x:a.x+36, y:a.y-120, rx:80, ry:230 });      // airstrip: runway beside the box, a plane parked on it
     addObj({ t:'party', kind:'plane', x:a.x+62, y:a.y-190 }); }
 
@@ -812,6 +828,11 @@ function buildMap(def){
     for(let i=6,n=0;i<pts.length-6;i+=4,n++){ const a=pts[i-1], b=pts[i+1], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1, sd=n%2?1:-1;   // little flags line it in the trees
       const fx=pts[i][0]-dy/L*13*sd, fy=pts[i][1]+dx/L*13*sd;
       if(edgeAt(fx,fy)>8 && edgeAt(pts[i][0],pts[i][1])>4) addObj({ t:'party', kind:'cflag', x:fx, y:fy, col:sd>0?'#ff6a1a':'#2463c9' }); }
+    if(c.plant) for(let i=8;i<pts.length-10;i+=2){ const a=pts[i-1], b=pts[i+1], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;   // birches lining the track
+      for(const sd of [-1,1]){ if(rng()<0.35) continue; const off=20+rng()*30, x=pts[i][0]-dy/L*off*sd, y=pts[i][1]+dx/L*off*sd;
+        if(!onMountain(x,y) || edgeAt(x,y)<12 || obs.some(o=>Math.hypot(o[0]-x,o[1]-y)<o[2]) || pts.some(q=>Math.hypot(q[0]-x,q[1]-y)<17)) continue;
+        if(LIFTS.some(Lf=>{ const t=clamp(((x-Lf.x1)*Lf.dx+(y-Lf.y1)*Lf.dy)/(Lf.len*Lf.len),0,1); return Math.hypot(Lf.x1+Lf.dx*t-x, Lf.y1+Lf.dy*t-y)<10; })) continue;
+        addObj({ t:'tree', x, y, r:4, s:rng()<0.3?1:0 }); } }
     catBox(); }
   if(WORLD.gate){ const g=WORLD.gate, L=LIFTS.find(l=>l.name.startsWith('7th'));      // backcountry gate, with a clear skin up to it
     addObj({ t:'party', kind:'bcgate', x:g.x, y:g.y });
@@ -861,7 +882,8 @@ function buildMap(def){
     if(cliffOK(x-w/2,x+w/2,y,h,0)){ CLIFFS.push({ x1:x-w/2, x2:x+w/2, y, h }); n++; }
   }
   const cols=['#ff6fb0','#2f6fd6','#ffd23f','#2a8f5a','#e0402a','#8b5a2b','#7a3cff','#f2f2f2','#ff8c1a'];
-  const fan=(x,y)=>addObj({ t:'party', kind:'dude', x, y, col:cols[(rng()*cols.length)|0], hat:cols[(rng()*cols.length)|0], ph:rng()*6, cup:rng()<0.2 });
+  const fan=(x,y)=>{ const o={ t:'party', kind:'dude', x, y, col:cols[(rng()*cols.length)|0], hat:cols[(rng()*cols.length)|0], ph:rng()*6, cup:rng()<0.2 };
+    if(onMountain(x,y)) addObj(o); };                                                            // no spectators floating off the edge
   for(const pk of PARKS) if(pk.comp){ const r=RUNS.find(q=>q.id===pk.run), k=pk.kickers[0], S=r.S;
     for(let i=0;i<S.length-1;i+=2){ const a=S[i]; if(a.y<k[1]-110 || a.y>k[1]+1700) continue;
       const c=S[i+1], dx=c.x-a.x, dy=c.y-a.y, L=Math.hypot(dx,dy)||1, nx=-dy/L, ny=dx/L;
@@ -1609,10 +1631,10 @@ function interact(px,py){
       // and lift by h so the skier stays put on screen, then floats down.
       if(P.state==='ride'){ launch(25,false); P.canPop=true; }
       P.y+=h; P.z+=h; P.drop+=h; P.minor=false;
-      if(c.pillow && c.line){ const pl=P.pl;
+      if((c.pillow||c.fence) && c.line){ const pl=P.pl;
         if(pl && pl.line===c.line && game.time-pl.t<4 && !pl.hit.includes(c)){ pl.n++; pl.t=game.time; pl.hit.push(c); }
         else if(!pl || pl.line!==c.line || game.time-pl.t>=4) P.pl={ line:c.line, n:1, t:game.time, hit:[c], done:false };
-        if(P.pl.n>=3 && !P.pl.done){ P.pl.done=true; popup('BEAST PILLOW LINE!', 750, '#7ee0ff', true); game.score+=750; sfx('beast'); } }
+        if(P.pl.n>=3 && !P.pl.done){ P.pl.done=true; popup(c.fence?'SNOW GATE BOUNCE LINE!':'BEAST PILLOW LINE!', 750, '#7ee0ff', true); game.score+=750; sfx('beast'); } }
       break;
     } else if(P.state==='ride' && P.y>ly && P.y<ly+h){
       const inX = px>c.x1 && px<c.x2, prevBot = inX ? lipY(c,px)+cliffH(c,px) : -1e9, depth=(P.y-ly)/h;
@@ -2034,7 +2056,8 @@ const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPUR
   'ファミリーコース':'FAMILY COURSE', '花園コース':'HANAZONO COURSE', 'ストロベリーフィールズ':'STRAWBERRY FIELDS', '水野の沢':'MIZUNO GULLY',
   '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
   'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
-  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
+  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'ニセコ神社':'NISEKO SHRINE', 'スノーゲート':'SNOW GATES', '白馬ジャンプ台':'HAKUBA SKI JUMPS',
+  'ジャンプ台':'SKI JUMPS', 'ジャンプ':'JUMP', 'ノーマルヒル':'NORMAL HILL', 'ラージヒル':'LARGE HILL', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
   'ひらふゴンドラ':'HIRAFU GONDOLA', 'メガパーク ビッグエア':'MEGA PARK BIG AIR', 'メガパーク':'MEGA PARK', 'スーパーパイプ':'SUPERPIPE', 'レールパーク':'RAIL PARK', 'キングリフト':'KING LIFT', '花園リフト':'HANAZONO LIFT', 'カレーハウス':'CURRY HOUSE', 'カレー':'CURRY',
   '新千歳空港':'NEW CHITOSE AIRPORT', 'ウィスラー行き':'FLY TO WHISTLER', 'アンヌプリ':'ANNUPURI', 'ひらふ':'HIRAFU', '花園':'HANAZONO', '火口':'CRATER',
   '温泉':'HOT SPRING', '高山帯':'ALPINE', '森林限界':'TREELINE', '白樺の森':'BIRCH FOREST', 'ようこそ ニセコへ':'' }).sort((a,b)=>b[0].length-a[0].length);
@@ -2128,6 +2151,24 @@ function drawGroundFeatures(cx,cy){
     ctx.fillStyle='#ffd23f'; ctx.fillRect(X-17,Y-11,34,1); ctx.fillRect(X-17,Y+10,34,1);
     ctx.fillStyle='#ffffff'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a plane painted in the box
     txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?27:23), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
+  if(WORLD.sj) for(const J of WORLD.sj){ const r=RUNS.find(q=>q.id===J.run); if(!r) continue; const S=r.S, top=S[0].y;   // Hakuba-style ski jumps
+    if(!(top-60<cy+VH && S[S.length-1].y>cy)) continue;
+    for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<cy-12 || a.y>cy+VH+4) continue; const X=Math.round(a.x-cx), Y=Math.round(a.y-cy), hw=Math.round(a.hw), dh=Math.max(2,Math.ceil(S[i+1].y-a.y)+1);
+      if(a.y<J.take){ ctx.fillStyle='#8d9098'; ctx.fillRect(X-hw-3,Y,3,dh); ctx.fillRect(X+hw,Y,3,dh);          // in-run: concrete side walls
+        ctx.fillStyle='#c7d4e6'; ctx.fillRect(X-hw,Y,2*hw,dh); ctx.fillStyle='#6f8fb8'; ctx.fillRect(X-4,Y,2,dh); ctx.fillRect(X+3,Y,2,dh); }   // and two ski tracks
+      else { ctx.fillStyle='#d9e4f2'; ctx.fillRect(X-hw-2,Y,2,dh); ctx.fillRect(X+hw,Y,2,dh); } }                // landing hill boards
+    const M=J.px||8, lines=[[J.k*0.75*M,'#2463c9'],[J.k*M,'#e0402a'],[J.k*1.1*M,'#2a8f5a']];                                   // P, K and hill-size lines
+    for(const [d,col] of lines){ const y=J.take+d; if(!vis(y,6)) continue; let a=S[0]; for(const q of S) if(Math.abs(q.y-y)<Math.abs(a.y-y)) a=q;
+      ctx.fillStyle=col; ctx.fillRect(Math.round(a.x-a.hw-cx),Math.round(y-cy),Math.round(2*a.hw),2); }
+    for(let m=40;m<=J.k*1.25;m+=10){ const y=J.take+m*M; if(!vis(y,8)) continue; let a=S[0]; for(const q of S) if(Math.abs(q.y-y)<Math.abs(a.y-y)) a=q;   // distance boards
+      ctx.fillStyle='#ffffff'; ctx.fillRect(Math.round(a.x+a.hw+3-cx),Math.round(y-cy)-3,9,6); txt(String(m), Math.round(a.x+a.hw+4-cx), Math.round(y-cy)-2, '#1e3a6a', 5, 'left', false); }
+    if(vis(top-30,40)){ const X=Math.round(S[0].x-cx), Y=Math.round(top-cy);                                   // start tower and gate
+      ctx.fillStyle='#6a6e78'; ctx.fillRect(X-10,Y-36,2,36); ctx.fillRect(X+9,Y-36,2,36);
+      ctx.fillStyle='#8a8e98'; for(let k=0;k<36;k+=6){ ctx.fillRect(X-10,Y-36+k,21,1); ctx.fillRect(X-8+((k/6)%2?0:14),Y-36+k,4,1); }
+      ctx.fillStyle='#efe6d4'; ctx.fillRect(X-12,Y-48,25,12); ctx.fillStyle='#4f8fd8'; ctx.fillRect(X-9,Y-45,19,4);
+      poly([X-15,Y-48, X+16,Y-48, X+11,Y-54, X-10,Y-54],'#b8341f'); ctx.fillStyle='#ffffff'; ctx.fillRect(X-12,Y-55,25,2);
+      ctx.fillStyle='#d8402f'; ctx.fillRect(X-7,Y+2,15,2); ctx.fillStyle='#ffd23f'; ctx.fillRect(X-1,Y+2,3,2);       // start bar
+      ctx.fillStyle='#333'; ctx.fillRect(X+14,Y-66,1,12); ctx.fillStyle='#ffffff'; ctx.fillRect(X+15,Y-66,7,5); ctx.fillStyle='#d8402f'; ctx.fillRect(X+17,Y-65,3,3); } }   // flag
   if(WORLD.volcano && vis(CRATER_Y,60)){ const X=PEAK.x-cx, Y=CRATER_Y-cy, gl=0.5+0.5*Math.sin(game.t*1.3);               // the volcano's crater
     const el=(rx,ry,col,dy)=>{ ctx.fillStyle=col; ctx.beginPath(); ctx.ellipse(X,Y+(dy||0),rx,ry,0,0,7); ctx.fill(); };
     el(62,17,'#8a7a80'); el(56,14,'#5a4c52'); el(48,11,'#3a3036',1); el(40,8,'#2a2226',2);
@@ -2230,6 +2271,17 @@ function drawGroundFeatures(cx,cy){
 
 function drawCliff(c,cx,cy){
   if(c.pillow){ drawPillow(c,cx,cy); return; }
+  if(c.fence){ const y0=Math.round(c.y-cy), w=c.x2-c.x1, h=c.h;                        // snow gate: steel lattice under a fat pillow of snow
+    ctx.fillStyle='rgba(90,110,150,0.3)'; ctx.fillRect(Math.round(c.x1-cx), y0+h, w, 4);
+    for(let x=0;x<w;x++){ const sx=Math.round(c.x1-cx+x);
+      ctx.fillStyle='#34363c'; ctx.fillRect(sx,y0+2,1,h-2);
+      if(x%7===0 || x%7===1){ ctx.fillStyle='#55585f'; ctx.fillRect(sx,y0+2,1,h-2); }                           // posts
+      const dy=(x*2)%(h-2); ctx.fillStyle='#6a6e76'; ctx.fillRect(sx,y0+2+dy,1,1); ctx.fillRect(sx,y0+h-1-dy,1,1);   // cross bracing
+      const u=x/w*2-1, cap=Math.round(2+5*Math.sqrt(Math.max(0,1-u*u*u*u)));                                    // rounded snow cap
+      ctx.fillStyle='#ffffff'; ctx.fillRect(sx,y0-cap,1,cap+3); ctx.fillStyle='#dde5ef'; ctx.fillRect(sx,y0+3,1,1);
+      if((x+3)%9<2){ ctx.fillStyle='#ffffff'; ctx.fillRect(sx,y0+4,1,2+(x%3)); } }                               // snow hanging off
+    ctx.fillStyle='#ffffff'; ctx.fillRect(Math.round(c.x1-cx)-1,y0-2,1,5); ctx.fillRect(Math.round(c.x2-cx),y0-2,1,5);
+    return; }
   const ROCK_C=['#4f5663','#5a6270','#626b79','#48505c'], PIL_C=['#e2e9f2','#d8e1ec','#cfd9e6','#dde5ef'];
   for(let x=Math.floor(c.x1); x<c.x2; x+=2){
     const h=Math.round(cliffH(c,x+1));
@@ -2293,7 +2345,7 @@ function drawPillow(c,cx,cy){
 }
 function drawObj(o,cx,cy){
   const x=Math.round(o.x-cx), y=Math.round(o.y-cy);
-  if(o.t==='tree'){ const birch=WORLD.birch && hash(o.x|0,o.y|0)%7!==0;          // Niseko: mostly birch, a few Todo firs
+  if(o.t==='tree'){ const birch=!!WORLD.birch;                                  // Niseko: all birch
     const s = birch ? (o.tapped ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?BIRCH_SM:BIRCH_BIG))
                     : o.tapped ? (o.s?TREE_SM_BARE:TREE_BIG_BARE) : (o.s?TREE_SM:TREE_BIG);
     ctx.fillStyle='rgba(90,110,145,0.3)'; ctx.fillRect(x-1,y,7,2);
@@ -2308,7 +2360,7 @@ function drawObj(o,cx,cy){
     ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillRect(x-4+wt,y-13,9,1);
     ctx.fillStyle='#ffffff'; ctx.fillRect(x-1+wt,y-11,3,3); }
   else if(o.t==='tower'){ ctx.fillStyle='#555'; ctx.fillRect(x,y-16,1,16); ctx.fillRect(x-4,y-16,9,1); ctx.fillStyle='rgba(120,140,170,0.3)'; ctx.fillRect(x-1,y,3,1); }
-  else if(o.t==='bldg'){ if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy);
+  else if(o.t==='bldg'){ if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy); else if(o.shrine) drawShrine(o,cx,cy);
     else if(WORLD.jp) drawJpHouse(o,cx,cy); else drawCottage(o,cx,cy); }
   else if(o.t==='party') drawParty(o,x,y);
 }
@@ -2392,6 +2444,22 @@ function drawJpHouse(o,cx,cy,noDoor){
     ctx.fillStyle='#d8402f'; ctx.fillRect(lx+sw,ye+3,3,4); ctx.fillStyle='#ffb070'; ctx.fillRect(lx+1+sw,ye+4,1,2);
     ctx.fillStyle='rgba(255,150,80,0.25)'; ctx.fillRect(lx-2+sw,ye+2,7,7); }
 }
+// a small Shinto shrine: raised wooden hall, deep curved roof, rope and paper streamers, stone lanterns
+function drawShrine(o,cx,cy){
+  const w=o.w, x0=Math.round(o.x-w/2-cx), yb=Math.round(o.y-cy), mx=Math.round(o.x-cx);
+  ctx.fillStyle='rgba(90,110,145,0.3)'; ctx.fillRect(x0-4,yb,w+8,2);
+  ctx.fillStyle='#8a8a8e'; ctx.fillRect(x0-2,yb-3,w+4,3);                                           // stone base
+  ctx.fillStyle='#7a2a1a'; ctx.fillRect(x0+3,yb-15,w-6,12); ctx.fillStyle='#5a1e12'; for(let i=x0+3;i<x0+w-3;i+=6) ctx.fillRect(i,yb-15,1,12);
+  ctx.fillStyle='#f3ead6'; ctx.fillRect(mx-6,yb-13,12,9); ctx.fillStyle='#8a5a36'; ctx.fillRect(mx,yb-13,1,9); ctx.fillRect(mx-6,yb-9,12,1);   // shoji doors
+  ctx.fillStyle='#c9a35a'; ctx.fillRect(mx-8,yb-16,16,1); for(let i=-6;i<=6;i+=4){ ctx.fillStyle='#ffffff'; ctx.fillRect(mx+i,yb-15,1,3); }   // shimenawa rope + shide
+  ctx.fillStyle='#d8b23a'; ctx.fillRect(mx-1,yb-15,2,2);                                             // bell
+  poly([x0-8,yb-14, x0+w+8,yb-14, x0+w-2,yb-24, x0+2,yb-24],'#3a2e2a');                             // roof
+  ctx.fillStyle='#3a2e2a'; ctx.fillRect(x0-10,yb-17,3,2); ctx.fillRect(x0+w+7,yb-17,3,2);
+  poly([x0-6,yb-16, x0+w+6,yb-16, x0+w-3,yb-24, x0+3,yb-24],'#f6f8fb'); ctx.fillStyle='#3a2e2a'; ctx.fillRect(x0-8,yb-15,w+16,2);
+  ctx.fillStyle='#3a2e2a'; ctx.fillRect(mx-2,yb-29,4,5); ctx.fillRect(mx-6,yb-29,1,4); ctx.fillRect(mx+5,yb-29,1,4);   // chigi on the ridge
+  for(const lx of [x0-10, x0+w+7]){ ctx.fillStyle='#9a9a9e'; ctx.fillRect(lx,yb-10,4,10); ctx.fillStyle='#7a7a7e'; ctx.fillRect(lx-1,yb-11,6,2);   // stone lanterns
+    ctx.fillStyle='#ffcf6a'; ctx.fillRect(lx+1,yb-8,2,2); ctx.fillStyle='#ffffff'; ctx.fillRect(lx-1,yb-12,6,1); }
+}
 // the curry house: a lodge with a covered balcony full of happy skiers eating steaming hot Japanese curry
 function drawCurry(o,cx,cy){
   const bw=78, x0=Math.round(o.x-o.w/2-cx), yb=Math.round(o.y-cy), t=game.t;
@@ -2412,17 +2480,17 @@ function drawCurry(o,cx,cy){
       ctx.fillStyle='#f1c9a5'; ctx.fillRect(px-1,py-10,3,3);                                     // face
       ctx.fillStyle=cols[(k+3)%cols.length]; ctx.fillRect(px-1,py-12,3,2);                       // beanie
       ctx.fillStyle=c; if(eat) ctx.fillRect(px+(sx<0?2:-2),py-10,1,3); else ctx.fillRect(px+(sx<0?3:-3),py-6,1,2);   // spoon up to the mouth
-      if(eat){ ctx.fillStyle='#c8c8c8'; ctx.fillRect(px+(sx<0?2:-2),py-11,1,1); } }
+      if(eat){ ctx.fillStyle=o.ramen?'#3a2a1a':'#c8c8c8'; ctx.fillRect(px+(sx<0?2:-2),py-11,1,o.ramen?2:1); } }   // chopsticks or a spoon
     ctx.fillStyle='#6b4a32'; ctx.fillRect(tx-4,dy-6,9,2); ctx.fillStyle='#4a3022'; ctx.fillRect(tx,dy-4,1,2);   // table
-    for(const bx of [tx-3,tx+2]){ ctx.fillStyle='#ffffff'; ctx.fillRect(bx,dy-8,3,2); ctx.fillStyle='#c98a1a'; ctx.fillRect(bx,dy-8,3,1);   // bowls of curry rice
+    for(const bx of [tx-3,tx+2]){ ctx.fillStyle=o.ramen?'#b8282a':'#ffffff'; ctx.fillRect(bx,dy-8,3,2); ctx.fillStyle=o.ramen?'#f3d36b':'#c98a1a'; ctx.fillRect(bx,dy-8,3,1);   // curry rice / ramen noodles
       for(let j=0;j<4;j++){ const tt=(t*0.5+j/4+bx*0.13)%1, sz=1+Math.round(tt*2.4);               // steam curling up off the hot curry
         ctx.fillStyle='rgba(255,255,255,'+(0.85*(1-tt))+')';
         ctx.fillRect(Math.round(bx+1+Math.sin(tt*6+j+bx)*2.2-sz/2), Math.round(dy-10-tt*22), sz, sz); } } }
   ctx.fillStyle='#5a3b24'; ctx.fillRect(dx,dy-9,dw,1); for(let px=dx; px<dx+dw; px+=4) ctx.fillRect(px,dy-9,1,7);   // railing
   const sx0=x0+8, sy0=yb-o.h-17;                                                                 // big red curry sign
-  ctx.fillStyle='#3a2618'; ctx.fillRect(sx0+4,sy0+12,2,8); ctx.fillRect(sx0+30,sy0+12,2,8);
-  ctx.fillStyle='#b8282a'; ctx.fillRect(sx0,sy0-3,36,21); ctx.fillStyle='#ffd23f'; ctx.fillRect(sx0,sy0-3,36,1); ctx.fillRect(sx0,sy0+17,36,1);
-  txt('カレー', sx0+18, sy0-2, '#ffffff', 8, 'center', false);
+  ctx.fillStyle='#3a2618'; ctx.fillRect(sx0+4,sy0+12,2,8); ctx.fillRect(sx0+(o.ramen?46:30),sy0+12,2,8);
+  const sw=o.ramen?52:36; ctx.fillStyle=o.ramen?'#1e1a1a':'#b8282a'; ctx.fillRect(sx0,sy0-3,sw,21); ctx.fillStyle=o.ramen?'#d8402f':'#ffd23f'; ctx.fillRect(sx0,sy0-3,sw,1); ctx.fillRect(sx0,sy0+17,sw,1);
+  txt(o.ramen?'ラーメン':'カレー', sx0+(o.ramen?26:18), sy0-2, '#ffffff', 8, 'center', false);
 }
 // little airport: terminal with blue glass, a control tower with a blinking beacon
 function drawAirportBldg(o,cx,cy){
@@ -2545,6 +2613,15 @@ function drawParty(o,x,y){
     for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.fillStyle='#7c838d'; ctx.fillRect(Math.round(x+Math.cos(a)*6)-1, Math.round(y+Math.sin(a)*3)-1, 2, 2); }
     for(let i=0;i<6;i++){ const f=Math.sin(t*12+i*1.7); ctx.fillStyle=i%2?'#ffb02e':'#ff5a1f'; ctx.fillRect(x-3+i, Math.round(y-3-Math.abs(f)*4), 1, Math.round(2+Math.abs(f)*3)); }
     ctx.fillStyle='rgba(255,180,60,0.25)'; ctx.fillRect(x-8,y-3,16,6);
+  } else if(o.kind==='torii'){                                        // vermilion torii gate: ski through it for luck
+    ctx.fillStyle='rgba(90,110,150,0.3)'; ctx.fillRect(x-16,y,33,2);
+    ctx.fillStyle='#2a1a14'; ctx.fillRect(x-12,y-2,4,3); ctx.fillRect(x+9,y-2,4,3);                 // black feet
+    ctx.fillStyle='#d8432a'; ctx.fillRect(x-11,y-26,3,24); ctx.fillRect(x+9,y-26,3,24);              // pillars
+    ctx.fillStyle='#b8341f'; ctx.fillRect(x-9,y-26,1,24); ctx.fillRect(x+11,y-26,1,24);
+    ctx.fillStyle='#d8432a'; ctx.fillRect(x-14,y-23,29,3);                                           // nuki tie beam
+    ctx.fillStyle='#2a1a14'; ctx.fillRect(x-17,y-31,35,3); ctx.fillRect(x-18,y-32,2,2); ctx.fillRect(x+17,y-32,2,2);   // kasagi top beam, ends curling up
+    ctx.fillStyle='#d8432a'; ctx.fillRect(x-15,y-28,31,2); ctx.fillStyle='#ffffff'; ctx.fillRect(x-17,y-33,35,2);     // ...with snow on top
+    ctx.fillStyle='#2a1a14'; ctx.fillRect(x-1,y-28,3,5); ctx.fillStyle='#ffd23f'; ctx.fillRect(x,y-27,1,3);         // name plaque
   } else if(o.kind==='bcgate'){                                       // backcountry access gate: rope, poles and a warning sign
     ctx.fillStyle='rgba(90,110,145,0.3)'; ctx.fillRect(x-24,y,48,2);
     ctx.fillStyle='#3a3f47'; ctx.fillRect(x-22,y-16,2,16); ctx.fillRect(x+20,y-16,2,16);
