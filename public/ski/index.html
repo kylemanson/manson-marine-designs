@@ -13,6 +13,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b2333">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Powder Days Ski Game (Beta)</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA+0lEQVR4AeySsQ3CMBBFbXoWSBk6JMQITMAMjECbEdIyAg0TsAhCoqN1kyGMfoFkRf46nzmgcaSnOOc739M5C/fnpwm0CVRPoO/7mEP7T1cLaBux/GqBzfnpcrBGLF4twA7UxqsF7oeVy/EzAW0jlq+ewPb4iGC5v7oc2AOs4TyuFpgf8Ol3ExAnMI5jBLWjRi1g9aIAK7SKNwH1BG6ntQfhsnM5sAdKr0gtUHpwaV4TKJ5A13UxhY04zcGa5b3jxQLvAuu3KDAMgwchBJ8yTZPPkeZgjVrAxEUBVmgVFwVwjxYwYVGAFVrFRQHcowVMWBRghVbxrwtIoi8AAAD//6My87sAAAAGSURBVAMAFjHEQUj0j8YAAAAASUVORK5CYII=">
 <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAz0lEQVR4AbSOrw7CMBCHN5IZHgAxOUuCQ+8ZeBHQqB1qnqeZYxUEgyLB1GHqSFDYsmvySy49CgHCsm+9v986yn58/iuoqopA6qIvbzBZrBrwlSC1JOvJG8yWZ7oejgZwLhcRJwV5njfj+boGnGNJnkrQti3JgTiO+0qQ+hNEcV8JMOi939wvOwM4R0+eScFpO6XbnmrAuVxE/FRQliUxGOKTc4ZjiRJYa40Y4BiEctTPlKDruj5MDp+iKHowpOGVfS4oARc/QQmcc/QO+YMHAAAA//8AzegWAAAABklEQVQDAKdkayHjYIscAAAAAElFTkSuQmCC">
@@ -78,6 +82,7 @@
   <button data-tap="p2p">PEAK 2 PEAK GONDOLA</button>
   <button data-tap="char">CHANGE RIDER</button>
   <button data-tap="mute">SOUND ON / OFF</button>
+  <button data-tap="full">FULL SCREEN</button>
 </div>
 <script>
 'use strict';
@@ -989,20 +994,25 @@ addEventListener('keydown', e => { audioInit(); const a=KEYMAP[e.code]; if(!a) r
 addEventListener('keyup', e => { const a=KEYMAP[e.code]; if(a) keys[a]=false; });
 addEventListener('blur', () => { for(const k in keys) keys[k]=false; });
 
+// phones: hide the browser's address bar by going full screen on the first tap (browsers only allow it after a tap)
+function goFull(){ const d=document.documentElement;
+  if(document.fullscreenElement || document.webkitFullscreenElement) return;
+  try{ if(d.requestFullscreen) d.requestFullscreen({ navigationUI:'hide' }).catch(()=>{}); else if(d.webkitRequestFullscreen) d.webkitRequestFullscreen(); }catch(e){} }
 if(TOUCH){
   document.body.classList.add('touch');
   for(const b of document.querySelectorAll('#tc [data-k]')){ const a=b.dataset.k;
-    const down=e=>{ e.preventDefault(); audioInit(); try{ b.setPointerCapture(e.pointerId); }catch(_){} if(!keys[a]) pressed[a]=true; keys[a]=true; b.classList.add('on'); };
+    const down=e=>{ e.preventDefault(); audioInit(); goFull(); try{ b.setPointerCapture(e.pointerId); }catch(_){} if(!keys[a]) pressed[a]=true; keys[a]=true; b.classList.add('on'); };
     const up=()=>{ keys[a]=false; b.classList.remove('on'); };
     b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
     b.addEventListener('contextmenu',e=>e.preventDefault()); }
-  for(const b of document.querySelectorAll('#pm [data-tap]')) b.addEventListener('click',e=>{ e.preventDefault(); audioInit(); pressed[b.dataset.tap]=true; });
+  for(const b of document.querySelectorAll('#pm [data-tap]')) b.addEventListener('click',e=>{ e.preventDefault(); audioInit();
+    if(b.dataset.tap==='full'){ goFull(); pressed.pause=true; } else pressed[b.dataset.tap]=true; });
   document.addEventListener('touchmove',e=>e.preventDefault(),{ passive:false });   // no page scroll / pull-to-refresh while playing
   document.addEventListener('gesturestart',e=>e.preventDefault());                   // no pinch zoom on iOS
 }
 // tap the game screen: start, pick a rider (tap twice to drop in), or carry on after the finish
 document.getElementById('c').addEventListener('pointerdown',e=>{
-  audioInit(); if(!TOUCH && e.pointerType==='mouse' && game.mode!=='select') return;
+  audioInit(); if(TOUCH) goFull(); if(!TOUCH && e.pointerType==='mouse' && game.mode!=='select') return;
   const r=e.currentTarget.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*VW, y=(e.clientY-r.top)/r.height*VH;
   if(game.mode==='title' || game.mode==='finish'){ pressed.enter=true; return; }
   if(game.mode==='select'){
