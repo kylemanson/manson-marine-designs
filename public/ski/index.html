@@ -301,19 +301,21 @@ const DEFS = {
     bases:[ { x1:60, x2:400, name:'アンヌプリ' }, { x1:520, x2:960, name:'ニセコビレッジ' }, { x1:1040, x2:1520, name:'グラン・ヒラフ' }, { x1:1600, x2:1860, name:'花園' } ],
     runs:[
       { id:'jumbo',   name:'ジャンボコース', grade:'green', w:120, slope:0.4,                       // Annupuri
-        pts:[[560,1500],[500,2400],[430,3300],[380,4400],[340,5600],[310,6800],[300,7800],[290,8750]] },
+        pts:[[470,3000],[430,3300],[380,4400],[340,5600],[310,6800],[300,7800],[290,8750]] },
       { id:'dynamic', name:'ダイナミックコース', grade:'black', w:100,
-        pts:[[720,1200],[650,2000],[580,2900],[540,3800],[500,5000],[480,6200],[480,7400],[470,8750]] },
+        pts:[[575,3000],[540,3800],[500,5000],[480,6200],[480,7400],[470,8750]] },
       { id:'mirage',  name:'ミラージュコース', grade:'blue', w:110,                                // Niseko Village
-        pts:[[860,900],[800,1700],[740,2500],[700,3300],[680,4300],[640,5400],[630,6500],[650,7600],[640,8750]] },
+        pts:[[712,3000],[700,3300],[680,4300],[640,5400],[630,6500],[650,7600],[640,8750]] },
       { id:'slalom',  name:'スーパースラローム', grade:'black', w:100,
-        pts:[[960,700],[930,1500],[920,2400],[900,3300],[910,4400],[880,5600],[900,6800],[890,7800],[900,8750]] },
+        pts:[[905,3000],[900,3300],[910,4400],[880,5600],[900,6800],[890,7800],[900,8750]] },
       { id:'center',  name:'センターコース', grade:'blue', w:130,                                   // Grand Hirafu
-        pts:[[1060,900],[1110,1800],[1170,2700],[1240,3300],[1290,4300],[1320,5400],[1300,6600],[1290,7700],[1300,8750]] },
+        pts:[[1215,3080],[1240,3300],[1290,4300],[1320,5400],[1300,6600],[1290,7700],[1300,8750]] },
       { id:'family',  name:'ファミリーコース', grade:'green', w:120, slope:0.42,
-        pts:[[1180,3300],[1400,3900],[1460,5000],[1440,6400],[1420,7600],[1430,8750]] },
+        pts:[[1180,3300],[1220,3800],[1300,4300],[1460,5000],[1440,6400],[1420,7600],[1430,8750]] },
       { id:'hanazono',name:'花園コース', grade:'blue', w:110,                                        // Hanazono
-        pts:[[1500,3620],[1660,4600],[1790,5800],[1840,7000],[1830,8000],[1790,8750]] }
+        pts:[[1500,3620],[1660,4600],[1790,5800],[1840,7000],[1830,8000],[1790,8750]] },
+      { id:'mega',    name:'メガパーク', grade:'park', w:200, slope:0.62, fixed:true, nobank:true,     // the alpine mega park, big air to rails
+        pts:[[1320,640],[1325,1200],[1330,1800],[1335,2400],[1345,2800],[1385,3200],[1420,3600],[1430,3960]] }
     ],
     zones:[
       { name:'ストロベリーフィールズ', type:'glade', x:1700, y:5400, rx:80,  ry:700 },
@@ -332,8 +334,8 @@ const DEFS = {
     ],
     moguls:[ { run:'slalom', y1:4600, y2:5300 }, { run:'dynamic', y1:3900, y2:4500 } ],
     cliffs:[], ridges:[],
-    stacks:[ [700,620,3], [1330,700,3] ],
-    alpine:{ cliffs:34, cornices:6, pillowLines:6, windLips:16, stacks:2 },       // a gentle volcano: open bowls, a few rock bands
+    stacks:[ [700,620,3], [600,1700,3] ],
+    alpine:{ cliffs:34, cornices:6, pillowLines:6, windLips:0, stacks:2 },        // a gentle volcano: open bowls, a few rock bands, no random kickers
     pillowLines:[], gladeCliffs:{ perPx:110, pillowLines:3 }, forestPillowLines:26,  // famous Japow pillows in the birch trees
     banks:{ scale:220, min:0.08 },
     ponds:[ { x:1548, y:8378, rx:8,  ry:5,  spring:true },                          // a little onsen beside Hirafu
@@ -341,8 +343,16 @@ const DEFS = {
             { x:1546, y:8420, rx:24, ry:10, fall:true, name:'温泉' } ],
     gates:[ { run:'slalom', y1:3500, y2:4500 } ],
     parks:[ { name:'ひらふパーク', run:'family', y1:5300, y2:6400,
-              kickers:[[null,5450,40,1.0],[null,5750,46,1.15],[null,6050,52,1.3]], boxes:[] } ],
-    jumps:[[1000,1900,50,0.9],[640,1300,44,0.8]],
+              kickers:[[null,5450,40,1.0],[null,5750,46,1.15],[null,6050,52,1.3]], boxes:[] },
+            { name:'メガパーク ビッグエア', run:'mega', mega:true, comp:true, y1:640, y2:2620,           // huge competition jump with a crowd and a DJ
+              kickers:[[null,1500,124,2.9]], boxes:[], dj:{ x:1470, y:2050 },
+              cat:{ x:1270, y:2640, top:{ x:1318, y:660 }, retro:true,                              // retro Japanese snowcat back up to the top
+                route:{ x:1175, amp:26, wave:170, y0:2620, y1:820, tail:[[1230,730],[1290,680]] } } },
+            { name:'スーパーパイプ', run:'mega', y1:2760, y2:3320, kickers:[], boxes:[], pipe:{ w:84 } },
+            { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:3960,                            // huge rails and boxes, and a jump line
+              kickers:[[null,3430,80,1.6],[null,3800,96,2.0]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
+    jumps:[],
+    parties:[ { x:1525, y:3040, name:'PIPE PARTY', pipe:true } ],
     lifts:[
       { name:'アンヌプリゴンドラ', x1:180,  y1:8650, x2:330,  y2:3300, gondola:true },
       { name:'センターフォー',     x1:360,  y1:3380, x2:600,  y2:1450 },
@@ -735,7 +745,7 @@ function buildMap(def){
         if(type==='stepdown') CLIFFS.push({ x1:a.x-a.hw-8, x2:a.x+a.hw+8, y, h:h||26, snow:true, line:9500+n }); }); }   // ledge you drop off
     for(const k of pk.kickers){ if(k[0]===null) k[0]=mid(k[1]); }
     for(const k of pk.kickers) KICKERS.push({ x:k[0], y:k[1], w:k[2], pow:k[3], len:pk.comp?110:pk.mega?50:26, park:true, mega:!!pk.mega, comp:!!pk.comp });
-    for(const b of pk.boxes)   BOXES.push({ x:b[0], y:b[1], len:b[2] });
+    for(const b of pk.boxes){ if(b[0]===null) b[0]=mid(b[1])+(b[3]||0); BOXES.push({ x:b[0], y:b[1], len:b[2] }); }
   }
   for(const k of JUMPS) KICKERS.push({ x:k[0], y:k[1], w:k[2], pow:k[3], len:18, park:false });
   // "fun" runs get a natural roller/kicker every few hundred px, alternating sides
@@ -796,6 +806,9 @@ function buildMap(def){
     for(let pass=0;pass<3;pass++){ push(); for(let i=3;i<pts.length-2;i++) pts[i][0]=(pts[i-1][0]+2*pts[i][0]+pts[i+1][0])/4; }
     push();
     c.path=pts; CATPTS.push(...pts);
+    const onTrack=(x,y,m)=>pts.some(q=>Math.abs(q[0]-x)<m && Math.abs(q[1]-y)<m);           // nothing left sitting on the track (alpine rocks and cliffs)
+    for(let i=CLIFFS.length-1;i>=0;i--){ const cl=CLIFFS[i]; if(pts.some(q=>q[0]>cl.x1-14 && q[0]<cl.x2+14 && q[1]>cl.y-14 && q[1]<cl.y+cl.h+12)) CLIFFS.splice(i,1); }
+
     for(let i=6,n=0;i<pts.length-6;i+=4,n++){ const a=pts[i-1], b=pts[i+1], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1, sd=n%2?1:-1;   // little flags line it in the trees
       const fx=pts[i][0]-dy/L*13*sd, fy=pts[i][1]+dx/L*13*sd;
       if(edgeAt(fx,fy)>8 && edgeAt(pts[i][0],pts[i][1])>4) addObj({ t:'party', kind:'cflag', x:fx, y:fy, col:sd>0?'#ff6a1a':'#2463c9' }); }
@@ -960,6 +973,9 @@ function buildMap(def){
   }
 
   buildShade(); buildCrest(); buildMinimap();
+  for(const pk of PARKS) if(pk.cat && pk.cat.path){ const pts=pk.cat.path;                   // final sweep: no tree or rock sitting on a snowcat track
+    for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
+      if((o.t==='rock'||o.t==='tree') && pts.some(q=>Math.hypot(q[0]-o.x,q[1]-o.y)<(o.r||4)+11)) bk.splice(i,1); } }
   const m=snapshot(); if(prev) useMap(prev); return m;
 }
 
@@ -1085,7 +1101,7 @@ const isFull=()=>!!(document.fullscreenElement || document.webkitFullscreenEleme
 function toggleFull(){ const d=document.documentElement;
   try{ if(isFull()){ if(document.exitFullscreen) document.exitFullscreen().catch(()=>{}); else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); }
        else if(d.requestFullscreen) d.requestFullscreen({ navigationUI:'hide' }).catch(()=>{}); else if(d.webkitRequestFullscreen) d.webkitRequestFullscreen(); }catch(e){} }
-function fsLabels(){ if(isFull() && game.mode==='play') game.holdT=3;
+function fsLabels(){ if(isFull() && game.mode==='play') game.holdT=5;   // the phone's notice shows ~5 s
   const f=isFull(), a=document.getElementById('fsb'), b=document.getElementById('pmfull');
   if(a) a.textContent=f?'EXIT':'FULL'; if(b) b.textContent=f?'EXIT FULL SCREEN':'FULL SCREEN'; setTimeout(fit,150); }
 document.addEventListener('fullscreenchange',fsLabels); document.addEventListener('webkitfullscreenchange',fsLabels);
@@ -1709,7 +1725,9 @@ function rideSkins(dt,steer){
   let zone=null;                                                  // you can still load a lift on skins
   for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<14 && P.y>L.y1+4 && P.y<L.y1+24){ zone=L; break; }
   P.inZone=zone;
-  if(zone && P.v<25){ P.loadT+=dt; if(P.loadT>0.5){ P.skins=false; boardLift(zone); return; } } else P.loadT=0;
+  const A=WORLD.air, pad = !zone && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // ...and get on the plane
+  if(pad) P.inZone=pad;
+  if((zone||pad) && P.v<25){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ P.skins=false; if(pad){ flyTo(pad.to); return; } boardLift(zone); return; } } else P.loadT=0;
   if(pressed.jump){ P.skins=false; P.h=0; P.v=0; popup('SKINS OFF - TIME TO SHRED', 0, '#bfe3ff'); }
 }
 
@@ -1833,11 +1851,12 @@ function updCat(dt){                              // the cat drives itself up it
     Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null }); popup('HOPPED OUT', 0, '#bfe3ff'); }
 }
 const CAT_SPR={};
-function catSprite(dir,ci){                       // built once per heading from little 3D boxes, then cached
-  const key=dir+'_'+ci; if(CAT_SPR[key]) return CAT_SPR[key];
+function catSprite(dir,ci,retro){                 // built once per heading from little 3D boxes, then cached
+  const key=dir+'_'+ci+(retro?'_r':''); if(CAT_SPR[key]) return CAT_SPR[key];
   const cv=document.createElement('canvas'); cv.width=44; cv.height=40; const g=cv.getContext('2d');
   const h=dir/16*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
-  const RED=['#f2606a','#d8283a','#a51b2c'], TR=['#5a616c','#2b2f36','#1d2026'], TL=['#7d8591','#5a616c','#3d434c'], WIN=['#d9f1ff','#a9dcf7','#7fbfe3'],
+  const RED=retro?['#ffb04a','#f0881c','#bf630e']:['#f2606a','#d8283a','#a51b2c'],   // retro Japanese cat: orange chassis, cream cabin, red stripe
+        CRM=['#fff4da','#ecd8ac','#c4a97c'], STR=['#e8453a','#c42a22','#8f1c17'], YEL=['#fff6a0','#ffe066','#d9b43a'], TR=['#5a616c','#2b2f36','#1d2026'], TL=['#7d8591','#5a616c','#3d434c'], WIN=['#d9f1ff','#a9dcf7','#7fbfe3'],
         BL=['#f1f4f8','#d3d9e1','#a9b3bf'], RACK=['#a0724a','#7a4e32','#5a3820'], HEL=ci>=0?[CHARS[ci].helmet,CHARS[ci].helmet,CHARS[ci].helmet]:WIN;
   const box=(l0,l1,f0,f1,z0,z1,col)=>{
     for(let l=l0;l<=l1+1e-6;l+=0.5) for(let f=f0;f<=f1+1e-6;f+=0.5) for(let z=z0;z<=z1+1e-6;z+=0.5){
@@ -1853,10 +1872,14 @@ function catSprite(dir,ci){                       // built once per heading from
   box(-4,4,3,8,5.5,10,(l,f,z,s)=>{                                                // driver cab up front
     if(s.F1 && z>=7 && z<=9.5 && Math.abs(l)<=3) return WIN;
     if((s.L0||s.L1) && z>=7 && z<=9.5 && f>=4 && f<=7) return WIN; return RED; });
+  if(retro){ box(-4,-2.5,8,8.5,4,5.5,YEL); box(2.5,4,8,8.5,4,5.5,YEL); }            // round retro headlights
+  const BODY=retro?CRM:RED;
   box(-6,6,-9,2,5.5,13,(l,f,z,s)=>{                                               // passenger cabin on the back
+    if(retro && !s.Z1 && z>=6.5 && z<=7.5) return STR;                              // red stripe round the cabin
+    if(retro && s.Z1) return [BODY[0],BODY[0],BODY[0]];
     if(s.F0 && z>=8.5 && z<=11 && Math.abs(l)<=4) return (Math.abs(l)<=1 && z<=10) ? HEL : WIN;
     if((s.L0||s.L1) && z>=8.5 && z<=11 && ((f>=-8 && f<=-6.5) || (f>=-5 && f<=-3) || (f>=-1.5 && f<=0.5))) return (f>=-5 && f<=-3 && z<=10) ? HEL : WIN;
-    if(s.Z1 && Math.abs(l)>=5.5) return [RED[0],RED[0],RED[0]]; return RED; });
+    if(s.Z1 && Math.abs(l)>=5.5) return [RED[0],RED[0],RED[0]]; return BODY; });
   box(-4,4,-7,0,13.5,14,(l,f,z)=>Math.round(f*2)%3===0?RACK:null);                // ski rack on the roof
   box(2,3,4.5,5.5,10,13,TR);                                                       // exhaust stack
   vox.sort((a,b)=>a[2]-b[2] || a[3]-b[3]);
@@ -1866,7 +1889,7 @@ function catSprite(dir,ci){                       // built once per heading from
 function drawCat(sx,sy,h,rider){                  // cute cat-skiing snowcat, seen from any of 16 headings
   const dir=((Math.round(h/(Math.PI*2)*16)%16)+16)%16, a=dir/16*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
-  ctx.drawImage(catSprite(dir, rider?game.char:-1), sx-22, sy-30+bob);
+  ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp), sx-22, sy-30+bob);
   const bx=Math.round(sx-2*Math.sin(a)), by=Math.round(sy-2*Math.cos(a)*0.6-15+bob);   // flashing beacon on the cabin roof
   ctx.fillStyle=Math.floor(game.t*4)%2?'#ff9b2f':'#ffd23f'; ctx.fillRect(bx,by,1,2);
 }
@@ -2012,7 +2035,7 @@ const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPUR
   '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
   'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
   'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
-  'ひらふゴンドラ':'HIRAFU GONDOLA', 'キングリフト':'KING LIFT', '花園リフト':'HANAZONO LIFT', 'カレーハウス':'CURRY HOUSE', 'カレー':'CURRY',
+  'ひらふゴンドラ':'HIRAFU GONDOLA', 'メガパーク ビッグエア':'MEGA PARK BIG AIR', 'メガパーク':'MEGA PARK', 'スーパーパイプ':'SUPERPIPE', 'レールパーク':'RAIL PARK', 'キングリフト':'KING LIFT', '花園リフト':'HANAZONO LIFT', 'カレーハウス':'CURRY HOUSE', 'カレー':'CURRY',
   '新千歳空港':'NEW CHITOSE AIRPORT', 'ウィスラー行き':'FLY TO WHISTLER', 'アンヌプリ':'ANNUPURI', 'ひらふ':'HIRAFU', '花園':'HANAZONO', '火口':'CRATER',
   '温泉':'HOT SPRING', '高山帯':'ALPINE', '森林限界':'TREELINE', '白樺の森':'BIRCH FOREST', 'ようこそ ニセコへ':'' }).sort((a,b)=>b[0].length-a[0].length);
 function toEN(s){ for(const [j,e] of EN_WORDS) if(s.indexOf(j)>=0) s=s.split(j).join(e); s=s.trim(); return s && !JP.test(s) ? s : ''; }   // '' = no translation
