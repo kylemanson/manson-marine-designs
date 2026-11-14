@@ -281,7 +281,7 @@ const DEFS = {
     peak:{ x:1000, y:30 },
     outline:[[30,0],[400,220],[2000,460],[5400,640],[9000,820],[14000,990]],
     start:{ x:1050, y:190 }, tele:{ x:1040, y:5850, name:'RENDEZVOUS' },
-    bases:[ { x1:520, x2:1060, name:'BLACKCOMB BASE' }, { x1:200, x2:520, name:'CHATEAU' } ],
+    bases:[ { x1:520, x2:1060, name:'BLACKCOMB BASE' }, { x1:200, x2:520, name:'CHATEAU' }, { x1:1120, x2:1900, name:'WHISTLER VILLAGE' } ],
     runs:[
       { id:'seventh', name:'7th Heaven', grade:'blue', w:200, slope:0.66, fixed:true, fun:true,
         pts:[[1150,760],[1230,1600],[1300,2600],[1360,3600],[1400,4600],[1430,5500],[1430,6250]] },
@@ -300,7 +300,13 @@ const DEFS = {
       { id:'crystal', name:'Crystal Road', grade:'green', w:44, slope:0.3, fixed:true,
         pts:[[540,5200],[480,6300],[440,7500],[470,8700],[560,9800],[640,10300]] },
       { id:'chateau', name:'Chateau Run', grade:'blue', w:100,
-        pts:[[560,9800],[480,10600],[440,11400],[460,12200],[480,12900],[470,13600]] }
+        pts:[[560,9800],[480,10600],[440,11400],[460,12200],[480,12900],[470,13600]] },
+      { id:'villrun', name:'Village Run', grade:'green', w:110,                     // down the right side to Whistler Village
+        pts:[[1150,10200],[1250,11000],[1340,11900],[1400,12800],[1430,13800]] },
+      { id:'jammer',  name:'Gear Jammer', grade:'black', w:100,
+        pts:[[1640,9900],[1730,10900],[1770,11900],[1760,12900],[1720,13800]] },
+      { id:'skix',    name:'Ski Cross', grade:'black', w:44, fixed:true, nobank:true,   // winds down through the trees between them
+        pts:[[1590,10850],[1630,11050],[1555,11280],[1650,11520],[1555,11760],[1650,12000],[1555,12240],[1650,12480],[1560,12720],[1640,12960],[1575,13200],[1600,13480]] }
     ],
     zones:[
       { name:'Blackcomb Glades', type:'glade', x:955,  y:7800, rx:100, ry:800 },
@@ -311,7 +317,8 @@ const DEFS = {
       { name:'Rendezvous',     type:'flat', x:1000, y:5900,  rx:260, ry:180, slope:0.3 },
       { name:'Blackcomb Base', type:'flat', x:790,  y:13850, rx:330, ry:250, slope:0.12 },
       { name:'Chateau Grounds', type:'flat', x:320,  y:13340, rx:150, ry:90,  slope:0.12 },
-      { name:'Scandinave Spa',  type:'flat', x:330,  y:13180, rx:110, ry:70,  slope:0.15 }
+      { name:'Scandinave Spa',  type:'flat', x:330,  y:13180, rx:110, ry:70,  slope:0.15 },
+      { name:'Whistler Village', type:'flat', x:1510, y:13850, rx:420, ry:250, slope:0.12 }
     ],
     moguls:[ { run:'spring', y1:7400, y2:8200 }, { run:'jersey', y1:7200, y2:7700 }, { rect:[900,2300,1100,2600] } ],
     cliffs:[ { x1:900, x2:1060, y:2000, h:200 }, { x1:740, x2:880, y:3700, h:150 }, { x1:1000, x2:1150, y:3300, h:120 } ],
@@ -327,11 +334,14 @@ const DEFS = {
             { x:356, y:13150, rx:25, ry:10, capys:2, fall:true },
             { x:390, y:13174, rx:30, ry:12, capys:2, fall:true, name:'ONSEN' },
             { x:366, y:13201, rx:21, ry:9,  capys:1, fall:true } ],
-    gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 } ],
+    gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 }, { run:'skix', y1:10950, y2:13420, every:120 } ],
+    skicross:{ run:'skix', y1:10880, y2:13440 },    // timed: start gate at the top, finish line at the bottom
     parks:[
       { name:'Catskinner Park', run:'gandy', y1:10300, y2:11050,
         kickers:[[1142,10350,40,1.0],[1127,10650,44,1.1],[1112,10950,48,1.2]], boxes:[] },
       { name:'Superpipe', run:'jersey', y1:6150, y2:6980, kickers:[], boxes:[], pipe:{ w:84 } },   // halfpipe: ride up a wall to air out
+      { name:'Ski Cross', run:'skix', y1:10850, y2:13480, cross:true,                  // rollers on the straights between the turns
+        kickers:[[null,11160,40,0.55],[null,11400,40,0.6],[null,11640,40,0.55],[null,11880,40,0.65],[null,12120,40,0.55],[null,12360,40,0.6],[null,12600,40,0.7],[null,12840,40,0.55],[null,13080,40,0.6],[null,13330,40,0.75]], boxes:[] },
       { name:'Blackcomb Park', run:'excal', y1:11450, y2:12200,
         kickers:[[608,11500,36,0.9],[620,11800,40,1.05]], boxes:[[632,12080,70]] }
     ],
@@ -343,7 +353,8 @@ const DEFS = {
       { name:'Solar Coaster Express',x1:900,  y1:13000, x2:940,  y2:5800 },
       { name:'Excalibur Gondola',    x1:760,  y1:13650, x2:640,  y2:10380, gondola:true },
       { name:'Peak 2 Peak',          x1:1120, y1:5960,  x2:2350, y2:5300, gondola:true, to:'whistler', arrive:{ x:1060, y:5890 } },
-      { name:'Blackcomb Gondola',    x1:470,  y1:13460, x2:640,  y2:5800, gondola:true }
+      { name:'Blackcomb Gondola',    x1:470,  y1:13460, x2:640,  y2:5800, gondola:true },
+      { name:'Village Gondola',      x1:1560, y1:13650, x2:1440, y2:7600, gondola:true }
     ],
     bcGate:{ x:1120, y:360 },                     // skin up from the 7th Heaven top to here to enter the backcountry
     buildings:[ { name:'Rendezvous', x:800, y:5880, w:96, h:30, c:'#7b5a3c' },
@@ -351,7 +362,7 @@ const DEFS = {
                 { name:'Fairmont Chateau Whistler', x:320, y:13380, w:170, h:70, c:'#ddd3bd', castle:true },
                 { name:'Scandinave sauna', x:300, y:13165, w:34, h:22, c:'#6b4a35' },
                 { name:'Scandinave lodge', x:248, y:13215, w:30, h:20, c:'#7b5a3c' } ],
-    labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318] ],
+    labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1590,10800] ],
     range:[[720,220,150],[820,110,60],[1200,150,140],[1290,230,110]],
     clouds:[[760,40,40],[860,-20,50],[1150,60,44],[1230,-10,36]]
   }
@@ -489,7 +500,7 @@ function prepRuns(){
       let hw = r.fixed ? r.w/2 : r.w/2*(0.75+0.5*vnoise(p.s/260+r.seed, 1.7));      // natural width changes
       if(PARKS.some(pk=>pk.run===r.id && p.y>pk.y1-100 && p.y<pk.y2+100) ||
          LIFTS.some(L=>Math.hypot(L.x1-p.x,L.y1-p.y)<80 || Math.hypot(L.x2-p.x,L.y2-p.y)<80)) hw=Math.max(hw,r.w/2);
-      p.hw=hw; p.bank=[bankAmt(r,p.s,0), bankAmt(r,p.s,1)];
+      p.hw=hw; p.bank=r.nobank ? [0,0] : [bankAmt(r,p.s,0), bankAmt(r,p.s,1)];
     }
     r.B=Array.from({length:NB},()=>[]);
     for(let i=0;i<S.length-1;i++){ const y0=Math.min(S[i].y,S[i+1].y)-130, y1=Math.max(S[i].y,S[i+1].y)+130;
@@ -606,7 +617,7 @@ function buildMap(def){
   RUNS=d.runs; ZONES=d.zones; MOGULS=d.moguls; CLIFFS=d.cliffs; RIDGES=d.ridges; ALPINE=d.alpine; PILLOW_LINES=d.pillowLines;
   GLADE_CLIFFS=d.gladeCliffs; FOREST_PILLOW_LINES=d.forestPillowLines; PARKS=d.parks; JUMPS=d.jumps; LIFTS=d.lifts;
   BUILDINGS=d.buildings; LABELS=d.labels; RANGE=d.range; CLOUDS=d.clouds; BANKS=d.banks; PONDS=d.ponds||[];
-  WORLD.bc=d.backcountry||null; WORLD.gate=d.bcGate||null;
+  WORLD.bc=d.backcountry||null; WORLD.gate=d.bcGate||null; WORLD.sx=d.skicross||null;
   rng=mulberry32(d.seed);
   if(WORLD.bc) prepChutes();
   if(WORLD.bc){ const B=WORLD.bc, at=(c,y)=>{ const i=clamp(Math.round((y-B.rockTop)/4),0,B.n-1); return [c.xs[i],c.hws[i]]; };
@@ -626,6 +637,8 @@ function buildMap(def){
 
   // parks, natural jumps
   for(const pk of PARKS){
+    const rr=RUNS.find(q=>q.id===pk.run), mid=y=>{ let b=1e9, bx=0; for(const p of rr.S){ const d=Math.abs(p.y-y); if(d<b){ b=d; bx=p.x; } } return bx; };
+    for(const k of pk.kickers){ if(k[0]===null) k[0]=mid(k[1]); }
     for(const k of pk.kickers) KICKERS.push({ x:k[0], y:k[1], w:k[2], pow:k[3], len:pk.comp?110:pk.mega?50:26, park:true, mega:!!pk.mega, comp:!!pk.comp });
     for(const b of pk.boxes)   BOXES.push({ x:b[0], y:b[1], len:b[2] });
   }
@@ -643,10 +656,10 @@ function buildMap(def){
   // downhill race gates: alternating red/blue flags down the fall line
   for(const gs of (d.gates||[])){ const r=RUNS.find(q=>q.id===gs.run); if(!r) continue;
     const S=r.S; let side=1, n=0, lastS=-1e9;
-    for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<gs.y1 || a.y>gs.y2 || a.s-lastS<210) continue; lastS=a.s;
+    for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<gs.y1 || a.y>gs.y2 || a.s-lastS<(gs.every||210)) continue; lastS=a.s;
       const c=S[i+1], dx=c.x-a.x, dy=c.y-a.y, L=Math.hypot(dx,dy)||1, off=side*a.hw*0.35;
       const x=a.x-dy/L*off, y=a.y+dx/L*off; side=-side;
-      if(KICKERS.some(k=>Math.hypot(k.x-x,k.y-y)<60) || LIFTS.some(l=>Math.hypot(l.x1-x,l.y1-y)<70 || Math.hypot(l.x2-x,l.y2-y)<70)) continue;
+      if(KICKERS.some(k=>Math.hypot(k.x-x,k.y-y)<(gs.every?30:60)) || LIFTS.some(l=>Math.hypot(l.x1-x,l.y1-y)<70 || Math.hypot(l.x2-x,l.y2-y)<70)) continue;
       addObj({ t:'gate', x, y, col:n%2?'#2463c9':'#d33333', shake:0 }); n++; } }
 
   // base-area buildings
@@ -978,8 +991,8 @@ document.getElementById('c').addEventListener('pointerdown',e=>{
   if(game.mode==='select'){
     const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,(VW-24)/perRow), hw=Math.floor(slot/2)-3;
     for(let i=0;i<CHARS.length;i++){ const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
-      const cx=VW/2+(col-(n-1)/2)*slot, y0=52+row*(VH<300?88:96);
-      if(Math.abs(x-cx)<=hw && y>=y0 && y<=y0+88){ if(game.char===i) pressed.enter=true; else game.char=i; return; } }
+      const cp=VH<250, cx=VW/2+(col-(n-1)/2)*slot, y0=(cp?50:52)+row*(cp?72:VH<300?88:96);
+      if(Math.abs(x-cx)<=hw && y>=y0 && y<=y0+(cp?68:88)){ if(game.char===i) pressed.enter=true; else game.char=i; return; } }
     if(y>Math.min(236,VH-40)) pressed.enter=true; }
 });
 // ---------- 5b. SOUND (soft retro effects synthesized live - no files, no music) ----------
@@ -1154,7 +1167,7 @@ function crash(msg, forceYard){
   if(P.state==='crash') return;
   const air=P.state==='air', speed=air?Math.hypot(P.vx,P.vy):P.v, head=air?Math.atan2(P.vx,P.vy):P.h;
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
-  P.state='crash'; P.yard=yard; P.pl=null; P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
+  P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
   game.crashes++; P.gear=[];
   if(yard){
@@ -1351,6 +1364,14 @@ function update(dt){
           launch(vz,false); P.z=10; P.vx=-sd*8; P.vy=Math.max(30,P.v*Math.cos(P.h)*0.55); P.pipeAir=sd; P.canPop=true; sfx('pop'); }
         else { P.h=-P.h*0.7; P.v*=0.8; } }                            // too slow: you slide back down the wall
       else if(Math.abs(dx)>W*0.5) P.v+=(out>0?-60:60)*dt*Math.abs(Math.sin(P.h)); } }   // up the wall slows you, dropping in speeds you up
+  if(WORLD.sx && (P.state==='ride' || P.state==='air')){             // ski cross: timed from the start gate to the finish line
+    const X=WORLD.sx, on=(runAt(P.x,P.y)||{}).id===X.run || P.state==='air';
+    if(!P.sx && py<X.y1 && P.y>=X.y1 && on){ P.sx={ t0:game.time, off:0 }; popup('SKI CROSS - GO!', 0, '#ffe066', true); sfx('chime'); }
+    if(P.sx){ P.sx.off = on ? 0 : P.sx.off+dt;
+      if(P.sx.off>1.5){ P.sx=null; popup('OFF COURSE', 0, '#ff6b5a'); }
+      else if(P.y>=X.y2){ const t=game.time-P.sx.t0; P.sx=null;
+        const best=WORLD.sxBest||1e9; WORLD.sxBest=Math.min(best,t); const pts=Math.max(200,Math.round(3200-t*90));
+        popup('SKI CROSS '+t.toFixed(1)+' S'+(t<best?'  BEST!':''), pts, '#7ee0ff', true); game.score+=pts; sfx('beast'); } } }
   if(P.state==='ride'){
     const g=WORLD.gate;                                              // Blackcomb: the backcountry access gate (skins on to go through)
     if(g && P.skins && Math.abs(P.x-g.x)<28 && P.y>g.y-14 && P.y<g.y+14){ travel('backcountry', DEFS.backcountry.tele, 'WELCOME TO THE BACKCOUNTRY'); return; }
@@ -1789,7 +1810,7 @@ const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
 function fit(){
   if(TOUCH){                                       // phones/tablets: the view fills the whole screen, buttons float on top
     const W=innerWidth, H=innerHeight, port=H>W; document.body.classList.toggle('portrait', port);
-    const w = port ? 360 : clamp(Math.round(260*W/H), 400, 680), h = port ? clamp(Math.round(360*H/W), 300, 900) : 260;
+    const w = port ? 340 : clamp(Math.round(232*W/H), 360, 640), h = port ? clamp(Math.round(340*H/W), 300, 900) : 232;
     if(cvs.width!==w || cvs.height!==h){ VW=w; VH=h; cvs.width=w; cvs.height=h; }
     cvs.style.width=W+'px'; cvs.style.height=H+'px'; return; }
   const s=Math.min(innerWidth/VW, innerHeight/VH), k=s>=1?Math.floor(s):s;
@@ -1881,6 +1902,13 @@ function drawGroundFeatures(cx,cy){
   for(const z of ZONES){ if(z.type==='flat') continue; const ly=z.type==='alpine' ? z.y-z.ry*0.5 : z.y-z.ry+40;
     if(vis(ly,20)) txt(z.name.toUpperCase(), z.x-cx, ly-cy, '#93a6bf', 8, 'center', false); }
   for(const l of LABELS) if(vis(l[2],20)) txt(l[0], l[1]-cx, l[2]-cy, l[2]<100?'#ffffff':'#7f94b0', 8, 'center', l[2]<100);
+  if(WORLD.sx){ const X=WORLD.sx, r=RUNS.find(q=>q.id===X.run);
+    for(const [yy,lab] of [[X.y1,'START'],[X.y2,'FINISH']]) if(vis(yy,30)){ let a=r.S[0]; for(const p of r.S) if(Math.abs(p.y-yy)<Math.abs(a.y-yy)) a=p;
+      const x0=Math.round(a.x-a.hw-cx), w=Math.round(2*a.hw), Y=Math.round(yy-cy);
+      for(let x=0;x<w;x+=4){ const on=(x/4)%2; ctx.fillStyle=on?'#222':'#fff'; ctx.fillRect(x0+x,Y,4,2); ctx.fillStyle=on?'#fff':'#222'; ctx.fillRect(x0+x,Y+2,4,2); }
+      ctx.fillStyle='#555'; ctx.fillRect(x0-3,Y-16,2,18); ctx.fillRect(x0+w+1,Y-16,2,18);
+      ctx.fillStyle=lab==='START'?'#2a8f5a':'#d33'; ctx.fillRect(x0-3,Y-18,w+6,6);
+      txt(lab, a.x-cx, Y-28, lab==='START'?'#2a8f5a':'#d33', 8, 'center'); } }
   if(vis(WORLD.finish,20)) for(const b of BASES){
     for(let x=b.x1; x<b.x2; x+=8){ const on=((x/8)|0)%2;
       ctx.fillStyle=on?'#222':'#fff'; ctx.fillRect(x-cx,WORLD.finish-cy,4,3); ctx.fillStyle=on?'#fff':'#222'; ctx.fillRect(x-cx+4,WORLD.finish-cy,4,3); }
@@ -2309,18 +2337,18 @@ function drawSkier(cx,cy){
 function drawSelect(){
   ctx.fillStyle='rgba(10,20,40,0.88)'; ctx.fillRect(10,28,VW-20,VH-44);
   ctx.strokeStyle='#bfe3ff'; ctx.strokeRect(10.5,28.5,VW-21,VH-45);
-  txt('CHOOSE YOUR RIDER', VW/2, 42, '#ffe066', 12, 'center');
+  txt('CHOOSE YOUR RIDER', VW/2, VH<250?36:42, '#ffe066', 12, 'center');
   const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,(VW-24)/perRow), hw=Math.floor(slot/2)-3;   // two rows of riders
   CHARS.forEach((c,i)=>{
     const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
-    const x=VW/2+(col-(n-1)/2)*slot, y0=52+row*(VH<300?88:96), sel=i===game.char;
-    ctx.fillStyle=sel?'#f4f8fc':'#c9d6e6'; ctx.fillRect(x-hw,y0,hw*2,64);
-    if(sel){ ctx.strokeStyle='#ffe066'; ctx.lineWidth=2; ctx.strokeRect(x-hw-1,y0-1,hw*2+2,66); ctx.lineWidth=1; }
-    ctx.save(); ctx.translate(x,y0+54); ctx.scale(3,3);
+    const cp=VH<250, ch=cp?54:64, x=VW/2+(col-(n-1)/2)*slot, y0=(cp?50:52)+row*(cp?72:VH<300?88:96), sel=i===game.char;   // compact on short phone screens
+    ctx.fillStyle=sel?'#f4f8fc':'#c9d6e6'; ctx.fillRect(x-hw,y0,hw*2,ch);
+    if(sel){ ctx.strokeStyle='#ffe066'; ctx.lineWidth=2; ctx.strokeRect(x-hw-1,y0-1,hw*2+2,ch+2); ctx.lineWidth=1; }
+    ctx.save(); ctx.translate(x,y0+ch-10); ctx.scale(cp?2.5:3,cp?2.5:3);
     drawRider(c, 0, 0, Math.PI/2 + (sel ? Math.sin(game.t*2)*0.4 : 0), 1, { low:false, poles:true });   // side-on so the skis/board show
     ctx.restore();
-    txt(c.name.toUpperCase(), x, y0+68, sel?'#ffe066':'#e8eef6', 8, 'center');
-    txt(c.type==='ski'?'SKIER':'BOARDER', x, y0+79, '#93a6bf', 8, 'center');
+    txt(c.name.toUpperCase(), x, y0+ch+4, sel?'#ffe066':'#e8eef6', 8, 'center');
+    if(!cp) txt(c.type==='ski'?'SKIER':'BOARDER', x, y0+79, '#93a6bf', 8, 'center');
   });
   txt(TOUCH ? 'TAP A RIDER, TAP AGAIN TO DROP IN' : 'A / D  CHOOSE     ENTER  DROP IN', VW/2, Math.min(250,VH-22), '#ffe066', 8, 'center');
 }
@@ -2330,6 +2358,7 @@ function drawHUD(){
   ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,0,VW,13);
   txt('SCORE '+String(game.score).padStart(6,'0'), 4, 3, '#fff');
   if(WORLD.bc && WORLD.bc.double && Math.floor(game.t*2)%2) txt('2X', 104, 3, '#ffe066');
+  if(P.sx) txt('SKI CROSS '+(game.time-P.sx.t0).toFixed(1), VW/2, 16, '#ffe066', 8, 'center');
   const t=game.time, mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(Math.floor(t%60)).padStart(2,'0');
   txt(mm+':'+ss, VW-4, 3, '#fff', 8, 'right');
   const loc=locName(); txt(loc.n, VW/2, 3, '#bfe3ff', 8, 'center');
@@ -2385,8 +2414,9 @@ function locName(){
 function panel(lines, title, size){
   ctx.fillStyle='rgba(10,20,40,0.82)'; ctx.fillRect(20,36,VW-40,VH-60);
   ctx.strokeStyle='#bfe3ff'; ctx.strokeRect(20.5,36.5,VW-41,VH-61);
-  txt(title, VW/2, 50, '#ffe066', size||16, 'center');
-  lines.forEach((l,i)=> txt(l, 34, 76+i*14, l.startsWith('>')?'#ffe066':'#e8eef6'));
+  txt(title, VW/2, VH<250?46:50, '#ffe066', size||16, 'center');
+  const sp=VH<250?12:14, y0=VH<250?66:76;
+  lines.forEach((l,i)=> txt(l, 34, y0+i*sp, l.startsWith('>')?'#ffe066':'#e8eef6'));
 }
 
 function render(){
@@ -2415,8 +2445,8 @@ function render(){
   else if(game.mode==='title' && TOUCH){
     panel(['< > ....... STEER   (AIR: SPIN)', 'TUCK ...... SPEED   (AIR: FRONTFLIP)', 'STOP ...... BRAKE   (AIR: BACKFLIP)',
       'JUMP ...... HOP  (AT A LIP = POP!)', 'GRAB ...... GRAB IN THE AIR',
-      'MENU ...... RESTART, LIFTS, RIDER', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
-      'HOLD STOP WHEN STOPPED = SKINS', 'TURN YOUR PHONE SIDEWAYS FOR BEST VIEW', 'WATCH OUT FOR JERRY', '>TAP TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
+      'MENU ...... RESTART, LIFTS, RIDER', 'LIFTS: STOP IN BLUE ZONE TO LOAD',
+      'HOLD STOP WHEN STOPPED = SKINS', 'TURN PHONE SIDEWAYS: BEST VIEW', 'WATCH OUT FOR JERRY', '>TAP TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
   } else if(game.mode==='title'){
     panel(['A / D ..... STEER   (AIR: SPIN)', 'W / UP .... TUCK    (AIR: FRONTFLIP)', 'S / DOWN .. STOP    (AIR: BACKFLIP)',
       'SPACE ..... HOP  (AT A LIP = POP!)', 'J / K / L . GRABS   SHIFT ... TUCK TOO',
