@@ -319,7 +319,7 @@ const DEFS = {
       { id:'hkl', name:'ラージヒル', grade:'black', w:44, slope:1.05, fixed:true, nobank:true,
         pts:[[262,4100],[262,4500],[262,5000],[260,5500],[256,5980]] },
       { id:'mega',    name:'メガパーク', grade:'park', w:200, slope:0.62, fixed:true, nobank:true,     // the alpine mega park, big air to rails
-        pts:[[1320,640],[1325,1200],[1330,1800],[1335,2400],[1345,2800],[1385,3200],[1420,3600],[1430,3960]] }
+        pts:[[1320,640],[1325,1200],[1330,1800],[1335,2400],[1345,2800],[1385,3200],[1420,3600],[1430,3960],[1442,4350],[1452,4760]] }
     ],
     zones:[
       { name:'ストロベリーフィールズ', type:'glade', x:1700, y:5400, rx:80,  ry:700 },
@@ -330,6 +330,7 @@ const DEFS = {
       { name:'ひらふの森',           type:'glade', x:1090, y:6200, rx:80,  ry:900 },
       { name:'アンヌプリ山頂', type:'alpine', x:1000, y:1300, rx:520, ry:1200 },
       { name:'ひらふ山頂駅',   type:'flat', x:1110, y:3240, rx:210, ry:130, slope:0.3 },
+      { name:'スノーキャット乗り場', type:'flat', x:1440, y:4680, rx:110, ry:110, slope:0.14 },   // flat run-out to stop for the cat
       { name:'白馬ジャンプ台', type:'flat', x:208, y:6060, rx:150, ry:110, slope:0.14 },        // ski-jump outrun
       { name:'ニセコ温泉',     type:'flat', x:1555, y:8400, rx:60,  ry:50,  slope:0.15 },
       { name:'アンヌプリ',     type:'flat', x:230,  y:8850, rx:200, ry:250, slope:0.12 },
@@ -353,14 +354,17 @@ const DEFS = {
               kickers:[[null,5450,40,1.0],[null,5750,46,1.15],[null,6050,52,1.3]], boxes:[] },
             { name:'メガパーク ビッグエア', run:'mega', mega:true, comp:true, y1:640, y2:2620,           // huge competition jump with a crowd and a DJ
               kickers:[[null,1500,124,2.9]], boxes:[], dj:{ x:1470, y:2050 },
-              cat:{ x:1300, y:4010, top:{ x:1318, y:660 }, retro:true, plant:true,                  // retro Japanese snowcat: bottom of the whole park, up through the birches
-                route:{ x:1165, amp:24, wave:130, y0:3960, y1:820, tail:[[1230,730],[1290,680]] } } },
+              cat:{ x:1372, y:4735, top:{ x:1318, y:660 }, retro:true, plant:true,                  // retro Japanese snowcat: bottom of the whole park, up through the birches
+                route:{ x:1165, amp:24, wave:130, y0:4370, y1:820, tail:[[1230,730],[1290,680]] } } },
             { name:'ジャンプ K90', run:'hkn', mega:true, comp:true, y1:4140, y2:5980, kickers:[[null,4560,30,1.35]], boxes:[] },
             { name:'ジャンプ K120', run:'hkl', mega:true, comp:true, y1:4090, y2:5980, kickers:[[null,4580,34,1.85]], boxes:[] },
             { name:'スーパーパイプ', run:'mega', y1:2760, y2:3320, kickers:[], boxes:[], pipe:{ w:84 } },
-            { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:3960,                            // huge rails and boxes, and a jump line
-              kickers:[[null,3430,80,1.6],[null,3800,96,2.0]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
+            { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:4760,                            // huge rails and boxes, a jump line and a long run-out
+              kickers:[[null,3430,80,1.6],[null,3800,96,1.6]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
     jumps:[],
+    road:{ pts:[[20,7080],[180,7190],[330,7110],[470,7240],[620,7160],[780,7300],[950,7200],[1120,7330],[1290,7220],[1460,7350],[1640,7250],[1810,7370],[1985,7290]],
+           tunnels:['ニセコトンネル','ひらふトンネル','羊蹄トンネル','花園トンネル','ビレッジトンネル','アンヌプリトンネル','昆布トンネル','倶知安トンネル','狩太トンネル'],
+           gates:true, scatter:34 },                                                                  // winding mountain road: tunnels under the runs, snow gates to jump it
     skijumps:[ { run:'hkn', take:4560, k:90 }, { run:'hkl', take:4580, k:120 } ],
     parties:[ { x:1525, y:3040, name:'PIPE PARTY', pipe:true } ],
     lifts:[
@@ -653,6 +657,7 @@ function nearCliff(x,y){
 }
 function cliffOK(x1,x2,y,h,line){
   if(WORLD.bc && y<WORLD.bc.rockTo+40) return false;
+  if(WORLD.road) for(const xx of [x1,(x1+x2)/2,x2]){ const ry=WORLD.road.ry[clamp(xx|0,0,WORLD.w)]; if(y-30<ry+16 && y+h+40>ry-50) return false; }   // keep the road clear
   for(const c of CLIFFS){ if(line && c.line===line) continue;
     if(x2<c.x1-20 || x1>c.x2+20) continue;
     if(c.ridge){ for(const xx of [x1,(x1+x2)/2,x2]){ const ly=lipY(c,clamp(xx,c.x1,c.x2));
@@ -746,6 +751,25 @@ function buildMap(def){
   for(const L of LIFTS){ L.dx=L.x2-L.x1; L.dy=L.y2-L.y1; L.len=Math.hypot(L.dx,L.dy); }
   prepRuns();
   const clear=[...(d.clears||[])];                // areas kept free of trees (Big Air arena, pond skim)
+  WORLD.road=null; WORLD.cars=null;
+  if(d.road){ const R=d.road, W=WORLD.w|0, ry=new Float32Array(W+1), tun=new Uint8Array(W+1), p=R.pts;   // the winding road, as height y for every x
+    for(let x=0,i=0;x<=W;x++){ while(i<p.length-2 && x>p[i+1][0]) i++; const a=p[i], b=p[i+1]; ry[x]=a[1]+(b[1]-a[1])*clamp((x-a[0])/(b[0]-a[0]),0,1); }
+    for(let pass=0;pass<3;pass++){ const c=ry.slice(); for(let x=0;x<=W;x++){ let sm=0,n=0; for(let k=-40;k<=40;k+=4){ const j=clamp(x+k,0,W); sm+=c[j]; n++; } ry[x]=sm/n; } }
+    let x0=W, x1=0; for(let x=0;x<=W;x++) if(onMountain(x,ry[x]) && Math.abs(x-PEAK.x)<halfW(ry[x])-6){ x0=Math.min(x0,x); x1=Math.max(x1,x); }
+    for(let x=0;x<=W;x++) tun[x]= x<x0||x>x1 ? 2 : edgeAt(x,ry[x])<6 ? 1 : 0;          // 1 = under a run (tunnel), 2 = off the mountain
+    for(let x=x0+1;x<x1;x++) if(tun[x]===0){ let e=x; while(e<x1 && tun[e]===0) e++; if(e-x<14) for(let k=x;k<e;k++) tun[k]=1; x=e; }   // no tiny gaps
+    const portals=[]; let tn=0;
+    for(let x=x0+1;x<=x1;x++) if(tun[x]===1 && tun[x-1]!==1){ let e=x; while(e<x1 && tun[e]===1) e++;
+      const name=R.tunnels[tn++%R.tunnels.length];
+      if(tun[x-1]===0) portals.push({ x:x-2, y:ry[x-2], side:1, name });
+      if(tun[e]===0) portals.push({ x:e+1, y:ry[e+1], side:-1, name }); x=e; }
+    WORLD.road={ ry, tun, x0, x1, portals };
+    for(const q of portals) addObj({ t:'party', kind:'portal', x:q.x, y:q.y+11, side:q.side, name:q.name });
+    for(let x=x0;x<=x1;x+=22) if(tun[x]===0) clear.push({ x, y:ry[x]-14, rx:24, ry:40 });              // plowed corridor, no trees
+    if(R.gates) for(let x=x0+30,n=0;x<x1-30;x+=58){                                                   // snow gates above the road: jump the road off them
+      const ok=[-22,0,22].every(k=>tun[x+k]===0) && edgeAt(x,ry[x]-36)>6; if(!ok) continue;
+      const y=Math.round(ry[x]-38); CLIFFS.push({ x1:x-20, x2:x+20, y, h:15, fence:true, line:'road'+(n++>>1), prof:[1,1,1], lip:[0,0,0] }); }
+  }
   for(const pk of PARKS) if(pk.pipe){ const r=RUNS.find(q=>q.id===pk.run); pk.pipe.cx=[];
     for(let y=pk.y1-20; y<=pk.y2+20; y+=4){ let best=1e9, bx=0; for(const p of r.S){ const d=Math.abs(p.y-y); if(d<best){ best=d; bx=p.x; } } pk.pipe.cx.push(bx); } }
 
@@ -801,6 +825,7 @@ function buildMap(def){
     const n=Math.max(2,Math.round(L.len/280));
     for(let i=1;i<=n;i++){ const t=i/(n+1), x=L.x1+L.dx*t, y=L.y1+L.dy*t;
       if(!onMountain(x,y) || runAt(x,y) || t*L.len<40 || (1-t)*L.len<40) continue;
+      if(WORLD.road && Math.abs(y-WORLD.road.ry[clamp(x|0,0,WORLD.w)])<20) continue;               // not standing on the road
       const o={ t:'tower', x, y, r:3 }; TOWERS.push(o); addObj(o); }
   }
 
@@ -867,6 +892,14 @@ function buildMap(def){
     const c={ x1:xa, x2:xb, ya, yb, y:Math.min(ya,yb), h:r.h, bh:Math.abs(yb-ya)+r.h, ridge:true, prof, lip };
     RIDGE_CLIFFS.push(c); CLIFFS.push(c);
   }
+  if(d.road && d.road.scatter){ let n=0;                                                           // snow gates dotted through the lower forest
+    for(let tries=0; n<d.road.scatter && tries<3000; tries++){
+      const y=WORLD.forest+300+rng()*(WORLD.village-WORLD.forest-700), x=PEAK.x+(rng()*2-1)*(halfW(y)-60), cnt=1+(rng()*3|0), g=[];
+      for(let k=0;k<cnt;k++){ const gx=Math.round(x+[0,28,-8][k]), gy=Math.round(y+k*64);
+        if(edgeAt(gx-24,gy)>16 && edgeAt(gx+24,gy)>16 && edgeAt(gx,gy+30)>12 && cliffOK(gx-20,gx+20,gy,15) && !CATPTS.some(q=>Math.abs(q[0]-gx)<40 && Math.abs(q[1]-gy)<40)
+           && !TOWERS.some(o=>Math.abs(o.x-gx)<30 && Math.abs(o.y-gy)<30) && !BUILDINGS.some(b=>Math.abs(b.x-gx)<b.w/2+40 && Math.abs(b.y-gy)<70)) g.push([gx,gy]); else break; }
+      if(!g.length) continue; n++;
+      for(const [gx,gy] of g){ CLIFFS.push({ x1:gx-20, x2:gx+20, y:gy, h:15, fence:true, line:'sg'+n, prof:[1,1,1], lip:[0,0,0] }); clear.push({ x:gx, y:gy+10, rx:30, ry:26 }); } } }
   // tall multi-step cliffs go in first so they get their space
   for(const st of (d.stacks||[])) addStack(st[0],st[1],st[2]);
   for(let n=0,tries=0; n<(ALPINE.stacks||0) && tries<400; tries++){
@@ -1089,6 +1122,7 @@ function buildMinimap(){
   g.fillStyle='#e3ebf4'; g.fillRect(0,0,w,h);
   g.fillStyle=WORLD.birch?'#b8a4b4':'#8fb197'; g.fillRect(0,WORLD.treeline*s,w,(WORLD.forest-WORLD.treeline)*s);
   g.fillStyle=WORLD.birch?'#7d6377':'#2d5a37'; g.fillRect(0,WORLD.forest*s,w,h);
+  if(WORLD.road){ g.fillStyle='#4d5059'; for(let x=WORLD.road.x0;x<=WORLD.road.x1;x+=3) if(!WORLD.road.tun[x]) g.fillRect(x*s,WORLD.road.ry[x]*s,Math.max(1,3*s),1); }
   if(WORLD.volcano){ g.fillStyle='#3a3036'; g.beginPath(); g.ellipse(PEAK.x*s,CRATER_Y*s,50*s,12*s,0,0,7); g.fill(); }
   g.fillStyle=WORLD.birch?'#a891a2':'#86ab8b'; for(const z of ZONES) if(z.type==='glade'){ g.beginPath(); g.ellipse(z.x*s,z.y*s,z.rx*s,z.ry*s,0,0,7); g.fill(); }
   g.save(); g.scale(s,s); g.fillStyle='#ffffff'; g.fill(GROOMED); g.restore();
@@ -1111,8 +1145,12 @@ const KEYMAP = { KeyW:'up', ArrowUp:'up', KeyS:'down', ArrowDown:'down', KeyA:'l
   Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute', KeyF:'niseko' };
 const keys = {}, pressed = {};
 // phones and tablets: on-screen buttons feed the same keys/pressed tables as the keyboard
-const TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || navigator.maxTouchPoints>0;
-addEventListener('keydown', e => { audioInit(); const a=KEYMAP[e.code]; if(!a) return; e.preventDefault();
+const mq=q=>!!(window.matchMedia && matchMedia(q).matches);
+let TOUCH = mq('(pointer: coarse)') || (('ontouchstart' in window || navigator.maxTouchPoints>0) && !mq('(any-pointer: fine)'));   // touchscreen laptops start with the keyboard layout
+function setTouch(on){ if(TOUCH===on) return; TOUCH=on; document.body.classList.toggle('touch',on);   // switch layouts by what you actually use
+  if(!on){ const pm=document.getElementById('pm'); if(pm) pm.style.display='none'; } try{ fit(); }catch(_){} }
+addEventListener('pointerdown', e => { if(e.pointerType==='touch') setTouch(true); }, true);
+addEventListener('keydown', e => { audioInit(); const a=KEYMAP[e.code]; if(!a) return; e.preventDefault(); if(TOUCH) setTouch(false);
   if(!keys[a]) pressed[a]=true; keys[a]=true; });
 addEventListener('keyup', e => { const a=KEYMAP[e.code]; if(a) keys[a]=false; });
 addEventListener('blur', () => { for(const k in keys) keys[k]=false; });
@@ -1129,8 +1167,8 @@ function fsLabels(){ if(isFull() && game.mode==='play') game.holdT=5;   // the p
 document.addEventListener('fullscreenchange',fsLabels); document.addEventListener('webkitfullscreenchange',fsLabels);
 if(!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) document.body.classList.add('nofs');   // e.g. iPhone Safari: no full screen for web pages
 addEventListener('beforeinstallprompt',e=>e.preventDefault());                                                     // never offer to install / download the game
-if(TOUCH){
-  document.body.classList.add('touch');
+if(TOUCH) document.body.classList.add('touch');
+{
   for(const b of document.querySelectorAll('#tc [data-k]')){ const a=b.dataset.k;
     const down=e=>{ e.preventDefault(); audioInit(); try{ b.setPointerCapture(e.pointerId); }catch(_){} if(!keys[a]) pressed[a]=true; keys[a]=true; b.classList.add('on'); };
     const up=()=>{ keys[a]=false; b.classList.remove('on'); };
@@ -1379,6 +1417,7 @@ function update(dt){
     if(p.plume){ p.s=Math.min(11,p.s+dt*2.4); }
     else if(p.smoke){ p.vz*=Math.pow(0.6,dt); p.vx*=Math.pow(0.5,dt); p.vy*=Math.pow(0.5,dt); p.s=Math.min(5,p.s+dt*3); } else p.vz-=300*dt; }
   game.parts=game.parts.filter(p=>p.life>0);
+  if(WORLD.road && game.mode==='play') updRoad(dt);
   if(WORLD.volcano && game.mode!=='flight' && cam.y<700){ game.smokeAcc=(game.smokeAcc||0)+dt*16;   // a lazy plume of volcanic steam drifting off the crater
     while(game.smokeAcc>1){ game.smokeAcc--; const g=150+Math.random()*45|0;
       game.parts.push({ x:PEAK.x+(Math.random()-0.5)*50, y:CRATER_Y+2+(Math.random()-0.5)*10, z:0, vx:6+Math.random()*8, vy:-1, vz:16+Math.random()*12,
@@ -1767,6 +1806,21 @@ function travel(to, at, msg){                     // go to another mountain: bui
     const t=camTarget(); cam.x=t.x; cam.y=t.y; popup(msg, 0, '#bfe3ff', true);
     if(WORLD.bc) popup('ALL POINTS DOUBLED', 0, '#ffe066'); }, 60);
 }
+// the Niseko road: little kei trucks drive it, the asphalt slows you right down, and jumping it scores a ROAD GAP
+function updRoad(dt){
+  const R=WORLD.road;
+  if(!WORLD.cars){ WORLD.cars=[]; const cols=['#f4f6fa','#2f6fd6','#f4f6fa','#e0402a','#f4f6fa'];
+    for(let i=0;i<5;i++) WORLD.cars.push({ x:R.x0+(R.x1-R.x0)*(i+0.3)/5, dir:i%2?-1:1, sp:42+Math.random()*22, col:cols[i] }); }
+  for(const c of WORLD.cars){ c.x+=c.dir*c.sp*dt; if(c.x>R.x1) c.x=R.x0; if(c.x<R.x0) c.x=R.x1; }
+  const xi=clamp(P.x|0,0,WORLD.w), ry=R.ry[xi], open=R.tun[xi]===0, side=P.y<ry?-1:1;
+  if(P.state==='air' && P.roadSide===-1 && side===1 && open && P.z>2){ popup('ROAD GAP!', 200, '#ffe066'); game.score+=200; sfx('tap'); }
+  P.roadSide=side;
+  if(P.state==='ride' && open && Math.abs(P.y-ry)<10){ P.v*=Math.pow(0.3,dt);                   // asphalt: no glide
+    if(!P.onRoad){ P.onRoad=true; popup('ON THE ROAD!', 0, '#bfe3ff'); }
+    for(const c of WORLD.cars){ if(R.tun[clamp(c.x|0,0,WORLD.w)]) continue;
+      if(Math.abs(P.x-c.x)<10 && Math.abs(P.y-(ry+c.dir*4))<6){ crash('Hit by a kei truck', true); return; } } }
+  else P.onRoad=false;
+}
 // fly between Whistler and Niseko: a little sunset flight over the Pacific, the new mountain builds on take-off
 function flyTo(to){
   const from=WORLD.id;
@@ -2056,7 +2110,9 @@ const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPUR
   'ファミリーコース':'FAMILY COURSE', '花園コース':'HANAZONO COURSE', 'ストロベリーフィールズ':'STRAWBERRY FIELDS', '水野の沢':'MIZUNO GULLY',
   '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
   'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
-  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'ニセコ神社':'NISEKO SHRINE', 'スノーゲート':'SNOW GATES', '白馬ジャンプ台':'HAKUBA SKI JUMPS',
+  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'ニセコトンネル':'NISEKO TUNNEL', 'ひらふトンネル':'HIRAFU TUNNEL', '羊蹄トンネル':'YOTEI TUNNEL', '花園トンネル':'HANAZONO TUNNEL',
+  'ビレッジトンネル':'VILLAGE TUNNEL', 'アンヌプリトンネル':'ANNUPURI TUNNEL', '昆布トンネル':'KONBU TUNNEL', '倶知安トンネル':'KUTCHAN TUNNEL', '狩太トンネル':'KARIBUTO TUNNEL',
+  'スノーキャット乗り場':'SNOWCAT STATION', 'ニセコ神社':'NISEKO SHRINE', 'スノーゲート':'SNOW GATES', '白馬ジャンプ台':'HAKUBA SKI JUMPS',
   'ジャンプ台':'SKI JUMPS', 'ジャンプ':'JUMP', 'ノーマルヒル':'NORMAL HILL', 'ラージヒル':'LARGE HILL', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
   'ひらふゴンドラ':'HIRAFU GONDOLA', 'メガパーク ビッグエア':'MEGA PARK BIG AIR', 'メガパーク':'MEGA PARK', 'スーパーパイプ':'SUPERPIPE', 'レールパーク':'RAIL PARK', 'キングリフト':'KING LIFT', '花園リフト':'HANAZONO LIFT', 'カレーハウス':'CURRY HOUSE', 'カレー':'CURRY',
   '新千歳空港':'NEW CHITOSE AIRPORT', 'ウィスラー行き':'FLY TO WHISTLER', 'アンヌプリ':'ANNUPURI', 'ひらふ':'HIRAFU', '花園':'HANAZONO', '火口':'CRATER',
@@ -2151,6 +2207,25 @@ function drawGroundFeatures(cx,cy){
     ctx.fillStyle='#ffd23f'; ctx.fillRect(X-17,Y-11,34,1); ctx.fillRect(X-17,Y+10,34,1);
     ctx.fillStyle='#ffffff'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a plane painted in the box
     txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?27:23), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
+  if(WORLD.road){ const R=WORLD.road;                                                       // the winding road: snowbanks, asphalt, lines, white guardrail
+    for(let sx=0; sx<VW; sx+=2){ const x=clamp((cx+sx)|0,0,WORLD.w); if(R.tun[x]) continue; const Y=Math.round(R.ry[x]-cy); if(Y<-30 || Y>VH+30) continue;
+      ctx.fillStyle='rgba(90,110,150,0.35)'; ctx.fillRect(sx,Y-13,2,3);
+      ctx.fillStyle='#ffffff'; ctx.fillRect(sx,Y-16+((x>>2)%2),2,4);                                // snowbank on the uphill side
+      ctx.fillStyle='#4d5059'; ctx.fillRect(sx,Y-10,2,20);                                         // asphalt
+      ctx.fillStyle='#5a5e68'; if((x*7)%11<2) ctx.fillRect(sx,Y-6+(x%9),2,1);
+      ctx.fillStyle='#e8ecf2'; ctx.fillRect(sx,Y-9,2,1); ctx.fillRect(sx,Y+8,2,1);                  // edge lines
+      if((x>>3)%2) { ctx.fillStyle='#f2c33a'; ctx.fillRect(sx,Y,2,1); }                             // yellow centre line
+      ctx.fillStyle='#ffffff'; ctx.fillRect(sx,Y+11,2,1); if(x%10<2){ ctx.fillStyle='#c9ced6'; ctx.fillRect(sx,Y+11,1,4); }   // guardrail
+      ctx.fillStyle='#f6f8fb'; ctx.fillRect(sx,Y+15,2,3+((x>>3)%2)); }                             // snowbank on the downhill side
+    if(WORLD.cars) for(const c of WORLD.cars){ const xi=clamp(c.x|0,0,WORLD.w); if(R.tun[xi]) continue;   // kei trucks
+      const X=Math.round(c.x-cx), Y=Math.round(R.ry[xi]+c.dir*4-cy); if(X<-20||X>VW+20||Y<-20||Y>VH+20) continue;
+      const f=c.dir; ctx.fillStyle='rgba(20,25,35,0.35)'; ctx.fillRect(X-8,Y+1,17,2);
+      ctx.fillStyle='#1e1e22'; ctx.fillRect(X-6,Y-1,3,3); ctx.fillRect(X+4,Y-1,3,3);                 // wheels
+      ctx.fillStyle=c.col; ctx.fillRect(X+(f>0?1:-8),Y-8,7,7);                                       // cab
+      ctx.fillStyle='#7fbfe3'; ctx.fillRect(X+(f>0?5:-8),Y-7,3,3);                                   // windscreen
+      ctx.fillStyle='#b8bec8'; ctx.fillRect(X+(f>0?-8:1),Y-4,8,3);                                   // flatbed
+      ctx.fillStyle='#ffffff'; ctx.fillRect(X+(f>0?1:-8),Y-9,7,1);                                   // snow on the roof
+      ctx.fillStyle='#fff3a0'; ctx.fillRect(X+(f>0?8:-9),Y-3,1,1); } }
   if(WORLD.sj) for(const J of WORLD.sj){ const r=RUNS.find(q=>q.id===J.run); if(!r) continue; const S=r.S, top=S[0].y;   // Hakuba-style ski jumps
     if(!(top-60<cy+VH && S[S.length-1].y>cy)) continue;
     for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<cy-12 || a.y>cy+VH+4) continue; const X=Math.round(a.x-cx), Y=Math.round(a.y-cy), hw=Math.round(a.hw), dh=Math.max(2,Math.ceil(S[i+1].y-a.y)+1);
@@ -2613,6 +2688,18 @@ function drawParty(o,x,y){
     for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.fillStyle='#7c838d'; ctx.fillRect(Math.round(x+Math.cos(a)*6)-1, Math.round(y+Math.sin(a)*3)-1, 2, 2); }
     for(let i=0;i<6;i++){ const f=Math.sin(t*12+i*1.7); ctx.fillStyle=i%2?'#ffb02e':'#ff5a1f'; ctx.fillRect(x-3+i, Math.round(y-3-Math.abs(f)*4), 1, Math.round(2+Math.abs(f)*3)); }
     ctx.fillStyle='rgba(255,180,60,0.25)'; ctx.fillRect(x-8,y-3,16,6);
+  } else if(o.kind==='portal'){                                       // tunnel portal: concrete face, dark arch, the name on a plaque at the crown
+    const R=WORLD.road, Y=y-11;
+    ctx.fillStyle='rgba(60,70,90,0.35)'; ctx.fillRect(x-46,y,92,3);
+    ctx.fillStyle='#b9bcc2'; ctx.fillRect(x-40,Y-26,80,36);                                         // portal face
+    ctx.fillStyle='#a2a6ae'; ctx.fillRect(x-46,Y-14,6,24); ctx.fillRect(x+40,Y-14,6,24);            // stepped wing walls
+    ctx.fillStyle='#8d9199'; ctx.fillRect(x-40,Y-26,80,2); ctx.fillRect(x-40,Y+8,80,2);
+    ctx.fillStyle='#16171c'; ctx.beginPath(); ctx.moveTo(x-13,Y+10); ctx.lineTo(x-13,Y-4); ctx.arc(x,Y-4,13,Math.PI,0); ctx.lineTo(x+13,Y+10); ctx.fill();   // the arch
+    ctx.fillStyle='#ffcf6a'; for(let i=-9;i<=9;i+=6) ctx.fillRect(x+i,Y-12,2,1);                    // tunnel lights inside
+    ctx.fillStyle='#4d5059'; ctx.fillRect(x-13,Y+4,26,6); ctx.fillStyle='#f2c33a'; ctx.fillRect(x-1,Y+6,3,1);
+    ctx.fillStyle='#f6f8fb'; ctx.fillRect(x-47,Y-29,94,4); for(let i=-46;i<46;i+=5) ctx.fillRect(x+i,Y-25,2,1+((i+30)%3));   // snow on top
+    ctx.fillStyle='#1e2a3a'; ctx.fillRect(x-38,Y-24,76,13); ctx.fillStyle='#ffffff'; ctx.fillRect(x-38,Y-24,76,1);   // name plaque at the crown
+    txt(o.name, x, Y-22, '#ffffff', 9, 'center', false);
   } else if(o.kind==='torii'){                                        // vermilion torii gate: ski through it for luck
     ctx.fillStyle='rgba(90,110,150,0.3)'; ctx.fillRect(x-16,y,33,2);
     ctx.fillStyle='#2a1a14'; ctx.fillRect(x-12,y-2,4,3); ctx.fillRect(x+9,y-2,4,3);                 // black feet
