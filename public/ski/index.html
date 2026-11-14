@@ -28,11 +28,14 @@
   html,body,canvas,button { touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
   .tc, .pm { display:none; }
   body.touch .tc { display:block; }
-  body.touch.portrait { align-items:flex-start; padding-top:env(safe-area-inset-top); }
-  .tb { position:fixed; border:2px solid rgba(191,227,255,0.55); background:rgba(20,35,60,0.42); color:#e8f3ff;
+  body.touch.noplay .tc { display:none; }
+  body.touch { overflow:hidden; }
+  body.touch canvas { position:fixed; left:0; top:0; }
+  .tb { position:fixed; border:2px solid rgba(255,255,255,0.45); background:rgba(20,35,60,0.16); color:rgba(255,255,255,0.85);
+        text-shadow:0 1px 2px rgba(0,0,0,0.6);
         font-family:'Press Start 2P',monospace; font-size:10px; border-radius:50%; display:flex; align-items:center; justify-content:center;
         padding:0; margin:0; z-index:5; }
-  .tb.on { background:rgba(255,224,102,0.55); color:#1b2333; border-color:#ffe066; }
+  .tb.on { background:rgba(255,224,102,0.35); border-color:rgba(255,224,102,0.9); }
   .tb.big { width:78px; height:78px; font-size:22px; }
   .tb.act { width:66px; height:66px; }
   .tb.jump { width:84px; height:84px; font-size:11px; }
@@ -43,10 +46,8 @@
   .tb.stop  { right:calc(106px + env(safe-area-inset-right)); bottom:calc(12px + env(safe-area-inset-bottom)); }
   .tb.tuck  { right:calc(52px + env(safe-area-inset-right)); bottom:calc(112px + env(safe-area-inset-bottom)); }
   .tb.grab  { right:calc(128px + env(safe-area-inset-right)); bottom:calc(90px + env(safe-area-inset-bottom)); width:54px; height:54px; font-size:9px; }
-  .tb.menu  { left:calc(8px + env(safe-area-inset-left)); top:calc(8px + env(safe-area-inset-top)); }
-  .tb.mapb  { right:calc(8px + env(safe-area-inset-right)); top:calc(8px + env(safe-area-inset-top)); }
-  body.touch.portrait .tb.menu { top:auto; bottom:calc(196px + env(safe-area-inset-bottom)); }
-  body.touch.portrait .tb.mapb { top:auto; bottom:calc(196px + env(safe-area-inset-bottom)); }
+  .tb.menu  { left:calc(8px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
+  .tb.mapb  { left:calc(62px + env(safe-area-inset-left)); top:calc(30px + env(safe-area-inset-top)); }
   .pm { position:fixed; inset:0; z-index:10; background:rgba(10,20,40,0.88); flex-direction:column; align-items:center; justify-content:center; gap:10px; }
   .pm h2 { font-family:'Press Start 2P',monospace; color:#ffe066; font-size:14px; margin:0 0 6px; }
   .pm button { font-family:'Press Start 2P',monospace; font-size:11px; color:#e8f3ff; background:#2a3a58; border:2px solid #bfe3ff;
@@ -93,7 +94,7 @@
 // =====================================================================
 
 // ---------- 1. CONFIG (tweak the feel of the game here) ----------
-const VW = 400, VH = 300;           // low-res internal screen (scaled up, pixelated)
+let VW = 400, VH = 300;             // low-res internal screen (scaled up, pixelated); phones reshape it to fill the screen
 const CFG = {
   G: 300,          // downhill pull at slope=1 (px/s^2)
   FRICTION: 12,    // snow friction (px/s^2)
@@ -975,11 +976,11 @@ document.getElementById('c').addEventListener('pointerdown',e=>{
   const r=e.currentTarget.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*VW, y=(e.clientY-r.top)/r.height*VH;
   if(game.mode==='title' || game.mode==='finish'){ pressed.enter=true; return; }
   if(game.mode==='select'){
-    const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,376/perRow), hw=Math.floor(slot/2)-3;
+    const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,(VW-24)/perRow), hw=Math.floor(slot/2)-3;
     for(let i=0;i<CHARS.length;i++){ const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
-      const cx=200+(col-(n-1)/2)*slot, y0=52+row*96;
+      const cx=VW/2+(col-(n-1)/2)*slot, y0=52+row*(VH<300?88:96);
       if(Math.abs(x-cx)<=hw && y>=y0 && y<=y0+88){ if(game.char===i) pressed.enter=true; else game.char=i; return; } }
-    if(y>236) pressed.enter=true; }
+    if(y>Math.min(236,VH-40)) pressed.enter=true; }
 });
 // ---------- 5b. SOUND (soft retro effects synthesized live - no files, no music) ----------
 const AUD = { ctx:null, on:true };
@@ -1785,8 +1786,13 @@ function followCam(dt){
 
 // ---------- 7. RENDER ----------
 const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
-function fit(){ const port=TOUCH && innerHeight>innerWidth; document.body.classList.toggle('portrait', port);
-  const H=port ? innerHeight-250 : innerHeight, s=Math.min(innerWidth/VW, H/VH), k=(!TOUCH && s>=1)?Math.floor(s):s;
+function fit(){
+  if(TOUCH){                                       // phones/tablets: the view fills the whole screen, buttons float on top
+    const W=innerWidth, H=innerHeight, port=H>W; document.body.classList.toggle('portrait', port);
+    const w = port ? 360 : clamp(Math.round(260*W/H), 400, 680), h = port ? clamp(Math.round(360*H/W), 300, 900) : 260;
+    if(cvs.width!==w || cvs.height!==h){ VW=w; VH=h; cvs.width=w; cvs.height=h; }
+    cvs.style.width=W+'px'; cvs.style.height=H+'px'; return; }
+  const s=Math.min(innerWidth/VW, innerHeight/VH), k=s>=1?Math.floor(s):s;
   cvs.style.width=(VW*k)+'px'; cvs.style.height=(VH*k)+'px'; }
 addEventListener('orientationchange',()=>setTimeout(fit,200));
 addEventListener('resize',fit); fit();
@@ -2303,11 +2309,11 @@ function drawSkier(cx,cy){
 function drawSelect(){
   ctx.fillStyle='rgba(10,20,40,0.88)'; ctx.fillRect(10,28,VW-20,VH-44);
   ctx.strokeStyle='#bfe3ff'; ctx.strokeRect(10.5,28.5,VW-21,VH-45);
-  txt('CHOOSE YOUR RIDER', 200, 42, '#ffe066', 12, 'center');
-  const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,376/perRow), hw=Math.floor(slot/2)-3;   // two rows of riders
+  txt('CHOOSE YOUR RIDER', VW/2, 42, '#ffe066', 12, 'center');
+  const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,(VW-24)/perRow), hw=Math.floor(slot/2)-3;   // two rows of riders
   CHARS.forEach((c,i)=>{
     const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
-    const x=200+(col-(n-1)/2)*slot, y0=52+row*96, sel=i===game.char;
+    const x=VW/2+(col-(n-1)/2)*slot, y0=52+row*(VH<300?88:96), sel=i===game.char;
     ctx.fillStyle=sel?'#f4f8fc':'#c9d6e6'; ctx.fillRect(x-hw,y0,hw*2,64);
     if(sel){ ctx.strokeStyle='#ffe066'; ctx.lineWidth=2; ctx.strokeRect(x-hw-1,y0-1,hw*2+2,66); ctx.lineWidth=1; }
     ctx.save(); ctx.translate(x,y0+54); ctx.scale(3,3);
@@ -2316,7 +2322,7 @@ function drawSelect(){
     txt(c.name.toUpperCase(), x, y0+68, sel?'#ffe066':'#e8eef6', 8, 'center');
     txt(c.type==='ski'?'SKIER':'BOARDER', x, y0+79, '#93a6bf', 8, 'center');
   });
-  txt(TOUCH ? 'TAP A RIDER, TAP AGAIN TO DROP IN' : 'A / D  CHOOSE     ENTER  DROP IN', 200, 250, '#ffe066', 8, 'center');
+  txt(TOUCH ? 'TAP A RIDER, TAP AGAIN TO DROP IN' : 'A / D  CHOOSE     ENTER  DROP IN', VW/2, Math.min(250,VH-22), '#ffe066', 8, 'center');
 }
 
 // ---------- 8. HUD & SCREENS ----------
@@ -2326,28 +2332,28 @@ function drawHUD(){
   if(WORLD.bc && WORLD.bc.double && Math.floor(game.t*2)%2) txt('2X', 104, 3, '#ffe066');
   const t=game.time, mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(Math.floor(t%60)).padStart(2,'0');
   txt(mm+':'+ss, VW-4, 3, '#fff', 8, 'right');
-  const loc=locName(); txt(loc.n, 200, 3, '#bfe3ff', 8, 'center');
-  if(loc.g) gradeSym(loc.g, 200-loc.n.length*4-11, 3);
+  const loc=locName(); txt(loc.n, VW/2, 3, '#bfe3ff', 8, 'center');
+  if(loc.g) gradeSym(loc.g, VW/2-loc.n.length*4-11, 3);
   const v = P.state==='air' ? Math.hypot(P.vx,P.vy) : P.v;
   txt(Math.round(v*CFG.KMH)+' KM/H', 4, VH-12, '#fff');
   if(P.tuck) txt('TUCK', 84, VH-12, '#ffe066');
   if(P.state==='air' && !P.minor && P.grab) txt(P.grab+'!', 130, VH-12, '#ffe066');
-  if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', 200, VH-26, '#bfe3ff', 8, 'center');
-  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', 200, VH-26, '#bfe3ff', 8, 'center');
-  if(P.state==='tbar') txt('A/D SWING ON THE ROPE   SPACE LET GO', 200, VH-26, '#bfe3ff', 8, 'center');
-  if(P.state==='skintrack') txt('SPACE: STEP OFF THE SKIN TRACK', 200, VH-26, '#bfe3ff', 8, 'center');
-  if(WORLD.bc && P.state==='ride' && P.nearTrack && !P.skins && P.skinHold<0.15) txt('HOLD S FOR SKINS TO JOIN THE SKIN TRACK', 200, VH-54, '#ffe066', 8, 'center');
+  if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(P.state==='tbar') txt('A/D SWING ON THE ROPE   SPACE LET GO', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(P.state==='skintrack') txt('SPACE: STEP OFF THE SKIN TRACK', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(WORLD.bc && P.state==='ride' && P.nearTrack && !P.skins && P.skinHold<0.15) txt('HOLD S FOR SKINS TO JOIN THE SKIN TRACK', VW/2, VH-54, '#ffe066', 8, 'center');
   if(WORLD.gate && P.state==='ride' && !P.skins && Math.hypot(P.x-WORLD.gate.x,P.y-WORLD.gate.y)<90)
-    txt('STOP + HOLD S FOR SKINS TO ENTER THE BACKCOUNTRY', 200, VH-54, '#ffe066', 8, 'center');
-  if(P.skinHold>0.15){ txt('HOLD S FOR SKINS', 200, VH-40, '#bfe3ff', 8, 'center');
+    txt('STOP + HOLD S FOR SKINS TO ENTER THE BACKCOUNTRY', VW/2, VH-54, '#ffe066', 8, 'center');
+  if(P.skinHold>0.15){ txt('HOLD S FOR SKINS', VW/2, VH-40, '#bfe3ff', 8, 'center');
     ctx.fillStyle='#bfe3ff'; ctx.fillRect(140, VH-30, Math.round(120*P.skinHold/CFG.SKIN_HOLD), 3); }
-  if(P.skins && P.state==='ride') txt('SKINS: W CLIMB  A/D TURN  SPACE = OFF', 200, VH-40, '#bfe3ff', 8, 'center');
-  if(P.skins && P.skinSteep && keys.up && Math.floor(game.t*3)%2) txt('TOO STEEP - ZIG ZAG!', 200, VH-54, '#ffe066', 8, 'center');
+  if(P.skins && P.state==='ride') txt('SKINS: W CLIMB  A/D TURN  SPACE = OFF', VW/2, VH-40, '#bfe3ff', 8, 'center');
+  if(P.skins && P.skinSteep && keys.up && Math.floor(game.t*3)%2) txt('TOO STEEP - ZIG ZAG!', VW/2, VH-54, '#ffe066', 8, 'center');
   let py=30;
   for(const p of game.popups){ const a=Math.min(1,p.t*2); ctx.globalAlpha=a;
     const size=p.big?(p.txt.length>18?12:16):8, col=p.big && Math.floor(game.t*8)%2 ? '#ffffff' : p.col;
-    txt(p.txt, 200, py, col, size, 'center'); py+=size+3;
-    if(p.pts){ txt('+'+p.pts, 200, py, '#fff', 8, 'center'); py+=11; }
+    txt(p.txt, VW/2, py, col, size, 'center'); py+=size+3;
+    if(p.pts){ txt('+'+p.pts, VW/2, py, '#fff', 8, 'center'); py+=11; }
     ctx.globalAlpha=1; }
   if(game.showMap){ const mx=VW-MM.w-4, my=17;
     ctx.globalAlpha=0.92; ctx.drawImage(MM.c, mx, my); ctx.globalAlpha=1;
@@ -2379,7 +2385,7 @@ function locName(){
 function panel(lines, title, size){
   ctx.fillStyle='rgba(10,20,40,0.82)'; ctx.fillRect(20,36,VW-40,VH-60);
   ctx.strokeStyle='#bfe3ff'; ctx.strokeRect(20.5,36.5,VW-41,VH-61);
-  txt(title, 200, 50, '#ffe066', size||16, 'center');
+  txt(title, VW/2, 50, '#ffe066', size||16, 'center');
   lines.forEach((l,i)=> txt(l, 34, 76+i*14, l.startsWith('>')?'#ffe066':'#e8eef6'));
 }
 
@@ -2404,7 +2410,7 @@ function render(){
   drawLifts(cx,cy);
   if(P.state==='lift') drawSkier(cx,cy);                         // on the lift: drawn above everything
   if(game.mode==='select' || game.mode==='title'){ ctx.fillStyle='rgba(10,20,40,0.6)'; ctx.fillRect(0,VH-12,VW,12);
-    txt('© 2026 KYLE MANSON. ALL RIGHTS RESERVED.', 200, VH-10, '#bfe3ff', 8, 'center'); }
+    txt('© 2026 KYLE MANSON. ALL RIGHTS RESERVED.', VW/2, VH-10, '#bfe3ff', 8, 'center'); }
   if(game.mode==='select') drawSelect();
   else if(game.mode==='title' && TOUCH){
     panel(['< > ....... STEER   (AIR: SPIN)', 'TUCK ...... SPEED   (AIR: FRONTFLIP)', 'STOP ...... BRAKE   (AIR: BACKFLIP)',
@@ -2447,7 +2453,8 @@ function frame(now){
     if(pressed.char && game.mode==='pause') game.mode='select';
     if(pressed.p2p){ const L=LIFTS.find(l=>l.to); if(L){ const sc=game.score; newRun({ x:L.x1+4, y:L.y1+14 }); game.score=sc; boardLift(L); } }
   }
-  if(TOUCH){ const pm=document.getElementById('pm'), want=game.mode==='pause'?'flex':'none'; if(pm.style.display!==want) pm.style.display=want; }
+  if(TOUCH){ const pm=document.getElementById('pm'), want=game.mode==='pause'?'flex':'none'; if(pm.style.display!==want) pm.style.display=want;
+    document.body.classList.toggle('noplay', game.mode!=='play'); }          // hide the ski buttons on the title, rider and menu screens
   const s0=game.score; update(dt);
   if(WORLD.bc && WORLD.bc.double && game.mode!=='select' && game.score>s0) game.score+=game.score-s0;   // backcountry: every point counts double
   for(const k in pressed) pressed[k]=false;
@@ -2456,7 +2463,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 // show a loading screen, then build Whistler (Blackcomb is built when you first ride the Peak 2 Peak)
-ctx.fillStyle='#1b2333'; ctx.fillRect(0,0,VW,VH); txt('LOADING THE MOUNTAIN...', 200, 145, '#ffffff', 8, 'center');
+ctx.fillStyle='#1b2333'; ctx.fillRect(0,0,VW,VH); txt('LOADING THE MOUNTAIN...', VW/2, 145, '#ffffff', 8, 'center');
 setTimeout(()=>{
   MAPS.whistler=buildMap(DEFS.whistler); useMap(MAPS.whistler);
   resetSkier(START); const t=camTarget(); cam.x=t.x; cam.y=t.y;
