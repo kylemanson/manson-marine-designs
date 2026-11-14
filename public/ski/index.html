@@ -305,8 +305,8 @@ const DEFS = {
         pts:[[1150,10200],[1250,11000],[1340,11900],[1400,12800],[1430,13800]] },
       { id:'jammer',  name:'Gear Jammer', grade:'black', w:100,
         pts:[[1640,9900],[1730,10900],[1770,11900],[1760,12900],[1720,13800]] },
-      { id:'skix',    name:'Ski Cross', grade:'black', w:44, fixed:true, nobank:true,   // winds down through the trees between them
-        pts:[[1590,10850],[1630,11050],[1555,11280],[1650,11520],[1555,11760],[1650,12000],[1555,12240],[1650,12480],[1560,12720],[1640,12960],[1575,13200],[1600,13480]] }
+      { id:'skix',    name:'Ski Cross', grade:'black', w:46, slope:0.6, fixed:true, nobank:true,   // snakes down through the trees between them
+        pts:Array.from({ length:46 }, (_,k)=>{ const y=10850+k*60; return [1600+52*Math.sin((y-10850)/520*Math.PI*2)*Math.min(1,k/3), y]; }) }
     ],
     zones:[
       { name:'Blackcomb Glades', type:'glade', x:955,  y:7800, rx:100, ry:800 },
@@ -334,14 +334,16 @@ const DEFS = {
             { x:356, y:13150, rx:25, ry:10, capys:2, fall:true },
             { x:390, y:13174, rx:30, ry:12, capys:2, fall:true, name:'ONSEN' },
             { x:366, y:13201, rx:21, ry:9,  capys:1, fall:true } ],
-    gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 }, { run:'skix', y1:10950, y2:13420, every:120 } ],
-    skicross:{ run:'skix', y1:10880, y2:13440 },    // timed: start gate at the top, finish line at the bottom
+    gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 } ],
+    skicross:{ run:'skix', y1:10880, y2:13440,      // timed: start gate at the top, finish line at the bottom; fenced in
+      features:[ [11050,'roller'], [11215,'roller'], [11380,'jump'], [11545,'stepdown',26], [11710,'stepup'], [11875,'roller'], [12040,'jump'],
+                 [12205,'stepdown',32], [12370,'roller'], [12535,'stepup'], [12700,'jump'], [12865,'stepdown',24], [13030,'roller'], [13195,'stepup'], [13340,'jump'] ] },
+    parties:[ { x:1600, y:13540, name:'SKI CROSS FINISH' }, { x:1205, y:6560, name:'PIPE PARTY', pipe:true } ],
     parks:[
       { name:'Catskinner Park', run:'gandy', y1:10300, y2:11050,
         kickers:[[1142,10350,40,1.0],[1127,10650,44,1.1],[1112,10950,48,1.2]], boxes:[] },
       { name:'Superpipe', run:'jersey', y1:6150, y2:6980, kickers:[], boxes:[], pipe:{ w:84 } },   // halfpipe: ride up a wall to air out
-      { name:'Ski Cross', run:'skix', y1:10850, y2:13480, cross:true,                  // rollers on the straights between the turns
-        kickers:[[null,11160,40,0.55],[null,11400,40,0.6],[null,11640,40,0.55],[null,11880,40,0.65],[null,12120,40,0.55],[null,12360,40,0.6],[null,12600,40,0.7],[null,12840,40,0.55],[null,13080,40,0.6],[null,13330,40,0.75]], boxes:[] },
+      { name:'Ski Cross', run:'skix', y1:10850, y2:13480, cross:true, kickers:[], boxes:[] },   // its rollers, jumps and steps come from skicross.features
       { name:'Blackcomb Park', run:'excal', y1:11450, y2:12200,
         kickers:[[608,11500,36,0.9],[620,11800,40,1.05]], boxes:[[632,12080,70]] }
     ],
@@ -362,7 +364,7 @@ const DEFS = {
                 { name:'Fairmont Chateau Whistler', x:320, y:13380, w:170, h:70, c:'#ddd3bd', castle:true },
                 { name:'Scandinave sauna', x:300, y:13165, w:34, h:22, c:'#6b4a35' },
                 { name:'Scandinave lodge', x:248, y:13215, w:30, h:20, c:'#7b5a3c' } ],
-    labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1590,10800] ],
+    labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1600,10800] ],
     range:[[720,220,150],[820,110,60],[1200,150,140],[1290,230,110]],
     clouds:[[760,40,40],[860,-20,50],[1150,60,44],[1230,-10,36]]
   }
@@ -389,15 +391,15 @@ function interp(arr,u){ const f=clamp(u,0,1)*(arr.length-1), i=Math.min(arr.leng
 // ---- the current map's data and generated world (swapped by useMap) ----
 let WORLD, PEAK, START, TELE, OUTLINE, BASES, RUNS, ZONES, MOGULS, CLIFFS, RIDGES, ALPINE, PILLOW_LINES,
     GLADE_CLIFFS, FOREST_PILLOW_LINES, PARKS, JUMPS, LIFTS, BUILDINGS, LABELS, RANGE, CLOUDS, BANKS;
-let CATPTS=[], CATBOX=null;
+let CATPTS=[], CATBOX=null, STEPUPS=[];
 function catBox(){ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const p of CATPTS){ x0=Math.min(x0,p[0]); x1=Math.max(x1,p[0]); y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
   CATBOX=CATPTS.length?[x0-20,x1+20,y0-20,y1+20]:null; }                      // the cat track while a map is being built (trees and cliffs keep off it)
 let NB, buckets, KICKERS, BOXES, TOWERS, RIDGE_CLIFFS, SH, MM, CREST, GROOMED, PONDS=[], rng, lineId=0;
 const BUCKET = 50;
-function snapshot(){ return { WORLD, PEAK, START, TELE, OUTLINE, BASES, RUNS, ZONES, MOGULS, CLIFFS, RIDGES, ALPINE, PILLOW_LINES,
+function snapshot(){ return { STEPUPS, WORLD, PEAK, START, TELE, OUTLINE, BASES, RUNS, ZONES, MOGULS, CLIFFS, RIDGES, ALPINE, PILLOW_LINES,
   GLADE_CLIFFS, FOREST_PILLOW_LINES, PARKS, JUMPS, LIFTS, BUILDINGS, LABELS, RANGE, CLOUDS, BANKS,
   NB, buckets, KICKERS, BOXES, TOWERS, RIDGE_CLIFFS, SH, MM, CREST, GROOMED, PONDS }; }
-function useMap(m){ ({ WORLD, PEAK, START, TELE, OUTLINE, BASES, RUNS, ZONES, MOGULS, CLIFFS, RIDGES, ALPINE, PILLOW_LINES,
+function useMap(m){ ({ STEPUPS, WORLD, PEAK, START, TELE, OUTLINE, BASES, RUNS, ZONES, MOGULS, CLIFFS, RIDGES, ALPINE, PILLOW_LINES,
   GLADE_CLIFFS, FOREST_PILLOW_LINES, PARKS, JUMPS, LIFTS, BUILDINGS, LABELS, RANGE, CLOUDS, BANKS,
   NB, buckets, KICKERS, BOXES, TOWERS, RIDGE_CLIFFS, SH, MM, CREST, GROOMED, PONDS } = m); }
 
@@ -628,7 +630,7 @@ function buildMap(def){
         const full=rng()<0.45, left=rng()<0.5, x1=full||left ? cx-hw-6 : cx-hw*0.15, x2=full||!left ? cx+hw+6 : cx+hw*0.15;
         CLIFFS.push({ x1, x2, y, h, line:9001+k }); } } }
   NB=Math.ceil(WORLD.h/BUCKET)+4; buckets=Array.from({length:NB},()=>[]);
-  KICKERS=[]; BOXES=[]; TOWERS=[]; RIDGE_CLIFFS=[]; CATPTS=[]; CATBOX=null;
+  KICKERS=[]; BOXES=[]; TOWERS=[]; RIDGE_CLIFFS=[]; CATPTS=[]; CATBOX=null; STEPUPS=[];
   for(const L of LIFTS){ L.dx=L.x2-L.x1; L.dy=L.y2-L.y1; L.len=Math.hypot(L.dx,L.dy); }
   prepRuns();
   const clear=[];                                 // areas kept free of trees (Big Air arena, pond skim)
@@ -638,6 +640,12 @@ function buildMap(def){
   // parks, natural jumps
   for(const pk of PARKS){
     const rr=RUNS.find(q=>q.id===pk.run), mid=y=>{ let b=1e9, bx=0; for(const p of rr.S){ const d=Math.abs(p.y-y); if(d<b){ b=d; bx=p.x; } } return bx; };
+    if(pk.cross && d.skicross){ const at=y=>{ let b=rr.S[0]; for(const p of rr.S) if(Math.abs(p.y-y)<Math.abs(b.y-y)) b=p; return b; };
+      d.skicross.features.forEach(([y,type,h],n)=>{ const a=at(y);
+        if(type==='roller') pk.kickers.push([a.x,y,52,0.55+0.1*(n%3)]);
+        if(type==='jump')   pk.kickers.push([a.x,y,52,1.1]);
+        if(type==='stepup'){ pk.kickers.push([a.x,y,52,1.25]); const b=at(y+50); STEPUPS.push({ x1:b.x-b.hw-6, x2:b.x+b.hw+6, y:y+50, h:18 }); }   // kicker up onto a raised deck
+        if(type==='stepdown') CLIFFS.push({ x1:a.x-a.hw-8, x2:a.x+a.hw+8, y, h:h||26, snow:true, line:9500+n }); }); }   // ledge you drop off
     for(const k of pk.kickers){ if(k[0]===null) k[0]=mid(k[1]); }
     for(const k of pk.kickers) KICKERS.push({ x:k[0], y:k[1], w:k[2], pow:k[3], len:pk.comp?110:pk.mega?50:26, park:true, mega:!!pk.mega, comp:!!pk.comp });
     for(const b of pk.boxes)   BOXES.push({ x:b[0], y:b[1], len:b[2] });
@@ -771,6 +779,13 @@ function buildMap(def){
       addObj({ t:'party', kind:'dj',   x:lx+4, y:q.y-q.ry+100 });
       for(let i=0;i<4;i++) fan(lx-20+rng()*30, q.y-q.ry+108+rng()*14); }
     clear.push({ x:q.x-20, y:q.y, rx:q.rx+90, ry:q.ry+50 }); }
+  for(const q of (d.parties||[])){                                  // little parties: tent, DJ and a crowd
+    addObj({ t:'party', kind:'tent', x:q.x-46, y:q.y-14 }); addObj({ t:'party', kind:'dj', x:q.x+40, y:q.y-4 });
+    for(let i=0;i<12;i++){ const a=rng()*Math.PI*2, r=0.3+rng()*0.7; fan(q.x+Math.cos(a)*58*r, q.y+16+Math.sin(a)*14*r); }
+    if(q.pipe){ const pk=PARKS.find(z=>z.pipe); if(pk) for(let y=pk.y1+40; y<pk.y2; y+=46){ const r=RUNS.find(z=>z.id===pk.run); let b=r.S[0];
+        for(const p of r.S) if(Math.abs(p.y-y)<Math.abs(b.y-y)) b=p;
+        for(const sd of [-1,1]) if(rng()<0.8) fan(b.x+sd*(pk.pipe.w/2+14+rng()*10), y+(rng()-0.5)*20); } }   // crowd lining the pipe decks
+    clear.push({ x:q.x, y:q.y, rx:110, ry:60 }); }
   if(d.party){ const q=d.party;
     addObj({ t:'party', kind:'rack', x:q.x-70, y:q.y-8 });
     addObj({ t:'party', kind:'tent', x:q.x,    y:q.y-10 });
@@ -1067,6 +1082,7 @@ function musicLoop(){
   if(def && def.party) spots.push(def.party);
   if(def) for(const q of def.ponds||[]) if(q.party) spots.push({ x:q.x-q.rx-30, y:q.y-q.ry+100 });
   if(def) for(const pk of def.parks||[]) if(pk.dj) spots.push(pk.dj);
+  if(def) for(const q of def.parties||[]) spots.push({ x:q.x+40, y:q.y });
   let target=0;
   if(game.mode==='play' || game.mode==='finish') for(const pq of spots){
     const vx=pq.x-cam.x, vy=pq.y-cam.y;
@@ -1132,7 +1148,7 @@ const P = {};
 
 function resetAir(){ Object.assign(P,{ spin:0, flip:0, grab:null, bestGrab:null, grabT:0, airT:0, drop:0, minor:false, airBonus:0 }); }
 function resetSkier(at){
-  Object.assign(P,{ x:at.x, y:at.y, h:0, v:0, z:0, vz:0, vx:0, vy:0, state:'ride', inv:0, crashT:0,
+  Object.assign(P,{ x:at.x, y:at.y, h:0, v:0, z:0, vz:0, vx:0, vy:0, state:'ride', inv:0, crashT:0, sx:null, pl:null,
     tuck:false, lastMogul:null, box:null, grindT:0, tracks:[], lastTrack:null, treeHits:0, lastTree:null,
     gear:[], yard:false, svx:0, svy:0, lift:null, liftD:0, liftRev:false, loadT:0, inZone:null, lastE:null,
     skins:false, skinAnim:0, skinHold:0, skid:0, skidSide:1 });
@@ -1364,6 +1380,19 @@ function update(dt){
           launch(vz,false); P.z=10; P.vx=-sd*8; P.vy=Math.max(30,P.v*Math.cos(P.h)*0.55); P.pipeAir=sd; P.canPop=true; sfx('pop'); }
         else { P.h=-P.h*0.7; P.v*=0.8; } }                            // too slow: you slide back down the wall
       else if(Math.abs(dx)>W*0.5) P.v+=(out>0?-60:60)*dt*Math.abs(Math.sin(P.h)); } }   // up the wall slows you, dropping in speeds you up
+  if(WORLD.sx && (P.state==='ride' || P.state==='air') && P.y>WORLD.sx.y1-20 && P.y<WORLD.sx.y2+30){   // fenced course: bounce off the fence
+    const r=RUNS.find(q=>q.id===WORLD.sx.run), e1=runQ(r,P.x,P.y);
+    if(P.inCourse && e1>-2.5){ let a=r.S[0], bd=1e9;                     // push back inside the fence
+      for(const q of r.S){ if(Math.abs(q.y-P.y)>40) continue; const d=Math.hypot(q.x-P.x,q.y-P.y); if(d<bd){ bd=d; a=q; } }
+      const dx=P.x-a.x, sd=Math.sign(dx)||1; P.x=a.x+sd*Math.max(0,a.hw-3);
+      if(P.state==='air') P.vx=-sd*Math.abs(P.vx)*0.3; else { if(Math.sin(P.h)*sd>0) P.h=-P.h*0.5; P.v*=0.85; }
+      if(!P.fenceT){ sfx('tap'); P.fenceT=0.3; } }
+    else if(e1<-4) P.inCourse=true; }
+  else P.inCourse=false;
+  if(P.fenceT) P.fenceT=Math.max(0,P.fenceT-dt);
+  for(const u of STEPUPS) if(py<u.y && P.y>=u.y && P.x>u.x1 && P.x<u.x2){
+    if(P.state==='ride'){ P.v*=0.6; popup('CASED THE STEP-UP!', 0, '#ff6b5a'); sfx('land'); }
+    else if(P.state==='air'){ P.z-=u.h; if(P.z<=0){ P.z=0; P.v*=0.7; popup('CASED IT!', 0, '#ff6b5a'); } } }
   if(WORLD.sx && (P.state==='ride' || P.state==='air')){             // ski cross: timed from the start gate to the finish line
     const X=WORLD.sx, on=(runAt(P.x,P.y)||{}).id===X.run || P.state==='air';
     if(!P.sx && py<X.y1 && P.y>=X.y1 && on){ P.sx={ t0:game.time, off:0 }; popup('SKI CROSS - GO!', 0, '#ffe066', true); sfx('chime'); }
@@ -1810,8 +1839,10 @@ const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
 function fit(){
   if(TOUCH){                                       // phones/tablets: the view fills the whole screen, buttons float on top
     const W=innerWidth, H=innerHeight, port=H>W; document.body.classList.toggle('portrait', port);
-    const w = port ? 340 : clamp(Math.round(232*W/H), 360, 640), h = port ? clamp(Math.round(340*H/W), 300, 900) : 232;
-    if(cvs.width!==w || cvs.height!==h){ VW=w; VH=h; cvs.width=w; cvs.height=h; }
+    const menu=port && game && game.mode!=='play' && game.mode!=='pause';      // portrait: same zoom as landscape while skiing, wider for the menu screens
+    const w = clamp(Math.round(232*W/H), 360, 640);
+    const ww = port ? (menu ? 340 : 232) : w, h = port ? clamp(Math.round(ww*H/W), 300, 1200) : 232;
+    if(cvs.width!==ww || cvs.height!==h){ VW=ww; VH=h; cvs.width=ww; cvs.height=h; }
     cvs.style.width=W+'px'; cvs.style.height=H+'px'; return; }
   const s=Math.min(innerWidth/VW, innerHeight/VH), k=s>=1?Math.floor(s):s;
   cvs.style.width=(VW*k)+'px'; cvs.style.height=(VH*k)+'px'; }
@@ -1839,6 +1870,9 @@ const TOUCH_WORDS=[[/HOLD S\b/g,'HOLD STOP'],[/\bSPACE\b/g,'JUMP'],[/W CLIMB/g,'
 function txt(s,x,y,col,size,align,shadow){
   if(TOUCH) for(const [re,w] of TOUCH_WORDS) s=s.replace(re,w);
   ctx.font=(size||8)+'px '+FONT; ctx.textAlign=align||'left'; ctx.textBaseline='top';
+  if(align==='center' && VW<300 && ctx.measureText(s).width>VW-8 && s.indexOf(' ')>0){   // narrow phone view: wrap onto two lines
+    const m=s.length/2; let k=s.lastIndexOf(' ',m); if(k<1) k=s.indexOf(' ',m);
+    txt(s.slice(0,k),x,y,col,size,align,shadow); txt(s.slice(k+1),x,y+(size||8)+2,col,size,align,shadow); return; }
   if(shadow!==false){ ctx.fillStyle='rgba(10,20,40,0.75)'; ctx.fillText(s,x+1,y+1); }
   ctx.fillStyle=col||'#fff'; ctx.fillText(s,x,y);
 }
@@ -1903,12 +1937,26 @@ function drawGroundFeatures(cx,cy){
     if(vis(ly,20)) txt(z.name.toUpperCase(), z.x-cx, ly-cy, '#93a6bf', 8, 'center', false); }
   for(const l of LABELS) if(vis(l[2],20)) txt(l[0], l[1]-cx, l[2]-cy, l[2]<100?'#ffffff':'#7f94b0', 8, 'center', l[2]<100);
   if(WORLD.sx){ const X=WORLD.sx, r=RUNS.find(q=>q.id===X.run);
-    for(const [yy,lab] of [[X.y1,'START'],[X.y2,'FINISH']]) if(vis(yy,30)){ let a=r.S[0]; for(const p of r.S) if(Math.abs(p.y-yy)<Math.abs(a.y-yy)) a=p;
-      const x0=Math.round(a.x-a.hw-cx), w=Math.round(2*a.hw), Y=Math.round(yy-cy);
+    for(let i=0;i<r.S.length-1;i++){ const a=r.S[i]; if(a.y<X.y1-6 || a.y>X.y2+20 || a.y<cy-10 || a.y>cy+VH+10) continue;   // orange course fencing
+      const b=r.S[i+1], dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1, nx=-dy/L, ny=dx/L;
+      for(const sd of [-1,1]){ const e=a.hw+2, X0=a.x+nx*sd*e-cx, Y0=a.y+ny*sd*e-cy, X1=b.x+nx*sd*e-cx, Y1=b.y+ny*sd*e-cy;
+        ctx.strokeStyle='rgba(255,106,26,0.9)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(X0,Y0-4); ctx.lineTo(X1,Y1-4); ctx.moveTo(X0,Y0-1.5); ctx.lineTo(X1,Y1-1.5); ctx.stroke();
+        if(i%2===0){ ctx.fillStyle='#5a4a3a'; ctx.fillRect(Math.round(X0),Math.round(Y0)-6,1,6); } } }
+    for(const u of STEPUPS) if(vis(u.y,40)){ const X=Math.round(u.x1-cx), W=Math.round(u.x2-u.x1), Y=Math.round(u.y-cy);   // raised deck: lit riser edge, deck beyond
+      ctx.fillStyle='rgba(120,145,185,0.45)'; ctx.fillRect(X,Y-5,W,5); ctx.fillStyle='#ffffff'; ctx.fillRect(X,Y,W,2); ctx.fillStyle='rgba(235,242,250,0.9)'; ctx.fillRect(X,Y+2,W,26);
+      ctx.fillStyle='rgba(40,110,220,0.5)'; ctx.fillRect(X,Y+26,W,1); }
+    for(const [yy,lab] of [[X.y1,'START'],[X.y2,'FINISH']]) if(vis(yy,40)){ let a=r.S[0]; for(const p of r.S) if(Math.abs(p.y-yy)<Math.abs(a.y-yy)) a=p;
+      const x0=Math.round(a.x-a.hw-cx), w=Math.round(2*a.hw), Y=Math.round(yy-cy), fin=lab==='FINISH';
       for(let x=0;x<w;x+=4){ const on=(x/4)%2; ctx.fillStyle=on?'#222':'#fff'; ctx.fillRect(x0+x,Y,4,2); ctx.fillStyle=on?'#fff':'#222'; ctx.fillRect(x0+x,Y+2,4,2); }
-      ctx.fillStyle='#555'; ctx.fillRect(x0-3,Y-16,2,18); ctx.fillRect(x0+w+1,Y-16,2,18);
-      ctx.fillStyle=lab==='START'?'#2a8f5a':'#d33'; ctx.fillRect(x0-3,Y-18,w+6,6);
-      txt(lab, a.x-cx, Y-28, lab==='START'?'#2a8f5a':'#d33', 8, 'center'); } }
+      ctx.fillStyle='#4a4f58'; ctx.fillRect(x0-4,Y-24,3,26); ctx.fillRect(x0+w+1,Y-24,3,26);                         // arch posts
+      if(fin){ for(let x=-4;x<w+4;x+=3) for(let k=0;k<2;k++){ ctx.fillStyle=((x/3|0)+k)%2?'#222':'#fff'; ctx.fillRect(x0+x,Y-26+k*3,3,3); } }   // checkered banner
+      else { ctx.fillStyle='#2a8f5a'; ctx.fillRect(x0-4,Y-26,w+8,7);
+        ctx.fillStyle='#8b6a44'; ctx.fillRect(x0-6,Y-6,w+12,2);                                                        // start-hut bar
+        for(let k=0;k<3;k++){ const gx=x0+Math.round((k+0.5)*w/3)-5; ctx.fillStyle=(k%2)?'#d33':'#fff'; ctx.fillRect(gx,Y-4,10,2); } }   // start wands
+      txt(lab, a.x-cx, Y-38, fin?'#222':'#2a8f5a', 8, 'center');
+      if(fin) for(const sd of [-1,1]){ const fx=sd<0?x0-14:x0+w+12, wv=Math.round(Math.sin(game.t*5+sd)*1.5);   // checkered flags waving on poles
+        ctx.fillStyle='#4a4f58'; ctx.fillRect(fx,Y-22,1,22);
+        for(let gy=0;gy<3;gy++) for(let gx=0;gx<4;gx++){ ctx.fillStyle=(gx+gy)%2?'#222':'#fff'; ctx.fillRect(fx+1+gx*2, Y-22+gy*2+Math.round(wv*gx/4), 2, 2); } } } }
   if(vis(WORLD.finish,20)) for(const b of BASES){
     for(let x=b.x1; x<b.x2; x+=8){ const on=((x/8)|0)%2;
       ctx.fillStyle=on?'#222':'#fff'; ctx.fillRect(x-cx,WORLD.finish-cy,4,3); ctx.fillStyle=on?'#fff':'#222'; ctx.fillRect(x-cx+4,WORLD.finish-cy,4,3); }
@@ -1991,6 +2039,9 @@ function drawCliff(c,cx,cy){
     if(c.ridge){ ctx.fillStyle='#ffffff'; ctx.fillRect(sx,y0-1,2,1);                     // snowy ridge crest the whole way
       ctx.fillStyle='rgba(130,150,190,0.35)'; ctx.fillRect(sx,y0+1,2,3); }
     if(h<=0) continue;
+    if(c.snow){ ctx.fillStyle='rgba(90,120,170,0.25)'; ctx.fillRect(sx,y0+h,2,4);          // ski cross step-down: groomed snow ledge
+      ctx.fillStyle=(x>>2)%2?'#d6e1ef':'#cbd8ea'; ctx.fillRect(sx,y0,2,h); ctx.fillStyle='#ffffff'; ctx.fillRect(sx,y0-1,2,2);
+      ctx.fillStyle='rgba(40,110,220,0.55)'; ctx.fillRect(sx,y0-3,2,1); continue; }
     if(c.ice){ const hv=hash(x>>1,c.y|0);                            // serac: translucent blue ice with bright streaks
       ctx.fillStyle='rgba(70,130,190,0.3)'; ctx.fillRect(sx,y0+h,2,Math.min(12,4+h/12));
       ctx.fillStyle=['rgba(120,190,240,0.72)','rgba(145,207,246,0.66)','rgba(100,170,228,0.76)','rgba(165,218,250,0.64)'][hv&3]; ctx.fillRect(sx,y0,2,h);
@@ -2358,11 +2409,11 @@ function drawHUD(){
   ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,0,VW,13);
   txt('SCORE '+String(game.score).padStart(6,'0'), 4, 3, '#fff');
   if(WORLD.bc && WORLD.bc.double && Math.floor(game.t*2)%2) txt('2X', 104, 3, '#ffe066');
-  if(P.sx) txt('SKI CROSS '+(game.time-P.sx.t0).toFixed(1), VW/2, 16, '#ffe066', 8, 'center');
+  if(P.sx) txt('SKI CROSS '+(game.time-P.sx.t0).toFixed(1), VW/2, VW<300?28:16, '#ffe066', 8, 'center');
   const t=game.time, mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(Math.floor(t%60)).padStart(2,'0');
   txt(mm+':'+ss, VW-4, 3, '#fff', 8, 'right');
-  const loc=locName(); txt(loc.n, VW/2, 3, '#bfe3ff', 8, 'center');
-  if(loc.g) gradeSym(loc.g, VW/2-loc.n.length*4-11, 3);
+  const loc=locName(), ly=VW<300?16:3; txt(loc.n, VW/2, ly, '#bfe3ff', 8, 'center');      // narrow view: location on its own line
+  if(loc.g) gradeSym(loc.g, VW/2-loc.n.length*4-11, ly);
   const v = P.state==='air' ? Math.hypot(P.vx,P.vy) : P.v;
   txt(Math.round(v*CFG.KMH)+' KM/H', 4, VH-12, '#fff');
   if(P.tuck) txt('TUCK', 84, VH-12, '#ffe066');
@@ -2484,6 +2535,7 @@ function frame(now){
     if(pressed.p2p){ const L=LIFTS.find(l=>l.to); if(L){ const sc=game.score; newRun({ x:L.x1+4, y:L.y1+14 }); game.score=sc; boardLift(L); } }
   }
   if(TOUCH){ const pm=document.getElementById('pm'), want=game.mode==='pause'?'flex':'none'; if(pm.style.display!==want) pm.style.display=want;
+    const mm=game.mode==='play'||game.mode==='pause'; if(mm!==game.lastPlayView){ game.lastPlayView=mm; fit(); }
     document.body.classList.toggle('noplay', game.mode!=='play'); }          // hide the ski buttons on the title, rider and menu screens
   const s0=game.score; update(dt);
   if(WORLD.bc && WORLD.bc.double && game.mode!=='select' && game.score>s0) game.score+=game.score-s0;   // backcountry: every point counts double
