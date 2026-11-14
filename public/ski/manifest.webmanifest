@@ -1,0 +1,14 @@
+{
+  "name": "Powder Days Ski Game (Beta)",
+  "short_name": "Powder Days",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1b2333",
+  "theme_color": "#1b2333",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
