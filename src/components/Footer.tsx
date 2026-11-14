@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 const Footer = () => {
   return (
     <footer className="bg-primary text-primary-foreground py-12">
@@ -25,12 +23,6 @@ const Footer = () => {
             <p className="text-xs text-primary-foreground/60 mt-1">
               Professional Engineer | British Columbia, Canada
             </p>
-            <Link
-              to="/fun-projects"
-              className="text-xs text-primary-foreground/60 hover:text-primary-foreground underline-offset-2 hover:underline mt-1 inline-block"
-            >
-              Fun projects
-            </Link>
           </div>
         </div>
       </div>

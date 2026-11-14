@@ -43,12 +43,20 @@ const Navigation = () => {
             >
               Contact
             </button>
-            <Link 
-              to="/designs"
-              className="text-foreground hover:text-accent transition-colors"
-            >
-              Designs
-            </Link>
+            <div className="relative">
+              <Link 
+                to="/designs"
+                className="text-foreground hover:text-accent transition-colors"
+              >
+                Designs
+              </Link>
+              <Link
+                to="/fun-projects"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-0.5 whitespace-nowrap text-[11px] text-muted-foreground hover:text-accent transition-colors"
+              >
+                Fun projects
+              </Link>
+            </div>
             <Link 
               to="/articles"
               className="text-foreground hover:text-accent transition-colors"
@@ -59,12 +67,20 @@ const Navigation = () => {
           
           {/* Mobile menu */}
           <div className="flex md:hidden items-center gap-4">
-            <Link 
-              to="/designs"
-              className="text-foreground hover:text-accent transition-colors text-sm"
-            >
-              Designs
-            </Link>
+            <div className="relative">
+              <Link 
+                to="/designs"
+                className="text-foreground hover:text-accent transition-colors text-sm"
+              >
+                Designs
+              </Link>
+              <Link
+                to="/fun-projects"
+                className="absolute left-1/2 -translate-x-1/2 top-full whitespace-nowrap text-[10px] text-muted-foreground hover:text-accent transition-colors"
+              >
+                Fun projects
+              </Link>
+            </div>
             <Link 
               to="/articles"
               className="text-foreground hover:text-accent transition-colors text-sm"
