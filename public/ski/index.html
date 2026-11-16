@@ -262,6 +262,8 @@ const DEFS = {
     buildings:[ { name:'Roundhouse', x:1180, y:5930, w:96, h:30, c:'#8a5a3c' },
                 { name:'Peak Express top', x:1000, y:105, w:44, h:20, c:'#6b4a35' } ],
     labels:[ ['WHISTLER PEAK',1000,6], ['ROUNDHOUSE LODGE',1180,5880], ['CREEKSIDE',1700,13700], ['VILLAGE',430,13700], ['PEAK 2 PEAK',784,6045], ['APRES SKI PARTY',270,13648], ['POND SKIM',1672,13150], ['CREEKSIDE AIRPORT',1860,13345], ['AIRPORT >>',1860,13530] ],
+    extras:[ { name:'GLASSHOUSE LODGE', x:542, y:9888, w:96, h:30, modern:true },                    // modern mid-mountain restaurant
+             { name:'FOREST SPA', x:409, y:11803, w:90, h:26, spa:true } ],                             // spa tucked in the trees
     party:{ x:270, y:13700 },   // apres: tent bar, DJ, fire pit, ski rack and a dancing crowd
     airport:{ x:1830, y:13690, to:'niseko', dest:'SAPPORO', arrive:{ x:1770, y:13640 } },   // Creekside airstrip: stop in the box to fly to Japan
     range:[[700,230,150],[800,120,60],[840,260,120],[1180,140,140],[1280,200,120],[1330,280,100]],
@@ -284,6 +286,7 @@ const DEFS = {
     pillowLines:[], gladeCliffs:{ perPx:90, pillowLines:0 }, forestPillowLines:5,
     banks:{ scale:220, min:0.08 }, ponds:[], gates:[], parks:[], jumps:[], lifts:[], buildings:[],
     labels:[ ['CHAM CHUTES',1000,8], ['SKI OUT TO BLACKCOMB',960,6420], ['SKIN TRACK',1260,6935] ],
+    extras:[ { name:'', x:600, y:6900, w:40, h:22, sauna:true, keepTrees:true } ],                    // secret forest sauna (no sign)
     backcountry:{ rockTop:130, rockTo:3480, double:true,
       chutes:[ { name:'LEFT CHAM CHUTE', y0:140, y1:3000, opens:true, f:[[140,0.25],[600,0.55],[1500,0.72],[2300,0.7],[3000,0.62]] },
                { name:'LEFT CHUTE FORK', y0:2300, y1:3060, opens:true, f:[[2300,0.7],[2700,0.88],[3060,0.97]] },          // splits off near the bottom
@@ -335,6 +338,7 @@ const DEFS = {
       { name:'ひらふの森',           type:'glade', x:1090, y:6200, rx:80,  ry:900 },
       { name:'アンヌプリ山頂', type:'alpine', x:1000, y:1300, rx:520, ry:1200 },
       { name:'ひらふ山頂駅',   type:'flat', x:1110, y:3240, rx:210, ry:130, slope:0.3 },
+      { name:'猿の温泉', type:'flat', x:116, y:7850, rx:55, ry:50, slope:0.15 },
       { name:'スノーキャット乗り場', type:'flat', x:1440, y:4680, rx:110, ry:110, slope:0.14 },   // flat run-out to stop for the cat
       { name:'白馬ジャンプ台', type:'flat', x:208, y:6060, rx:150, ry:110, slope:0.14 },        // ski-jump outrun
       { name:'ニセコ温泉',     type:'flat', x:1555, y:8400, rx:60,  ry:50,  slope:0.15 },
@@ -352,8 +356,11 @@ const DEFS = {
     pillowLines:[], gladeCliffs:{ perPx:110, pillowLines:3 }, forestPillowLines:26,  // famous Japow pillows in the birch trees
     banks:{ scale:220, min:0.08 },
     ponds:[ { x:1548, y:8378, rx:8,  ry:5,  spring:true },                          // a little onsen beside Hirafu
-            { x:1562, y:8396, rx:18, ry:8,  fall:true },
-            { x:1546, y:8420, rx:24, ry:10, fall:true, name:'温泉' } ],
+            { x:1562, y:8396, rx:18, ry:8,  fall:true, capys:2 },
+            { x:1546, y:8420, rx:24, ry:10, fall:true, capys:2, name:'カピバラ温泉' },         // ...with capybaras
+            { x:108, y:7826, rx:7,  ry:5,  spring:true },                                       // snow monkey onsen in the Annupuri woods
+            { x:124, y:7845, rx:19, ry:8,  fall:true, monkeys:2 },
+            { x:110, y:7870, rx:24, ry:10, fall:true, monkeys:3, name:'猿の温泉' } ],
     gates:[ { run:'slalom', y1:3500, y2:4500 } ],
     parks:[ { name:'ひらふパーク', run:'family', y1:5300, y2:6400,
               kickers:[[null,5450,40,1.0],[null,5750,46,1.15],[null,6050,52,1.3]], boxes:[] },
@@ -483,6 +490,8 @@ const DEFS = {
                 { name:'Scandinave sauna', x:300, y:13165, w:34, h:22, c:'#6b4a35' },
                 { name:'Scandinave lodge', x:248, y:13215, w:30, h:20, c:'#7b5a3c' } ],
     labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1600,10800] ],
+    extras:[ { name:'SKY BISTRO', x:1141, y:5870, w:96, h:30, modern:true },
+             { name:'CEDAR LODGE', x:996, y:9750, w:96, h:30, modern:true } ],
     range:[[720,220,150],[820,110,60],[1200,150,140],[1290,230,110]],
     clouds:[[760,40,40],[860,-20,50],[1150,60,44],[1230,-10,36]]
   }
@@ -1037,6 +1046,12 @@ function buildMap(def){
     }
   }
 
+  for(const e of (d.extras||[])){ const x0=e.x-e.w/2-16, x1=e.x+e.w/2+16, y0=e.y-e.h-18, y1=e.y+(e.spa?50:26);
+    for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
+      if((o.t==='tree'||o.t==='rock') && o.x>x0 && o.x<x1 && o.y>y0 && o.y<y1 && !(e.keepTrees && (o.x<x0+10 || o.x>x1-10))) bk.splice(i,1); }
+    for(let i=CLIFFS.length-1;i>=0;i--){ const c=CLIFFS[i]; if(c.x2>x0 && c.x1<x1 && c.y+c.h>y0 && c.y<y1) CLIFFS.splice(i,1); }
+    const B=Object.assign({ c:'#6a5a4a' }, e); BUILDINGS.push(B); addObj(Object.assign({ t:'bldg' }, B));
+    if(e.name) LABELS.push([e.name, e.x, e.y-e.h-30]); }
   buildShade(); buildCrest(); buildMinimap();
   for(const pk of PARKS) if(pk.cat && pk.cat.path){ const pts=pk.cat.path;                   // final sweep: no tree or rock sitting on a snowcat track
     for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
@@ -1348,6 +1363,7 @@ function resetSkier(at){
     tuck:false, lastMogul:null, box:null, grindT:0, tracks:[], lastTrack:null, treeHits:0, lastTree:null,
     gear:[], yard:false, svx:0, svy:0, lift:null, liftD:0, liftRev:false, loadT:0, inZone:null, lastE:null,
     skins:false, skinAnim:0, skinHold:0, skid:0, skidSide:1, destroyed:false, wing:false, glide:false, loopT:0, loops:0, wingCool:0 });
+  if(!P.packs) P.packs={ bc:false, para:false }; if(P.hp===undefined) P.hp=100;
   game.heli=null; resetAir();
 }
 function camTarget(){
@@ -1381,7 +1397,9 @@ function crash(msg, forceYard){
   const air=P.state==='air', speed=air?Math.hypot(P.vx,P.vy):P.v, head=air?Math.atan2(P.vx,P.vy):P.h;
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
   const impact = speed + (air && !P.minor ? Math.max(0,-P.vz)*0.6 : 0), avy=msg.includes('AVALANCHE');
-  const destroyed = msg.includes('kei truck') || (avy ? P.pack!=='bc' : impact>CFG.DESTROY);
+  const healOnly=msg.includes('onsen'), out=P.hp<=0 && !healOnly;
+  const destroyed = out || msg.includes('kei truck') || (avy ? !P.packs.bc : impact>CFG.DESTROY);
+  if(healOnly) P.hp=100; else if(!destroyed){ P.hp=Math.max(0,P.hp-Math.round(18+impact*0.08)); if(P.hp<=0) setTimeout(()=>popup('OUT OF HEALTH! NEXT CRASH = HELI RESCUE', 0, '#ff6b5a', true), 1300); }
   P.wing=false; P.glide=false; P.loopT=0;
   P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
@@ -1393,7 +1411,7 @@ function crash(msg, forceYard){
     popup(destroyed?'DESTROYED!':'YARD SALE!', 0, destroyed?'#ff3a2a':'#ff6b5a', true); puff(40); sfx('yard');
     if(msg.startsWith('JERRY')) popup(msg, 0, '#ff6b5a', true);
   } else { popup(destroyed?'DESTROYED!':msg.toUpperCase(), 0, destroyed?'#ff3a2a':'#ff6b5a', destroyed); puff(22); sfx('crash'); }
-  if(avy && P.pack==='bc') setTimeout(()=>popup('BEACON, PROBE + SHOVEL: DUG OUT!', 0, '#bfe3ff', true), 1600);
+  if(avy && P.packs.bc) setTimeout(()=>popup('BEACON, PROBE + SHOVEL: DUG OUT!', 0, '#bfe3ff', true), 1600);
   if(destroyed){ P.destroyed=true; P.crashT=1e9; game.heli={ t:0 }; setTimeout(()=>{ if(game.heli) popup('SKI PATROL IS ON THE WAY', 0, '#ffe066'); }, 900); }
   P.tracks.push(null); P.lastTrack=null;
 }
@@ -1471,8 +1489,12 @@ function update(dt){
   if(P.state==='skintrack'){ updSkinTrack(dt); followCam(dt); return; }
   if(P.inv>0) P.inv-=dt;
   if(P.wingCool>0) P.wingCool-=dt;
+  if(P.state!=='crash') P.hp=Math.min(100,P.hp+dt*1.2);                    // health comes back slowly
+  if(P.state==='ride' && P.v<60 && P.hp<99.5) for(const b of BUILDINGS){ if(b.name==='airport' || b.name==='Peak Express top' || b.name==='hut') continue;   // stop at a restaurant, lodge, spa or sauna to heal up
+    if(Math.abs(P.x-b.x)<b.w/2+14 && P.y>b.y-6 && P.y<b.y+(b.spa?48:30)){ P.hp=100; sfx('chime');
+      popup(b.sauna?'SAUNA: HEALTH RESTORED':b.spa?'SPA DAY: HEALTH RESTORED':b.curry?(b.ramen?'RAMEN: HEALTH RESTORED':'CURRY: HEALTH RESTORED'):'LUNCH BREAK: HEALTH RESTORED', 0, '#4ad07a', true); break; } }
   if(pressed.wing && (P.state==='ride' || P.state==='air') && !P.skins){
-    if(P.pack!=='para') popup('NO WING - GRAB A PARAGLIDER PACK AT A LIFT TOP', 0, '#ff9a6a');
+    if(!P.packs.para) popup('NO WING - GRAB A PARAGLIDER PACK AT A LIFT TOP', 0, '#ff9a6a');
     else { P.wing=!P.wing; popup(P.wing?'WING OPEN':'WING AWAY', 0, '#bfe3ff'); if(!P.wing && P.state==='air'){ P.glide=false; P.loopT=0; P.flip=0; } } }
   P.treeHits=Math.max(0,P.treeHits-dt*2.0);
 
@@ -1532,17 +1554,20 @@ function update(dt){
       for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && Math.hypot(P.x-o.x,P.y-o.y)<12) takePack(o); }
     if((zone||cat||pad) && P.wing) P.wing=false;                         // pack the wing away for the lift
     // hold S while stopped (not in a lift line) to put your skins on - skins come in the backcountry pack
-    if(stopKey && P.v<5 && !zone && !P.wing){ if(P.pack!=='bc'){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
+    if(stopKey && P.v<5 && !zone && !P.wing){ if(!P.packs.bc){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
       else { P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; P.skinAnim=1.0; P.v=0; } } } else P.skinHold=0;
     if(P.wing && !P.skins && P.v>CFG.WING_TAKEOFF && !(P.wingCool>0)){ launch(70,false); P.glide=true; popup('TAKE OFF!', 0, '#ffe066'); return; }
     if(pressed.jump){ launch(CFG.OLLIE, false); P.hop=true; }  // small hop - time it at a lip for a pop
   }
   else if(P.state==='air' && P.wing && !P.minor){                  // paragliding: steer, dive (tuck), flare (stop), JUMP = loop
     P.airT += dt; P.glide=true;
-    const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+steer*1.7*dt, tgt=keys.up?225:keys.down?95:150;
-    const ns=sp+(tgt-sp)*Math.min(1,dt*1.2); P.vx=Math.sin(ang)*ns; P.vy=Math.cos(ang)*ns;
-    const sink=keys.up?-60:keys.down?-12:-26;
+    const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+steer*1.7*dt, tgt=keys.up?240:keys.down?60:150;
+    const ns=sp+(tgt-sp)*Math.min(1,dt*(keys.down?0.7:1.2)); P.vx=Math.sin(ang)*ns; P.vy=Math.cos(ang)*ns;
+    const stall=keys.down && ns<92;                                            // pulled too long: the wing stalls
+    if(stall && !P.stalled){ P.stalled=true; popup('STALL!', 0, '#ff9a6a'); } if(!keys.down) P.stalled=false;
+    const sink=keys.up?-70 : keys.down ? (stall?-60:34*Math.min(1,(ns-90)/60)) : -26;   // dive: trade height for speed / pull: trade speed for height
     if(P.vz>sink) P.vz=Math.max(sink, P.vz-CFG.GZ*0.42*dt); else P.vz+=(sink-P.vz)*Math.min(1,2.5*dt);
+    if(keys.down && !stall && P.vz<sink) P.vz+=(sink-P.vz)*Math.min(1,2.5*dt);
     if(pressed.jump && !(P.loopT>0)){ P.loopT=0.9; sfx('pop'); }
     if(P.loopT>0){ P.loopT-=dt; P.flip=(1-Math.max(0,P.loopT)/0.9)*Math.PI*2;
       if(P.loopT<=0){ P.flip=0; P.loops=(P.loops||0)+1; const nm=['LOOP!','DOUBLE LOOP!','TRIPLE LOOP!','QUAD LOOP!'][Math.min(3,P.loops-1)]; popup(nm, 300*P.loops, '#ffe066'); game.score+=300*P.loops; } }
@@ -1688,7 +1713,7 @@ function update(dt){
         for(let i=0;i<3;i++) game.parts.push({ x:P.x+(Math.random()-0.5)*6, y:P.y+1, z:1, vx:(Math.random()-0.5)*80-Math.sin(P.h)*30,
           vy:(Math.random()-0.5)*30-Math.cos(P.h)*30, vz:40+Math.random()*60, life:0.4, col:Math.random()<0.5?'#bfe8f5':'#5fbcd2', s:Math.random()<0.4?2:1 });
         if(!P.skimming){ P.skimming=true; const sp=q.skim?400:250; popup('POND SKIM!', sp); game.score+=sp; sfx('splash'); } }
-      else { P.y=q.y+q.ry+8; crash('Took a dip in the onsen'); P.svx=0; P.svy=0; }
+      else { P.y=q.y+q.ry+8; crash('Took a dip in the onsen'); P.svx=0; P.svy=0; popup('ONSEN: HEALTH RESTORED', 0, '#4ad07a', true); }
     }
     if(!inAny) P.skimming=false; }
 
@@ -1860,8 +1885,8 @@ function travel(to, at, msg){                     // go to another mountain: bui
 }
 // grab a gear pack: ski over it, or just tap / click it on the screen
 function takePack(o){
-  if(o.takenUntil>game.t || P.pack===o.pack) return false;
-  P.pack=o.pack; o.takenUntil=game.t+30; P.wing=false; sfx('chime');
+  if(o.takenUntil>game.t || P.packs[o.pack]) return false;
+  P.packs[o.pack]=true; o.takenUntil=game.t+30; sfx('chime');
   if(o.pack==='bc') popup('BACKCOUNTRY PACK: SKINS, BEACON, PROBE, SHOVEL', 0, '#bfe3ff', true);
   else popup('PARAGLIDER PACK! '+(TOUCH?'TAP WING':'PRESS V')+' TO OPEN', 0, '#ffe066', true);
   return true;
@@ -1891,7 +1916,7 @@ function updHeli(dt){
     game.parts.push({ x:h.x+Math.cos(a)*r, y:h.y+Math.sin(a)*r*0.5, z:1, vx:Math.cos(a)*90, vy:Math.sin(a)*45, vz:20+Math.random()*30, life:0.5, col:'#ffffff' }); }
   const ty=(h.lifted ? h.y-h.a : P.y)-VH*0.5, tx=clamp((h.lifted?h.x:P.x)-VW/2,0,WORLD.w-VW);
   cam.x+=(tx-cam.x)*Math.min(1,dt*2.5); cam.y+=(ty-cam.y)*Math.min(1,dt*2.5);
-  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time; game.heli=null; resetSkier(TELE); P.inv=2; P.destroyed=false; game.score=sc; game.time=tm;
+  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time; game.heli=null; resetSkier(TELE); P.inv=2; P.destroyed=false; P.hp=100; game.score=sc; game.time=tm;
     const t=camTarget(); cam.x=t.x; cam.y=t.y; popup('PATCHED UP BY SKI PATROL', 0, '#bfe3ff', true); }
 }
 function drawHeli(cx,cy){
@@ -2221,7 +2246,7 @@ const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPUR
   'ファミリーコース':'FAMILY COURSE', '花園コース':'HANAZONO COURSE', 'ストロベリーフィールズ':'STRAWBERRY FIELDS', '水野の沢':'MIZUNO GULLY',
   '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
   'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
-  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'ニセコトンネル':'NISEKO TUNNEL', 'ひらふトンネル':'HIRAFU TUNNEL', '羊蹄トンネル':'YOTEI TUNNEL', '花園トンネル':'HANAZONO TUNNEL',
+  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'カピバラ温泉':'CAPYBARA ONSEN', '猿の温泉':'SNOW MONKEY ONSEN', 'ニセコトンネル':'NISEKO TUNNEL', 'ひらふトンネル':'HIRAFU TUNNEL', '羊蹄トンネル':'YOTEI TUNNEL', '花園トンネル':'HANAZONO TUNNEL',
   'ビレッジトンネル':'VILLAGE TUNNEL', 'アンヌプリトンネル':'ANNUPURI TUNNEL', '昆布トンネル':'KONBU TUNNEL', '倶知安トンネル':'KUTCHAN TUNNEL', '狩太トンネル':'KARIBUTO TUNNEL',
   'スノーキャット乗り場':'SNOWCAT STATION', 'ニセコ神社':'NISEKO SHRINE', 'スノーゲート':'SNOW GATES', '白馬ジャンプ台':'HAKUBA SKI JUMPS',
   'ジャンプ台':'SKI JUMPS', 'ジャンプ':'JUMP', 'ノーマルヒル':'NORMAL HILL', 'ラージヒル':'LARGE HILL', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
@@ -2546,7 +2571,7 @@ function drawObj(o,cx,cy){
     ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillRect(x-4+wt,y-13,9,1);
     ctx.fillStyle='#ffffff'; ctx.fillRect(x-1+wt,y-11,3,3); }
   else if(o.t==='tower'){ ctx.fillStyle='#555'; ctx.fillRect(x,y-16,1,16); ctx.fillRect(x-4,y-16,9,1); ctx.fillStyle='rgba(120,140,170,0.3)'; ctx.fillRect(x-1,y,3,1); }
-  else if(o.t==='bldg'){ if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy); else if(o.shrine) drawShrine(o,cx,cy);
+  else if(o.t==='bldg'){ if(o.modern) drawModern(o,cx,cy); else if(o.spa) drawSpa(o,cx,cy); else if(o.sauna) drawSauna(o,cx,cy); else if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy); else if(o.shrine) drawShrine(o,cx,cy);
     else if(WORLD.jp) drawJpHouse(o,cx,cy); else drawCottage(o,cx,cy); }
   else if(o.t==='party') drawParty(o,x,y);
 }
@@ -2629,6 +2654,60 @@ function drawJpHouse(o,cx,cy,noDoor){
     ctx.fillStyle='#2e1d14'; ctx.fillRect(lx+1+sw,ye+1,1,2);
     ctx.fillStyle='#d8402f'; ctx.fillRect(lx+sw,ye+3,3,4); ctx.fillStyle='#ffb070'; ctx.fillRect(lx+1+sw,ye+4,1,2);
     ctx.fillStyle='rgba(255,150,80,0.25)'; ctx.fillRect(lx-2+sw,ye+2,7,7); }
+}
+// modern mountain restaurant: cantilevered flat roof under deep snow, floor-to-ceiling glass glowing warm,
+// cedar cladding on a stone base, and a deck with people at tables
+function drawModern(o,cx,cy){
+  const w=o.w, x0=Math.round(o.x-w/2-cx), yb=Math.round(o.y-cy), H=26, t=game.t;
+  ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(x0-6,yb,w+14,3);
+  ctx.fillStyle='#7d7f86'; ctx.fillRect(x0,yb-5,w,5); ctx.fillStyle='#696b72'; for(let i=x0;i<x0+w;i+=6) ctx.fillRect(i,yb-5,1,5);   // stone plinth
+  ctx.fillStyle='#a8683c'; ctx.fillRect(x0,yb-H,22,H-5); ctx.fillStyle='#8a5530'; for(let i=x0;i<x0+22;i+=3) ctx.fillRect(i,yb-H,1,H-5);   // cedar wing
+  ctx.fillStyle='#ffd99a'; ctx.fillRect(x0+22,yb-H,w-22,H-5);                                     // glass wall, lit from inside
+  ctx.fillStyle='#ffc46a'; ctx.fillRect(x0+22,yb-H+12,w-22,H-17);
+  for(let i=0;i<5;i++){ const px=x0+30+i*((w-36)/5)|0, py=yb-12; ctx.fillStyle='#5a3a2a'; ctx.fillRect(px,py,4,1);   // diners inside
+    ctx.fillStyle=['#2f6fd6','#e0402a','#2a8f5a','#ff6fb0','#7a3cff'][i]; ctx.fillRect(px-2+((i*3)%5),py-5,3,4); ctx.fillStyle='#f1c9a5'; ctx.fillRect(px-2+((i*3)%5),py-7,3,2); }
+  ctx.fillStyle='#2b2f38'; for(let i=x0+22;i<=x0+w;i+=12) ctx.fillRect(i,yb-H,1,H-5);              // black mullions
+  ctx.fillRect(x0+22,yb-H+10,w-22,1);
+  ctx.fillStyle='#2b2f38'; ctx.fillRect(x0-4,yb-H-4,w+16,4);                                       // cantilevered roof
+  ctx.fillStyle='#f6f8fb'; ctx.fillRect(x0-4,yb-H-9,w+16,6); ctx.fillStyle='#ffffff'; for(let i=0;i<w+16;i+=5) ctx.fillRect(x0-4+i,yb-H,2,1+(i%3));
+  ctx.fillStyle='#8a5530'; ctx.fillRect(x0+w-1,yb-8,14,2); ctx.fillStyle='#5a3a24'; ctx.fillRect(x0+w+1,yb-6,1,6); ctx.fillRect(x0+w+11,yb-6,1,6);   // deck
+  ctx.fillStyle='#c8ced8'; ctx.fillRect(x0+w+4,yb-12,7,1); ctx.fillStyle='#e0402a'; ctx.fillRect(x0+w+7,yb-11,1,3);   // patio table + umbrella pole
+  ctx.fillStyle='rgba(255,210,140,0.18)'; ctx.fillRect(x0+18,yb,w-14,6);                          // warm light spilling on the snow
+  ctx.fillStyle='#ffffff'; ctx.fillRect(x0+4,yb-H+5,14,5); ctx.fillStyle='#2b2f38'; ctx.fillRect(x0+5,yb-H+6,12,3);   // little sign
+  ctx.fillStyle='#ffd23f'; ctx.fillRect(x0+6,yb-H+7,10,1);
+}
+// forest spa: low timber pavilion, two steaming outdoor pools with bathers, Muskoka chairs in the snow
+function drawSpa(o,cx,cy){
+  const w=o.w, x0=Math.round(o.x-w/2-cx), yb=Math.round(o.y-cy), t=game.t;
+  ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(x0-4,yb,w+8,3);
+  ctx.fillStyle='#6a4a32'; ctx.fillRect(x0,yb-18,w,18); ctx.fillStyle='#57391f'; for(let i=x0;i<x0+w;i+=4) ctx.fillRect(i,yb-18,1,18);
+  ctx.fillStyle='#ffd99a'; ctx.fillRect(x0+8,yb-14,w-40,9); ctx.fillStyle='#2b2f38'; for(let i=x0+8;i<x0+w-32;i+=8) ctx.fillRect(i,yb-14,1,9);
+  ctx.fillStyle='#2b1a10'; ctx.fillRect(x0+w-22,yb-12,8,12); ctx.fillStyle='#ffcf6a'; ctx.fillRect(x0+w-17,yb-7,1,1);
+  ctx.fillStyle='#2b2f38'; ctx.fillRect(x0-5,yb-22,w+10,4); ctx.fillStyle='#f6f8fb'; ctx.fillRect(x0-5,yb-27,w+10,6);
+  for(const [px,rx] of [[x0+22,18],[x0+w-26,14]]){ const py=yb+22;                                // the hot pools
+    ctx.fillStyle='#8a8f97'; ctx.beginPath(); ctx.ellipse(px,py+1,rx+3,7,0,0,7); ctx.fill();
+    ctx.fillStyle='#3fb0c8'; ctx.beginPath(); ctx.ellipse(px,py,rx,5,0,0,7); ctx.fill();
+    ctx.fillStyle='#7fd6e8'; ctx.fillRect(px-rx+4,py-2,rx,1);
+    for(let i=0;i<3;i++){ const bx=px-rx+6+i*(rx*0.6)|0; ctx.fillStyle='#f1c9a5'; ctx.fillRect(bx,py-2,2,2); ctx.fillStyle=['#5a3a24','#e8c070','#2a2a2a'][i]; ctx.fillRect(bx,py-3,2,1); }
+    for(let k=0;k<4;k++){ const tt=(t*0.35+k/4)%1; ctx.fillStyle='rgba(255,255,255,'+(0.55*(1-tt))+')';
+      ctx.fillRect(Math.round(px-rx/2+k*rx/3+Math.sin(tt*5+k)*2), Math.round(py-4-tt*16), 2+Math.round(tt*3), 2+Math.round(tt*2)); } }
+  for(const cxp of [x0+w+4, x0+w+12]){ ctx.fillStyle='#e0402a'; ctx.fillRect(cxp,yb+6,5,2); ctx.fillRect(cxp,yb+2,1,5); ctx.fillStyle='#ffffff'; ctx.fillRect(cxp,yb+1,1,1); }   // Muskoka chairs
+}
+// secret forest sauna: little dark log cabin, glowing window, smoke from the stovepipe, firewood and a towel
+function drawSauna(o,cx,cy){
+  const w=o.w, x0=Math.round(o.x-w/2-cx), yb=Math.round(o.y-cy), t=game.t;
+  ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(x0-2,yb,w+4,2);
+  ctx.fillStyle='#4a3020'; ctx.fillRect(x0,yb-14,w,14); ctx.fillStyle='#3a2416'; for(let y=yb-13;y<yb;y+=3) ctx.fillRect(x0,y,w,1);   // logs
+  ctx.fillStyle='#5a3a26'; for(let y=yb-13;y<yb;y+=3){ ctx.fillRect(x0-2,y,2,2); ctx.fillRect(x0+w,y,2,2); }
+  ctx.fillStyle='#ffb050'; ctx.fillRect(x0+6,yb-10,6,4); ctx.fillStyle='#3a2416'; ctx.fillRect(x0+9,yb-10,1,4);   // glowing window
+  ctx.fillStyle='#2a1a10'; ctx.fillRect(x0+w-12,yb-11,7,11);
+  ctx.fillStyle='#3b3f4a'; ctx.beginPath(); ctx.moveTo(x0-5,yb-14); ctx.lineTo(x0+w/2,yb-24); ctx.lineTo(x0+w+5,yb-14); ctx.fill();   // roof
+  ctx.fillStyle='#f6f8fb'; ctx.beginPath(); ctx.moveTo(x0-4,yb-15); ctx.lineTo(x0+w/2,yb-25); ctx.lineTo(x0+w+4,yb-15); ctx.lineTo(x0+w/2,yb-21); ctx.fill();
+  ctx.fillStyle='#555'; ctx.fillRect(x0+w-10,yb-29,2,8);                                          // stovepipe
+  for(let k=0;k<4;k++){ const tt=(t*0.4+k/4)%1; ctx.fillStyle='rgba(200,200,210,'+(0.6*(1-tt))+')';
+    ctx.fillRect(Math.round(x0+w-10+tt*8+Math.sin(tt*6)*2), Math.round(yb-31-tt*18), 2+Math.round(tt*3), 2+Math.round(tt*3)); }
+  ctx.fillStyle='#8a5a36'; for(let i=0;i<3;i++) for(let j=0;j<3-i;j++){ ctx.fillRect(x0+w+3+j*3+i,yb-3-i*2,2,2); }   // firewood
+  ctx.fillStyle='#e0402a'; ctx.fillRect(x0-6,yb-8,3,6); ctx.fillStyle='#ffffff'; ctx.fillRect(x0-6,yb-6,3,1);       // towel on a hook
 }
 // a small Shinto shrine: raised wooden hall, deep curved roof, rope and paper streamers, stone lanterns
 function drawShrine(o,cx,cy){
@@ -2756,6 +2835,13 @@ function drawPonds(cx,cy){
       ctx.fillStyle='#1a1a1a'; ctx.fillRect(f>0?bx+5:bx-5,by-3,1,1);
       if(q.name && i===0){ ctx.fillStyle='#ffb02e'; ctx.fillRect(bx-1,by-4,2,2); }   // the one with a yuzu on its head
       ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fillRect(bx-4,by+1,9,1); }
+    for(let i=0;i<(q.monkeys||0);i++){                                 // snow monkeys: red faces, snow on their heads, one grooming on the rim
+      const rim=i===q.monkeys-1 && q.monkeys>2, a=i/(q.monkeys)*Math.PI*2+1.2, bx=Math.round(X+Math.cos(a)*q.rx*(rim?1.05:0.45)), by=Math.round(Y+Math.sin(a)*q.ry*(rim?1.1:0.4)+(rim?0:Math.sin(game.t*1.7+i)*0.6));
+      ctx.fillStyle='#8f8172'; ctx.fillRect(bx-2,by-(rim?5:3),5,rim?5:3); ctx.fillStyle='#a49686'; ctx.fillRect(bx-2,by-(rim?8:6),5,3);   // fur
+      ctx.fillStyle='#e0786a'; ctx.fillRect(bx-1,by-(rim?7:5),3,2); ctx.fillStyle='#2a1a1a'; ctx.fillRect(bx-1,by-(rim?7:5),1,1); ctx.fillRect(bx+1,by-(rim?7:5),1,1);
+      ctx.fillStyle='#ffffff'; ctx.fillRect(bx-1,by-(rim?9:7),3,1);                                // snow on its head
+      if(rim && Math.floor(game.t*2)%2){ ctx.fillStyle='#8f8172'; ctx.fillRect(bx+3,by-6,2,1); }
+      if(!rim){ ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fillRect(bx-3,by+1,7,1); } }
     if(q.name) txt(q.name, X+q.rx+22, Y-4, '#7f94b0', 8, 'center', false); }
   for(let i=1;i<PONDS.length;i++){ const A=PONDS[i-1], B=PONDS[i]; if(!B.fall) continue;             // water spilling over the rim into the next pool
     const a=Math.atan2((B.y-A.y)/A.ry,(B.x-A.x)/A.rx), b=a+Math.PI;
@@ -3011,9 +3097,15 @@ function drawHUD(){
   if(loc.g) gradeSym(loc.g, VW/2-textW(loc.n)/2-11, ly);
   const v = P.state==='air' ? Math.hypot(P.vx,P.vy) : P.v;
   txt(Math.round(v*CFG.KMH)+' KM/H', 4, VH-12, '#fff');
-  if(P.pack==='bc') txt('BC PACK: SKINS BEACON PROBE SHOVEL', 4, VH-22, '#ff9a6a', 6, 'left');
-  else if(P.pack==='para') txt(P.wing ? (P.state==='air' ? 'WING: < > STEER  TUCK DIVE  STOP FLARE  JUMP LOOP' : 'WING OPEN: GET SPEED TO TAKE OFF') : (TOUCH?'PARAGLIDER: TAP WING':'PARAGLIDER: V = WING'), 4, VH-22, '#ffe066', 6, 'left');
-  document.body.classList.toggle('para', P.pack==='para');
+  { let ly=VH-22;
+    if(P.packs.para){ txt(P.wing ? (P.state==='air' ? 'WING: < > STEER  TUCK DIVE  STOP PULL UP  JUMP LOOP' : 'WING OPEN: GET SPEED TO TAKE OFF') : (TOUCH?'PARAGLIDER: TAP WING':'PARAGLIDER: V = WING'), 4, ly, '#ffe066', 6, 'left'); ly-=8; }
+    if(P.packs.bc) txt('BC PACK: SKINS BEACON PROBE SHOVEL', 4, ly, '#ff9a6a', 6, 'left'); }
+  document.body.classList.toggle('para', !!P.packs.para);
+  { const hp=Math.max(0,P.hp), y=15, flash=hp<=0 && Math.floor(game.t*3)%2;                    // health bar
+    ctx.fillStyle='rgba(10,20,40,0.6)'; ctx.fillRect(3,y-1,50,7);
+    ctx.fillStyle=flash?'#ffffff':'#ff4a5a'; ctx.fillRect(5,y+1,1,2); ctx.fillRect(7,y+1,1,2); ctx.fillRect(5,y+2,3,2); ctx.fillRect(6,y+4,1,1);   // heart
+    ctx.fillStyle='#3a2a34'; ctx.fillRect(11,y+1,40,3);
+    ctx.fillStyle=hp>50?'#4ad07a':hp>25?'#ffd23f':'#ff4a5a'; ctx.fillRect(11,y+1,Math.round(40*hp/100),3); }
   if(P.tuck) txt('TUCK', 84, VH-12, '#ffe066');
   if(P.state==='air' && !P.minor && P.grab) txt(P.grab+'!', 130, VH-12, '#ffe066');
   if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
@@ -3187,7 +3279,7 @@ function frame(now){
     if(pressed.pause) game.mode = game.mode==='play' ? 'pause' : 'play';
     if(pressed.reset) newRun(START);
     if(pressed.tele){ if(WORLD.id!=='whistler') switchMap('whistler'); newRun(TELE); }
-    if(pressed.secret){ P.pack='bc'; travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
+    if(pressed.secret){ P.packs.bc=true; travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
     if(pressed.bctele){ if(WORLD.id!=='blackcomb') switchMap('blackcomb'); newRun(TELE); }
     if(pressed.char && game.mode==='pause') game.mode='select';
     if(pressed.niseko){ if(WORLD.id==='niseko') newRun(TELE);
