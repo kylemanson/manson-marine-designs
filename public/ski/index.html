@@ -807,9 +807,9 @@ function buildMap(def){
     const S=r.S; let side=1, n=0, lastS=-1e9;
     for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<gs.y1 || a.y>gs.y2 || a.s-lastS<(gs.every||210)) continue; lastS=a.s;
       const c=S[i+1], dx=c.x-a.x, dy=c.y-a.y, L=Math.hypot(dx,dy)||1, off=side*a.hw*0.35;
-      const x=a.x-dy/L*off, y=a.y+dx/L*off; side=-side;
+      const x=a.x-dy/L*off, y=a.y+dx/L*off, gsd=Math.sign(-dy/L*off)||1; side=-side;
       if(KICKERS.some(k=>Math.hypot(k.x-x,k.y-y)<(gs.every?30:60)) || LIFTS.some(l=>Math.hypot(l.x1-x,l.y1-y)<70 || Math.hypot(l.x2-x,l.y2-y)<70)) continue;
-      addObj({ t:'gate', x, y, col:n%2?'#2463c9':'#d33333', shake:0 }); n++; } }
+      addObj({ t:'gate', x, y, col:n%2?'#2463c9':'#d33333', shake:0, gs:gsd }); n++; } }
 
   // base-area buildings
   { const cols=['#8a5a3c','#6e7f8f','#a0522d','#7b6a58','#5f6f52'];
@@ -835,10 +835,10 @@ function buildMap(def){
   }
 
   // gear stash at the top of each lift: a backcountry pack (skins, beacon, probe, shovel) and a paragliding pack
-  if(!WORLD.bc) for(const L of LIFTS){ if(L.tbar || L.to) continue; const x=L.x2+30, y=L.y2+44;
-    if(!onMountain(x,y) || !onMountain(x+18,y)) continue;
-    addObj({ t:'party', kind:'pack', pack:'bc', x, y }); addObj({ t:'party', kind:'pack', pack:'para', x:x+18, y });
-    clear.push({ x:x+9, y, rx:22, ry:14 }); }
+  if(!WORLD.bc) for(const L of LIFTS){ if(L.tbar || L.to) continue; const x=L.x2-10, y=L.y2+130;   // a little way down from where you get off
+    if(!onMountain(x,y) || !onMountain(x+28,y)) continue;
+    addObj({ t:'party', kind:'pack', pack:'bc', x, y }); addObj({ t:'party', kind:'pack', pack:'para', x:x+28, y });
+    clear.push({ x:x+14, y, rx:28, ry:16 }); }
   // snowcat track: winds up through the trees beside the Big Air, around lift towers and stations
   for(const pk of PARKS) if(pk.cat && pk.cat.route){
     const c=pk.cat, r=c.route, obs=[];
@@ -1192,8 +1192,10 @@ if(TOUCH) document.body.classList.add('touch');
 }
 // tap the game screen: start, pick a rider (tap twice to drop in), or carry on after the finish
 document.getElementById('c').addEventListener('pointerdown',e=>{
-  audioInit(); if(!TOUCH && e.pointerType==='mouse' && game.mode!=='select') return;
+  audioInit();
   const r=e.currentTarget.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*VW, y=(e.clientY-r.top)/r.height*VH;
+  if(tapPack(x,y)) return;                                                 // tap or click a pack to grab it
+  if(!TOUCH && e.pointerType==='mouse' && game.mode!=='select') return;
   if(game.mode==='title' || game.mode==='finish' || game.mode==='flight'){ pressed.enter=true; return; }
   if(game.mode==='select'){
     const perRow=Math.ceil(CHARS.length/2), slot=Math.min(84,(VW-24)/perRow), hw=Math.floor(slot/2)-3;
@@ -1527,10 +1529,7 @@ function update(dt){
     P.inZone=zone||cat||pad;
     if((zone||cat||pad) && P.v<(cat?40:25)){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ if(pad){ flyTo(pad.to); return; } if(zone) boardLift(zone); else boardCat(cat); followCam(dt); return; } } else P.loadT=0;
     { const i0=Math.floor(P.y/BUCKET);                                  // ski over a pack to grab it
-      for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && !(o.takenUntil>game.t) && Math.hypot(P.x-o.x,P.y-o.y)<10 && P.pack!==o.pack){
-        P.pack=o.pack; o.takenUntil=game.t+30; P.wing=false; sfx('chime');
-        if(o.pack==='bc') popup('BACKCOUNTRY PACK: SKINS, BEACON, PROBE, SHOVEL', 0, '#bfe3ff', true);
-        else popup('PARAGLIDER PACK! '+(TOUCH?'TAP WING':'PRESS V')+' TO OPEN', 0, '#ffe066', true); } }
+      for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && Math.hypot(P.x-o.x,P.y-o.y)<12) takePack(o); }
     if((zone||cat||pad) && P.wing) P.wing=false;                         // pack the wing away for the lift
     // hold S while stopped (not in a lift line) to put your skins on - skins come in the backcountry pack
     if(stopKey && P.v<5 && !zone && !P.wing){ if(P.pack!=='bc'){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
@@ -1699,6 +1698,13 @@ function update(dt){
         for(const o of b) if(o.t==='gate' && Math.abs(o.x-P.x)<22 && Math.abs(o.y-P.y)<12){
           const s2=Math.min(1.6,sp/180); if(s2>o.shake){ if(o.shake===0) game.shaking.push(o); o.shake=s2; } } } } }
 
+  if(P.state==='ride' && P.y>py){ const i0=Math.floor(P.y/BUCKET)-1;      // race gates: around the outside = speed boost, clip it = speed cut
+    for(let i=i0;i<=i0+2;i++){ const b=buckets[i]; if(!b) continue;
+      for(const o of b) if(o.t==='gate' && py<o.y && P.y>=o.y){ const dx=P.x-o.x, out=dx*o.gs;
+        if(Math.abs(dx)<4){ P.v*=0.6; o.shake=1.6; if(!game.shaking.includes(o)) game.shaking.push(o); P.gateRun=0; popup('HIT THE GATE!', 0, '#ff6b5a'); sfx('tap'); }
+        else if(out>0 && out<26){ const k=1-(out-4)/22, boost=1.06+0.12*k; P.v=Math.min(P.v*boost, CFG.VMAX_TUCK*1.25); P.gateRun=(P.gateRun||0)+1;
+          const pts=25*P.gateRun; game.score+=pts; popup(P.gateRun>1?'CLEAN GATE x'+P.gateRun:'CLEAN GATE', pts, '#7ee0ff'); if(AUD.ctx && AUD.on) whoosh(); }
+        else if(out<0 && out>-26) P.gateRun=0; } } }
   if(P.y>=WORLD.finish && game.mode==='play'){
     game.mode='finish'; if(P.state==='air'||P.state==='grind'){ P.z=0; P.state='ride'; }
     if(game.score>game.best){ game.best=game.score; try{ localStorage.setItem('whistlerShredBest',game.best); }catch(e){} }
@@ -1851,6 +1857,21 @@ function travel(to, at, msg){                     // go to another mountain: bui
     resetSkier(at); Object.assign(game,{ score:sc, time:tm, parts:[], popups:[], mode:'play' });
     const t=camTarget(); cam.x=t.x; cam.y=t.y; popup(msg, 0, '#bfe3ff', true);
     if(WORLD.bc) popup('ALL POINTS DOUBLED', 0, '#ffe066'); }, 60);
+}
+// grab a gear pack: ski over it, or just tap / click it on the screen
+function takePack(o){
+  if(o.takenUntil>game.t || P.pack===o.pack) return false;
+  P.pack=o.pack; o.takenUntil=game.t+30; P.wing=false; sfx('chime');
+  if(o.pack==='bc') popup('BACKCOUNTRY PACK: SKINS, BEACON, PROBE, SHOVEL', 0, '#bfe3ff', true);
+  else popup('PARAGLIDER PACK! '+(TOUCH?'TAP WING':'PRESS V')+' TO OPEN', 0, '#ffe066', true);
+  return true;
+}
+function tapPack(sx,sy){                         // screen point -> nearest pack under it
+  if(game.mode!=='play' || !(P.state==='ride' || P.state==='air')) return false;
+  const wx=Math.round(cam.x)+sx, wy=Math.round(cam.y)+sy, i0=Math.floor(wy/BUCKET);
+  let best=null, bd=1e9;
+  for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && !(o.takenUntil>game.t)){ const d=Math.hypot(wx-o.x,(wy-(o.y-8))*0.7); if(d<16 && d<bd){ bd=d; best=o; } }
+  return best ? takePack(best) : false;
 }
 // ski patrol rescue: the heli flies in, hovers, lowers a stretcher, winches you up and flies you to the base
 const HELI_T=[1.6, 3.6, 4.8, 6.0, 7.8];               // wait, fly in, lower, winch up, fly out
