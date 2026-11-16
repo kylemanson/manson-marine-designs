@@ -44,6 +44,8 @@
   .tb.act small { font-size:8px; margin-top:4px; }
   .tb.jump { width:80px; height:80px; font-size:11px; }
   .tb.sm { width:46px; height:34px; border-radius:10px; font-size:9px; }
+  .tb.wingb { display:none; right:calc(196px + env(safe-area-inset-right)); bottom:calc(70px + env(safe-area-inset-bottom)); }
+  body.para .tb.wingb { display:block; }
   .tb.left  { left:calc(14px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
   .tb.right { left:calc(102px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
   /* right side: up/down arrows (tuck/stop) stacked on the outside edge, jump and grab just inside them */
@@ -78,6 +80,7 @@
   <button class="tb sm menu"   data-k="pause" aria-label="Menu">MENU</button>
   <button class="tb sm mapb"   data-k="map">MAP</button>
   <button class="tb sm fsb" id="fsb" aria-label="Full screen">FULL</button>
+  <button class="tb sm wingb" data-k="wing">WING</button>
 </div>
 <div class="pm" id="pm">
   <h2>PAUSED</h2>
@@ -149,6 +152,8 @@ const CFG = {
   ASSIST: 3.5,     // landing assist: auto-straightens spin/flip near the snow (rad/s)
   TREE_CRASH: 6,   // tree "hit points": brushes add ~0.7, dead-on hits ~1.5, decays over time
   TREE_DODGE: 80,  // how hard the skier auto-dodges trees just ahead (px/s sideways)
+  DESTROY: 250,     // crash harder than this (speed + landing impact) = DESTROYED, ski patrol heli comes for you
+  WING_TAKEOFF: 165, // paraglider: ground speed needed to take off
   YARD_SALE: 170,  // crash faster than this (px/s, ~48 km/h) = skis and poles everywhere
   JERRY_EVERY: 70, // average seconds between Jerry sightings
   BEAST: 900       // trick points (or an 11 m+ drop, or 1.8 s of air) for a BEAST CANDIDE
@@ -829,6 +834,11 @@ function buildMap(def){
       const o={ t:'tower', x, y, r:3 }; TOWERS.push(o); addObj(o); }
   }
 
+  // gear stash at the top of each lift: a backcountry pack (skins, beacon, probe, shovel) and a paragliding pack
+  if(!WORLD.bc) for(const L of LIFTS){ if(L.tbar || L.to) continue; const x=L.x2+30, y=L.y2+44;
+    if(!onMountain(x,y) || !onMountain(x+18,y)) continue;
+    addObj({ t:'party', kind:'pack', pack:'bc', x, y }); addObj({ t:'party', kind:'pack', pack:'para', x:x+18, y });
+    clear.push({ x:x+9, y, rx:22, ry:14 }); }
   // snowcat track: winds up through the trees beside the Big Air, around lift towers and stations
   for(const pk of PARKS) if(pk.cat && pk.cat.route){
     const c=pk.cat, r=c.route, obs=[];
@@ -1142,7 +1152,7 @@ function buildMinimap(){
 const KEYMAP = { KeyW:'up', ArrowUp:'up', KeyS:'down', ArrowDown:'down', KeyA:'left', ArrowLeft:'left',
   KeyD:'right', ArrowRight:'right', ShiftLeft:'tuck', ShiftRight:'tuck', Space:'jump',
   KeyJ:'g1', KeyK:'g2', KeyL:'g3', KeyR:'reset', KeyT:'tele', KeyM:'map', Enter:'enter',
-  Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute', KeyF:'niseko' };
+  Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute', KeyF:'niseko', KeyV:'wing' };
 const keys = {}, pressed = {};
 // phones and tablets: on-screen buttons feed the same keys/pressed tables as the keyboard
 const mq=q=>!!(window.matchMedia && matchMedia(q).matches);
@@ -1305,7 +1315,8 @@ function sfxLoop(){
   AUD.carve.g.gain.setTargetAtTime(cg,t,cg>AUD.carve.g.gain.value?0.12:0.25); AUD.carve.f.frequency.setTargetAtTime(cf,t,0.15);
   if(riding && steerNow && steerNow!==AUD.lastSteer && P.v>80) whoosh();        // each new turn gets a little swoosh
   AUD.lastSteer=steerNow;
-  { const inCat=game.mode==='play' && P.state==='cat', th=inCat?Math.min(1,Math.abs(P.catV)/CFG.CAT_MAX):0, D=AUD.diesel;
+  { const heli=game.mode==='play' && game.heli && game.heli.pos && game.heli.pos.show, inCat=(game.mode==='play' && P.state==='cat') || heli,
+      th=heli?0.9:inCat?Math.min(1,Math.abs(P.catV)/CFG.CAT_MAX):0, D=AUD.diesel;
     D.g.gain.setTargetAtTime(inCat?0.035+0.03*th:0, t, inCat?0.25:0.4);
     D.o1.frequency.setTargetAtTime(34+24*th, t, 0.35); D.o2.frequency.setTargetAtTime(51+36*th, t, 0.35);
     D.lfo.frequency.setTargetAtTime(6+9*th, t, 0.35); D.f.frequency.setTargetAtTime(200+260*th, t, 0.35); }
@@ -1334,8 +1345,8 @@ function resetSkier(at){
   Object.assign(P,{ x:at.x, y:at.y, h:0, v:0, z:0, vz:0, vx:0, vy:0, state:'ride', inv:0, crashT:0, sx:null, pl:null,
     tuck:false, lastMogul:null, box:null, grindT:0, tracks:[], lastTrack:null, treeHits:0, lastTree:null,
     gear:[], yard:false, svx:0, svy:0, lift:null, liftD:0, liftRev:false, loadT:0, inZone:null, lastE:null,
-    skins:false, skinAnim:0, skinHold:0, skid:0, skidSide:1 });
-  resetAir();
+    skins:false, skinAnim:0, skinHold:0, skid:0, skidSide:1, destroyed:false, wing:false, glide:false, loopT:0, loops:0, wingCool:0 });
+  game.heli=null; resetAir();
 }
 function camTarget(){
   const near=Math.max(0,1-(P.y-START.y)/220);            // at the top, show the peak and the sky
@@ -1367,6 +1378,9 @@ function crash(msg, forceYard){
   if(P.state==='crash') return;
   const air=P.state==='air', speed=air?Math.hypot(P.vx,P.vy):P.v, head=air?Math.atan2(P.vx,P.vy):P.h;
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
+  const impact = speed + (air && !P.minor ? Math.max(0,-P.vz)*0.6 : 0), avy=msg.includes('AVALANCHE');
+  const destroyed = msg.includes('kei truck') || (avy ? P.pack!=='bc' : impact>CFG.DESTROY);
+  P.wing=false; P.glide=false; P.loopT=0;
   P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
   game.crashes++; P.gear=[];
@@ -1374,9 +1388,11 @@ function crash(msg, forceYard){
     for(const type of (CHARS[game.char].type==='ski' ? ['ski','ski','pole','pole'] : ['board','mitt','mitt'])){ const s=speed*(0.3+Math.random()*0.6);
       P.gear.push({ type, x:P.x, y:P.y, z:3, vx:Math.sin(head)*s+(Math.random()-0.5)*100, vy:Math.cos(head)*s+(Math.random()-0.5)*60,
         vz:80+Math.random()*120, rot:Math.random()*6.3, vr:(Math.random()-0.5)*20 }); }
-    popup('YARD SALE!', 0, '#ff6b5a', true); puff(40); sfx('yard');
+    popup(destroyed?'DESTROYED!':'YARD SALE!', 0, destroyed?'#ff3a2a':'#ff6b5a', true); puff(40); sfx('yard');
     if(msg.startsWith('JERRY')) popup(msg, 0, '#ff6b5a', true);
-  } else { popup(msg.toUpperCase(), 0, '#ff6b5a'); puff(22); sfx('crash'); }
+  } else { popup(destroyed?'DESTROYED!':msg.toUpperCase(), 0, destroyed?'#ff3a2a':'#ff6b5a', destroyed); puff(22); sfx('crash'); }
+  if(avy && P.pack==='bc') setTimeout(()=>popup('BEACON, PROBE + SHOVEL: DUG OUT!', 0, '#bfe3ff', true), 1600);
+  if(destroyed){ P.destroyed=true; P.crashT=1e9; game.heli={ t:0 }; setTimeout(()=>{ if(game.heli) popup('SKI PATROL IS ON THE WAY', 0, '#ffe066'); }, 900); }
   P.tracks.push(null); P.lastTrack=null;
 }
 function endAir(){        // score the trick that just finished
@@ -1441,6 +1457,7 @@ function update(dt){
       vx:(Math.random()-0.5)*30, vy:150+Math.random()*90, vz:8+Math.random()*16, life:0.8+Math.random()*0.6, col:Math.random()<0.6?'rgba(255,255,255,0.85)':'rgba(214,224,238,0.8)', s:2, smoke:true });
     if(P.state==='crash' && P.avyRide && A.t<2.2) P.y+=190*dt*(1-A.t/2.4);
     if(A.t>2.6) game.avy=null; }
+  if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }
   if(P.state==='crash'){
     P.crashT-=dt; P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f;
     if(P.crashT<=0){ P.state='ride'; P.h=0; P.v=0; P.inv=1.5; P.gear=[]; P.yard=false; P.avyRide=false; }
@@ -1451,6 +1468,10 @@ function update(dt){
   if(P.state==='tbar'){ updTbar(dt); followCam(dt); return; }
   if(P.state==='skintrack'){ updSkinTrack(dt); followCam(dt); return; }
   if(P.inv>0) P.inv-=dt;
+  if(P.wingCool>0) P.wingCool-=dt;
+  if(pressed.wing && (P.state==='ride' || P.state==='air') && !P.skins){
+    if(P.pack!=='para') popup('NO WING - GRAB A PARAGLIDER PACK AT A LIFT TOP', 0, '#ff9a6a');
+    else { P.wing=!P.wing; popup(P.wing?'WING OPEN':'WING AWAY', 0, '#bfe3ff'); if(!P.wing && P.state==='air'){ P.glide=false; P.loopT=0; P.flip=0; } } }
   P.treeHits=Math.max(0,P.treeHits-dt*2.0);
 
   const px=P.x, py=P.y;
@@ -1505,9 +1526,34 @@ function update(dt){
     const A=WORLD.air, pad = !zone && !cat && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // airport box
     P.inZone=zone||cat||pad;
     if((zone||cat||pad) && P.v<(cat?40:25)){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ if(pad){ flyTo(pad.to); return; } if(zone) boardLift(zone); else boardCat(cat); followCam(dt); return; } } else P.loadT=0;
-    // hold S while stopped (not in a lift line) to put your skins on
-    if(stopKey && P.v<5 && !zone){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; P.skinAnim=1.0; P.v=0; } } else P.skinHold=0;
+    { const i0=Math.floor(P.y/BUCKET);                                  // ski over a pack to grab it
+      for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && !(o.takenUntil>game.t) && Math.hypot(P.x-o.x,P.y-o.y)<10 && P.pack!==o.pack){
+        P.pack=o.pack; o.takenUntil=game.t+30; P.wing=false; sfx('chime');
+        if(o.pack==='bc') popup('BACKCOUNTRY PACK: SKINS, BEACON, PROBE, SHOVEL', 0, '#bfe3ff', true);
+        else popup('PARAGLIDER PACK! '+(TOUCH?'TAP WING':'PRESS V')+' TO OPEN', 0, '#ffe066', true); } }
+    if((zone||cat||pad) && P.wing) P.wing=false;                         // pack the wing away for the lift
+    // hold S while stopped (not in a lift line) to put your skins on - skins come in the backcountry pack
+    if(stopKey && P.v<5 && !zone && !P.wing){ if(P.pack!=='bc'){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
+      else { P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; P.skinAnim=1.0; P.v=0; } } } else P.skinHold=0;
+    if(P.wing && !P.skins && P.v>CFG.WING_TAKEOFF && !(P.wingCool>0)){ launch(70,false); P.glide=true; popup('TAKE OFF!', 0, '#ffe066'); return; }
     if(pressed.jump){ launch(CFG.OLLIE, false); P.hop=true; }  // small hop - time it at a lip for a pop
+  }
+  else if(P.state==='air' && P.wing && !P.minor){                  // paragliding: steer, dive (tuck), flare (stop), JUMP = loop
+    P.airT += dt; P.glide=true;
+    const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+steer*1.7*dt, tgt=keys.up?225:keys.down?95:150;
+    const ns=sp+(tgt-sp)*Math.min(1,dt*1.2); P.vx=Math.sin(ang)*ns; P.vy=Math.cos(ang)*ns;
+    const sink=keys.up?-60:keys.down?-12:-26;
+    if(P.vz>sink) P.vz=Math.max(sink, P.vz-CFG.GZ*0.42*dt); else P.vz+=(sink-P.vz)*Math.min(1,2.5*dt);
+    if(pressed.jump && !(P.loopT>0)){ P.loopT=0.9; sfx('pop'); }
+    if(P.loopT>0){ P.loopT-=dt; P.flip=(1-Math.max(0,P.loopT)/0.9)*Math.PI*2;
+      if(P.loopT<=0){ P.flip=0; P.loops=(P.loops||0)+1; const nm=['LOOP!','DOUBLE LOOP!','TRIPLE LOOP!','QUAD LOOP!'][Math.min(3,P.loops-1)]; popup(nm, 300*P.loops, '#ffe066'); game.score+=300*P.loops; } }
+    P.x+=P.vx*dt; P.y+=P.vy*dt;
+    P.z=Math.min(150, P.z + P.vz*dt + Math.min(1.2,Math.max(0,slopeAt(P.x,P.y)))*Math.max(0,P.vy)*dt*0.1);   // the hill falls away beneath you
+    if(P.z<14) dodgeTrees(dt);
+    if(P.z<=0){ P.z=0;
+      if(P.loopT>0){ P.loopT=0; P.flip=0; P.wing=false; crash('LOOPED INTO THE SNOW'); }
+      else { const t=P.airT, pts=Math.round(t*40); P.state='ride'; P.v=Math.hypot(P.vx,P.vy); P.h=clamp(Math.atan2(P.vx,P.vy),-1.8,1.8);
+        popup('PARAGLIDE '+t.toFixed(1)+'S', pts, '#bfe3ff'); game.score+=pts; resetAir(); P.loops=0; P.glide=false; P.wingCool=1.2; puff(10); sfx('land'); } }
   }
   else if(P.state==='air'){
     P.airT += dt;
@@ -1805,6 +1851,50 @@ function travel(to, at, msg){                     // go to another mountain: bui
     resetSkier(at); Object.assign(game,{ score:sc, time:tm, parts:[], popups:[], mode:'play' });
     const t=camTarget(); cam.x=t.x; cam.y=t.y; popup(msg, 0, '#bfe3ff', true);
     if(WORLD.bc) popup('ALL POINTS DOUBLED', 0, '#ffe066'); }, 60);
+}
+// ski patrol rescue: the heli flies in, hovers, lowers a stretcher, winches you up and flies you to the base
+const HELI_T=[1.6, 3.6, 4.8, 6.0, 7.8];               // wait, fly in, lower, winch up, fly out
+function heliPos(){ const H=game.heli, t=H.t, e=u=>u*u*(3-2*u);
+  if(!H.sx){ H.sx=P.x+(P.x<WORLD.w/2?280:-280); H.sy=P.y-160; H.ex=P.x-(P.x<WORLD.w/2?-320:320); H.ey=P.y-340; H.bx=P.x; H.by=P.y; }
+  if(t<HELI_T[0]) return { x:H.sx, y:H.sy, a:110, rope:0, show:false };
+  if(t<HELI_T[1]){ const u=e((t-HELI_T[0])/(HELI_T[1]-HELI_T[0])); return { x:H.sx+(H.bx-H.sx)*u, y:H.sy+(H.by-H.sy)*u, a:110-40*u, rope:0, show:true }; }
+  if(t<HELI_T[2]){ const u=(t-HELI_T[1])/(HELI_T[2]-HELI_T[1]); return { x:H.bx, y:H.by, a:70, rope:70*u, show:true }; }
+  if(t<HELI_T[3]){ const u=(t-HELI_T[2])/(HELI_T[3]-HELI_T[2]); return { x:H.bx, y:H.by, a:70+20*u, rope:70*(1-u)+20*u, lifted:true, show:true }; }
+  const u=e(Math.min(1,(t-HELI_T[3])/(HELI_T[4]-HELI_T[3]))); return { x:H.bx+(H.ex-H.bx)*u, y:H.by+(H.ey-H.by)*u, a:90+60*u, rope:20, lifted:true, show:true };
+}
+function updHeli(dt){
+  const H=game.heli; H.t+=dt;
+  if((pressed.enter || pressed.jump) && H.t>1.0) H.t=Math.max(H.t, HELI_T[4]);
+  const h=heliPos(); H.pos=h;
+  if(h.show && h.a<100 && Math.random()<0.8) for(let i=0;i<3;i++){ const a=Math.random()*6.3, r=10+Math.random()*30;   // rotor downwash kicks up snow
+    game.parts.push({ x:h.x+Math.cos(a)*r, y:h.y+Math.sin(a)*r*0.5, z:1, vx:Math.cos(a)*90, vy:Math.sin(a)*45, vz:20+Math.random()*30, life:0.5, col:'#ffffff' }); }
+  const ty=(h.lifted ? h.y-h.a : P.y)-VH*0.5, tx=clamp((h.lifted?h.x:P.x)-VW/2,0,WORLD.w-VW);
+  cam.x+=(tx-cam.x)*Math.min(1,dt*2.5); cam.y+=(ty-cam.y)*Math.min(1,dt*2.5);
+  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time; game.heli=null; resetSkier(TELE); P.inv=2; P.destroyed=false; game.score=sc; game.time=tm;
+    const t=camTarget(); cam.x=t.x; cam.y=t.y; popup('PATCHED UP BY SKI PATROL', 0, '#bfe3ff', true); }
+}
+function drawHeli(cx,cy){
+  const H=game.heli; if(!H || !H.pos || !H.pos.show) return; const h=H.pos, X=Math.round(h.x-cx), G=Math.round(h.y-cy), Y=G-Math.round(h.a), t=game.t;
+  const sc=Math.max(0.4,1-h.a/220); ctx.fillStyle='rgba(40,50,70,0.3)'; ctx.fillRect(Math.round(X-16*sc),G-2,Math.round(32*sc),4);   // shadow on the snow
+  const by=Y+10+Math.round(h.rope);
+  if(h.rope>0){ ctx.fillStyle='#2a2a2a'; ctx.fillRect(X,Y+9,1,by-Y-9); }                          // winch cable
+  if(h.rope>0 || h.lifted){ ctx.fillStyle='#ff7a1a'; ctx.fillRect(X-7,by,15,4); ctx.fillStyle='#c85a10'; ctx.fillRect(X-7,by+3,15,1);   // stretcher basket
+    if(h.lifted){ const C=CHARS[game.char]; ctx.fillStyle=C.jacket; ctx.fillRect(X-4,by-1,6,2); ctx.fillStyle=C.helmet; ctx.fillRect(X-6,by-2,3,3); } }
+  const d=H.ex<H.bx?-1:1;                                                                           // facing the way out
+  ctx.save(); ctx.translate(X,Y); ctx.scale(d,1);
+  ctx.fillStyle='#d8282a'; ctx.fillRect(-6,-4,20,10); ctx.fillRect(-4,-6,14,2); ctx.fillRect(12,-2,4,6);   // body
+  ctx.fillStyle='#bfe3ff'; ctx.fillRect(12,-3,4,4); ctx.fillStyle='#8fc0e8'; ctx.fillRect(14,-3,2,4);   // windscreen
+  ctx.fillStyle='#ffffff'; ctx.fillRect(-4,0,16,2); ctx.fillRect(2,-3,2,6); ctx.fillRect(0,-1,6,2);       // white band and cross
+  ctx.fillStyle='#d8282a'; ctx.fillRect(2,-1,2,2);
+  ctx.fillStyle='#d8282a'; ctx.fillRect(-20,-2,15,3); ctx.fillRect(-22,-6,3,7);                           // tail boom and fin
+  ctx.fillStyle='#ffffff'; ctx.fillRect(-21,-5,1,3);
+  const tr=Math.floor(t*30)%2; ctx.fillStyle='rgba(60,60,60,0.7)'; ctx.fillRect(-23,tr?-8:-4,1,tr?7:3);  // tail rotor blur
+  ctx.fillStyle='#555'; ctx.fillRect(-4,7,18,1); ctx.fillRect(-2,6,1,2); ctx.fillRect(10,6,1,2);         // skids
+  ctx.fillStyle='#333'; ctx.fillRect(3,-9,2,3);                                                          // mast
+  const r=Math.floor(t*24)%3, rw=[46,30,40][r]; ctx.fillStyle='rgba(40,40,40,0.75)'; ctx.fillRect(4-rw/2,-10,rw,1);   // main rotor blur
+  ctx.fillStyle='rgba(40,40,40,0.25)'; ctx.fillRect(-19,-10,46,1);
+  ctx.restore();
+  txt('SKI PATROL', X, Y-22, '#ffffff', 6, 'center');
 }
 // the Niseko road: little kei trucks drive it, the asphalt slows you right down, and jumping it scores a ROAD GAP
 function updRoad(dt){
@@ -2688,6 +2778,17 @@ function drawParty(o,x,y){
     for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.fillStyle='#7c838d'; ctx.fillRect(Math.round(x+Math.cos(a)*6)-1, Math.round(y+Math.sin(a)*3)-1, 2, 2); }
     for(let i=0;i<6;i++){ const f=Math.sin(t*12+i*1.7); ctx.fillStyle=i%2?'#ffb02e':'#ff5a1f'; ctx.fillRect(x-3+i, Math.round(y-3-Math.abs(f)*4), 1, Math.round(2+Math.abs(f)*3)); }
     ctx.fillStyle='rgba(255,180,60,0.25)'; ctx.fillRect(x-8,y-3,16,6);
+  } else if(o.kind==='pack'){                                         // gear stash: grab a pack by skiing over it
+    if(o.takenUntil>game.t) return;
+    ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.fillRect(x-5,y,11,2);
+    if(o.pack==='bc'){ ctx.fillStyle='#b8282a'; ctx.fillRect(x-4,y-9,8,9); ctx.fillStyle='#7a1a1c'; ctx.fillRect(x-4,y-4,8,1); ctx.fillRect(x-3,y-9,6,1);
+      ctx.fillStyle='#c0c4cc'; ctx.fillRect(x+2,y-14,1,6); ctx.fillRect(x+1,y-15,3,1);                  // shovel handle
+      ctx.fillStyle='#ffd23f'; ctx.fillRect(x-3,y-13,1,5); ctx.fillStyle='#2f9a4a'; ctx.fillRect(x-2,y-7,3,2); }   // probe, beacon
+    else { ctx.fillStyle='#2f6fd6'; ctx.fillRect(x-5,y-11,10,11); ctx.fillStyle='#ffd23f'; ctx.fillRect(x-5,y-7,10,2);
+      ctx.fillStyle='#1e4a9a'; ctx.fillRect(x-4,y-11,8,1); ctx.fillStyle='#e0402a'; ctx.fillRect(x-1,y-4,2,2); }
+    const bob=Math.round(Math.sin(game.t*3+o.x)*1.5);
+    txt(o.pack==='bc'?'BC':'FLY', x, y-24+bob, o.pack==='bc'?'#ff9a6a':'#ffe066', 6, 'center');
+    ctx.fillStyle=o.pack==='bc'?'#ff9a6a':'#ffe066'; ctx.fillRect(x-1,y-17+bob,3,2);
   } else if(o.kind==='portal'){                                       // tunnel portal: concrete face, dark arch, the name on a plaque at the crown
     const R=WORLD.road, Y=y-11;
     ctx.fillStyle='rgba(60,70,90,0.35)'; ctx.fillRect(x-46,y,92,3);
@@ -2828,6 +2929,7 @@ function drawSkier(cx,cy){
     ctx.fillStyle='#333'; ctx.fillRect(sx+3,sy-16,1,7); ctx.fillRect(sx-3,sy-9,8,2); }
   else { const sh=Math.max(0.35,1-P.z/160);
     ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.fillRect(Math.round(sx-4*sh), sy, Math.round(8*sh), 2); }
+  if(P.state==='crash' && game.heli && game.heli.pos && game.heli.pos.lifted) return;   // you're in the stretcher now
   if(P.state==='crash'){
     if(!P.yard){ ctx.fillStyle=C.gear;
       if(C.type==='ski') for(let t=-4;t<=4;t++){ ctx.fillRect(sx+t,sy+(t>>1),1,1); ctx.fillRect(sx+t,sy-(t>>1),1,1); }
@@ -2838,11 +2940,24 @@ function drawSkier(cx,cy){
   const by=sy-Math.round(P.z)-pipeLift(), air=P.state==='air' && !P.minor;
   const skidOff = C.type==='ski' || P.skins ? (P.h<-0.08?-1:P.h>0.08?1:(P.skidSide||1))*(P.skid||0)*Math.PI*0.45 : 0;   // skid = sideways stop, turning further across the hill
   const ang = P.state==='air' ? Math.atan2(P.vx,P.vy)+P.spin : P.h+skidOff;
+  if(P.wing && (P.state==='ride' || P.state==='air')) drawWing(sx, by);
   drawRider(C, sx, by, ang, air?Math.cos(P.flip):1,
     { low:P.tuck||!!P.grab, poles:P.state==='ride', grab:!!P.grab, skins:P.skins, skinAnim:P.skinAnim, skid:P.skid,
       skidDir: P.h<-0.08 ? -1 : P.h>0.08 ? 1 : (P.skidSide||1) });
 }
 
+// paraglider canopy: a curved, striped wing on lines above you; loops swing it right round
+function drawWing(x,y){
+  const st=(keys.right?1:0)-(keys.left?1:0), up=P.state==='air', a=(up?P.flip:0)+st*0.22, lo=!up && P.v<60;
+  ctx.save(); ctx.translate(x,y-6); ctx.rotate(a);
+  const top=lo?-18:-30, cols=['#ffd23f','#e0402a','#2f6fd6'];
+  ctx.strokeStyle='rgba(40,40,55,0.55)'; ctx.lineWidth=0.6; ctx.beginPath();
+  for(const lx of [-17,-9,0,9,17]){ ctx.moveTo(0,0); ctx.lineTo(lx, top+2+lx*lx*0.02); } ctx.stroke();
+  for(let i=-9;i<=9;i++){ const cxp=Math.round(i*2), cyp=Math.round(top+i*i*0.09);
+    ctx.fillStyle=cols[Math.floor((i+9)/3)%3]; ctx.fillRect(cxp-1,cyp-3,2,4);
+    ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.fillRect(cxp-1,cyp-3,2,1); ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(cxp-1,cyp,2,1); }
+  ctx.restore();
+}
 // character select screen
 function drawSelect(){
   ctx.fillStyle='rgba(10,20,40,0.88)'; ctx.fillRect(10,28,VW-20,VH-44);
@@ -2875,6 +2990,9 @@ function drawHUD(){
   if(loc.g) gradeSym(loc.g, VW/2-textW(loc.n)/2-11, ly);
   const v = P.state==='air' ? Math.hypot(P.vx,P.vy) : P.v;
   txt(Math.round(v*CFG.KMH)+' KM/H', 4, VH-12, '#fff');
+  if(P.pack==='bc') txt('BC PACK: SKINS BEACON PROBE SHOVEL', 4, VH-22, '#ff9a6a', 6, 'left');
+  else if(P.pack==='para') txt(P.wing ? (P.state==='air' ? 'WING: < > STEER  TUCK DIVE  STOP FLARE  JUMP LOOP' : 'WING OPEN: GET SPEED TO TAKE OFF') : (TOUCH?'PARAGLIDER: TAP WING':'PARAGLIDER: V = WING'), 4, VH-22, '#ffe066', 6, 'left');
+  document.body.classList.toggle('para', P.pack==='para');
   if(P.tuck) txt('TUCK', 84, VH-12, '#ffe066');
   if(P.state==='air' && !P.minor && P.grab) txt(P.grab+'!', 130, VH-12, '#ffe066');
   if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
@@ -2955,6 +3073,7 @@ function render(){
   drawSteam(cx,cy);
   drawLifts(cx,cy);
   if(P.state==='lift') drawSkier(cx,cy);                         // on the lift: drawn above everything
+  drawHeli(cx,cy);
   if(WORLD.sunset){                                              // Niseko: warm orange evening light
     ctx.globalCompositeOperation='multiply'; ctx.fillStyle='rgb(255,226,196)'; ctx.fillRect(0,0,VW,VH);
     const gl=ctx.createLinearGradient(0,0,VW,VH); gl.addColorStop(0,'rgba(255,150,70,0.16)'); gl.addColorStop(1,'rgba(255,110,140,0.04)');
@@ -2976,7 +3095,7 @@ function render(){
     if(game.mode==='play' && game.holdT>0){ ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,VH/2-22,VW,40);
       txt('FULL SCREEN ON', VW/2, VH/2-16, '#ffffff', 8, 'center'); txt('GET READY... '+Math.ceil(game.holdT), VW/2, VH/2-2, '#ffe066', 8, 'center'); }
     if(game.mode==='travel') panel(['', game.travelMsg||'', ''], 'LOADING');
-    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'C  CHANGE RIDER'], 'PAUSED');
+    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'V  PARAGLIDER (WITH THE PACK)', 'C  CHANGE RIDER'], 'PAUSED');
     if(game.mode==='finish'){ const t=game.time;
       panel(['', 'TIME     '+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'),
         'SCORE    '+game.score, 'CRASHES  '+game.crashes, 'BEST     '+game.best, '', TOUCH?'>TAP: RIDE THE LIFT BACK UP':'>ENTER: RIDE THE LIFT BACK UP'], 'RUN COMPLETE'); } }
@@ -3047,7 +3166,7 @@ function frame(now){
     if(pressed.pause) game.mode = game.mode==='play' ? 'pause' : 'play';
     if(pressed.reset) newRun(START);
     if(pressed.tele){ if(WORLD.id!=='whistler') switchMap('whistler'); newRun(TELE); }
-    if(pressed.secret){ travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
+    if(pressed.secret){ P.pack='bc'; travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
     if(pressed.bctele){ if(WORLD.id!=='blackcomb') switchMap('blackcomb'); newRun(TELE); }
     if(pressed.char && game.mode==='pause') game.mode='select';
     if(pressed.niseko){ if(WORLD.id==='niseko') newRun(TELE);
