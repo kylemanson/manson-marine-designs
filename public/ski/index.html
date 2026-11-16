@@ -1401,9 +1401,9 @@ function crash(msg, forceYard){
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
   const impact = speed + (air && !P.minor ? Math.max(0,-P.vz)*0.6 : 0), avy=msg.includes('AVALANCHE');
   const healOnly=msg.includes('onsen'), out=P.hp<=0 && !healOnly;
-  const destroyed = out;                                                   // the heli only comes once your health is gone
   const dmg = msg.includes('kei truck') ? 60 : avy ? (P.packs.bc ? 15 : 60) : Math.round(18+impact*0.08);
-  if(healOnly) P.hp=100; else if(!destroyed){ P.hp=Math.max(0,P.hp-dmg); if(P.hp<=0) setTimeout(()=>popup('OUT OF HEALTH! NEXT CRASH = HELI RESCUE', 0, '#ff6b5a', true), 1300); }
+  if(healOnly) P.hp=100; else P.hp=Math.max(0,P.hp-dmg);
+  const destroyed = !healOnly && (out || P.hp<=0);                       // health bar empty: the ski patrol heli is on its way
   P.wing=false; P.glide=false; P.loopT=0;
   P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
@@ -1482,7 +1482,7 @@ function update(dt){
       vx:(Math.random()-0.5)*30, vy:150+Math.random()*90, vz:8+Math.random()*16, life:0.8+Math.random()*0.6, col:Math.random()<0.6?'rgba(255,255,255,0.85)':'rgba(214,224,238,0.8)', s:2, smoke:true });
     if(P.state==='crash' && P.avyRide && A.t<2.2) P.y+=190*dt*(1-A.t/2.4);
     if(A.t>2.6) game.avy=null; }
-  if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }
+  if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.004,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }   // you lie still for the heli
   if(P.state==='crash'){
     P.crashT-=dt; P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f;
     if(P.crashT<=0){ P.state='ride'; P.h=0; P.v=0; P.inv=1.5; P.gear=[]; P.yard=false; P.avyRide=false; }
@@ -1906,7 +1906,8 @@ function tapPack(sx,sy){                         // screen point -> nearest pack
 // ski patrol rescue: the heli flies in, hovers, lowers a stretcher, winches you up and flies you to the base
 const HELI_T=[1.6, 3.6, 4.8, 6.0, 7.8];               // wait, fly in, lower, winch up, fly out
 function heliPos(){ const H=game.heli, t=H.t, e=u=>u*u*(3-2*u);
-  if(!H.sx){ H.sx=P.x+(P.x<WORLD.w/2?280:-280); H.sy=P.y-160; H.ex=P.x-(P.x<WORLD.w/2?-320:320); H.ey=P.y-340; H.bx=P.x; H.by=P.y; }
+  if(!H.sx){ H.sx=P.x+(P.x<WORLD.w/2?280:-280); H.sy=P.y-160; H.ex=P.x-(P.x<WORLD.w/2?-320:320); H.ey=P.y-340; }
+  if(t<HELI_T[1] || H.bx===undefined){ H.bx=P.x; H.by=P.y; }               // home in on where you're lying
   if(t<HELI_T[0]) return { x:H.sx, y:H.sy, a:110, rope:0, show:false };
   if(t<HELI_T[1]){ const u=e((t-HELI_T[0])/(HELI_T[1]-HELI_T[0])); return { x:H.sx+(H.bx-H.sx)*u, y:H.sy+(H.by-H.sy)*u, a:110-40*u, rope:0, show:true }; }
   if(t<HELI_T[2]){ const u=(t-HELI_T[1])/(HELI_T[2]-HELI_T[1]); return { x:H.bx, y:H.by, a:70, rope:70*u, show:true }; }
@@ -1915,7 +1916,7 @@ function heliPos(){ const H=game.heli, t=H.t, e=u=>u*u*(3-2*u);
 }
 function updHeli(dt){
   const H=game.heli; H.t+=dt;
-  if((pressed.enter || pressed.jump) && H.t>1.0) H.t=Math.max(H.t, HELI_T[4]);
+  if(pressed.enter && H.t>HELI_T[3]) H.t=Math.max(H.t, HELI_T[4]);        // once you're on board, Enter skips the flight out
   const h=heliPos(); H.pos=h;
   if(h.show && h.a<100 && Math.random()<0.8) for(let i=0;i<3;i++){ const a=Math.random()*6.3, r=10+Math.random()*30;   // rotor downwash kicks up snow
     game.parts.push({ x:h.x+Math.cos(a)*r, y:h.y+Math.sin(a)*r*0.5, z:1, vx:Math.cos(a)*90, vy:Math.sin(a)*45, vz:20+Math.random()*30, life:0.5, col:'#ffffff' }); }
