@@ -265,6 +265,7 @@ const DEFS = {
     bcGate:{ x:808, y:422, arrive:{ x:322, y:3944 }, name:'BACKCOUNTRY ACCESS' },        // Whistler side: skin through to the far side of the backcountry
     extras:[ { name:'GLASSHOUSE LODGE', x:737, y:5993, w:96, h:30, modern:true },                    // modern restaurants by the Peak 2 Peak station
              { name:'ALPINE GRILL', x:746, y:6217, w:96, h:30, modern:true },
+             { name:'SKI PATROL CLINIC', x:1000, y:5895, w:64, h:26, clinic:true },                 // where the heli drops you off
              { name:'FOREST SPA', x:409, y:11803, w:90, h:26, spa:true } ],                             // spa tucked in the trees
     party:{ x:270, y:13700 },   // apres: tent bar, DJ, fire pit, ski rack and a dancing crowd
     airport:{ x:1830, y:13690, to:'niseko', dest:'SAPPORO', arrive:{ x:1770, y:13640 } },   // Creekside airstrip: stop in the box to fly to Japan
@@ -495,6 +496,7 @@ const DEFS = {
     labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1600,10800] ],
     extras:[ { name:'SKY BISTRO', x:1141, y:5870, w:96, h:30, modern:true },
              { name:'CEDAR LODGE', x:1197, y:6023, w:96, h:30, modern:true } ],
+    freeCats:[ { x:889, y:5976, h:-Math.PI/2 }, { x:921, y:5978, h:-Math.PI/2 }, { x:953, y:5974, h:-Math.PI/2 } ],   // PistenBullys you can steal
     range:[[720,220,150],[820,110,60],[1200,150,140],[1290,230,110]],
     clouds:[[760,40,40],[860,-20,50],[1150,60,44],[1230,-10,36]]
   }
@@ -751,7 +753,7 @@ function buildMap(def){
   RUNS=d.runs; ZONES=d.zones; MOGULS=d.moguls; CLIFFS=d.cliffs; RIDGES=d.ridges; ALPINE=d.alpine; PILLOW_LINES=d.pillowLines;
   GLADE_CLIFFS=d.gladeCliffs; FOREST_PILLOW_LINES=d.forestPillowLines; PARKS=d.parks; JUMPS=d.jumps; LIFTS=d.lifts;
   BUILDINGS=d.buildings; LABELS=d.labels; RANGE=d.range; CLOUDS=d.clouds; BANKS=d.banks; PONDS=d.ponds||[];
-  WORLD.sj=d.skijumps||null;
+  WORLD.sj=d.skijumps||null; WORLD.fcats=(d.freeCats||[]).map(c=>Object.assign({ free:true, tracks:[] }, c));
   WORLD.bc=d.backcountry||null; WORLD.gate=d.bcGate||null; WORLD.sx=d.skicross||null; WORLD.air=d.airport||null;
   if(WORLD.air){ const a=WORLD.air; BUILDINGS.push({ name:'airport', x:a.x-14, y:a.y+66, w:70, h:28, c:'#d9dde3', airport:true }); }   // little terminal and tower
   rng=mulberry32(d.seed);
@@ -1493,11 +1495,11 @@ function update(dt){
   if(P.state==='tbar'){ updTbar(dt); followCam(dt); return; }
   if(P.state==='skintrack'){ updSkinTrack(dt); followCam(dt); return; }
   if(P.inv>0) P.inv-=dt;
-  if(P.wingCool>0) P.wingCool-=dt;
+  if(P.wingCool>0) P.wingCool-=dt; if(P.catCool>0) P.catCool-=dt;
   if(P.state!=='crash') P.hp=Math.min(100,P.hp+dt*1.2);                    // health comes back slowly
   if(P.state==='ride' && P.v<60 && P.hp<99.5) for(const b of BUILDINGS){ if(b.name==='airport' || b.name==='Peak Express top' || b.name==='hut') continue;   // stop at a restaurant, lodge, spa or sauna to heal up
     if(Math.abs(P.x-b.x)<b.w/2+14 && P.y>b.y-6 && P.y<b.y+(b.spa?48:30)){ P.hp=100; sfx('chime');
-      popup(b.hut?'SLEPT IN THE HUT: HEALTH RESTORED':b.sauna?'SAUNA: HEALTH RESTORED':b.spa?'SPA DAY: HEALTH RESTORED':b.curry?(b.ramen?'RAMEN: HEALTH RESTORED':'CURRY: HEALTH RESTORED'):'LUNCH BREAK: HEALTH RESTORED', 0, '#4ad07a', true); break; } }
+      popup(b.clinic?'CLINIC: HEALTH RESTORED':b.hut?'SLEPT IN THE HUT: HEALTH RESTORED':b.sauna?'SAUNA: HEALTH RESTORED':b.spa?'SPA DAY: HEALTH RESTORED':b.curry?(b.ramen?'RAMEN: HEALTH RESTORED':'CURRY: HEALTH RESTORED'):'LUNCH BREAK: HEALTH RESTORED', 0, '#4ad07a', true); break; } }
   if(pressed.wing && (P.state==='ride' || P.state==='air') && !P.skins){
     if(!P.packs.para) popup('NO WING - GRAB A PARAGLIDER PACK AT A LIFT TOP', 0, '#ff9a6a');
     else { P.wing=!P.wing; popup(P.wing?'WING OPEN':'WING AWAY', 0, '#bfe3ff'); if(!P.wing && P.state==='air'){ P.glide=false; P.loopT=0; P.flip=0; } } }
@@ -1552,6 +1554,7 @@ function update(dt){
     for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<14 && P.y>L.y1+4 && P.y<L.y1+24){ zone=L; break; }
     let cat=null;
     if(!zone) for(const pk of PARKS) if(pk.cat && Math.abs(P.x-pk.cat.x)<45 && P.y>pk.cat.y-60 && P.y<pk.cat.y+50){ cat=pk.cat; break; }
+    if(!zone && !cat && !(P.catCool>0)) for(const fc of (WORLD.fcats||[])) if(Math.hypot(P.x-fc.x,P.y-fc.y)<20){ cat=fc; break; }   // a parked PistenBully
     const A=WORLD.air, pad = !zone && !cat && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // airport box
     P.inZone=zone||cat||pad;
     if((zone||cat||pad) && P.v<(cat?40:25)){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ if(pad){ flyTo(pad.to); return; } if(zone) boardLift(zone); else boardCat(cat); followCam(dt); return; } } else P.loadT=0;
@@ -1922,8 +1925,9 @@ function updHeli(dt){
     game.parts.push({ x:h.x+Math.cos(a)*r, y:h.y+Math.sin(a)*r*0.5, z:1, vx:Math.cos(a)*90, vy:Math.sin(a)*45, vz:20+Math.random()*30, life:0.5, col:'#ffffff' }); }
   const ty=(h.lifted ? h.y-h.a : P.y)-VH*0.5, tx=clamp((h.lifted?h.x:P.x)-VW/2,0,WORLD.w-VW);
   cam.x+=(tx-cam.x)*Math.min(1,dt*2.5); cam.y+=(ty-cam.y)*Math.min(1,dt*2.5);
-  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time; game.heli=null; resetSkier(TELE); P.inv=2; P.destroyed=false; P.hp=100; game.score=sc; game.time=tm;
-    const t=camTarget(); cam.x=t.x; cam.y=t.y; popup('PATCHED UP BY SKI PATROL', 0, '#bfe3ff', true); }
+  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time, C=BUILDINGS.find(b=>b.clinic); game.heli=null;
+    resetSkier(C ? { x:C.x, y:C.y+22 } : TELE); P.inv=2; P.destroyed=false; P.hp=100; game.score=sc; game.time=tm;       // dropped at the clinic
+    const t=camTarget(); cam.x=t.x; cam.y=t.y; popup(C?'PATCHED UP AT THE SKI PATROL CLINIC':'PATCHED UP BY SKI PATROL', 0, '#bfe3ff', true); }
 }
 function drawHeli(cx,cy){
   const H=game.heli; if(!H || !H.pos || !H.pos.show) return; const h=H.pos, X=Math.round(h.x-cx), G=Math.round(h.y-cy), Y=G-Math.round(h.a), t=game.t;
@@ -2035,6 +2039,8 @@ function catPoint(c,s){                          // point at distance s along th
   return [p[i][0]+(p[i+1][0]-p[i][0])*t, p[i][1]+(p[i+1][1]-p[i][1])*t];
 }
 function boardCat(c){
+  if(c.free){ Object.assign(P,{ state:'cat', cat:c, catV:0, catH:c.h, catI:0, catManual:true, x:c.x, y:c.y, z:0, v:0, h:0, loadT:0, inZone:null });
+    popup('YOU STOLE A PISTENBULLY!', 0, '#ffe066', true); sfx('chime'); P.tracks.push(null); P.lastTrack=null; return; }
   if(!c.cum){ c.cum=[0]; for(let i=1;i<c.path.length;i++) c.cum.push(c.cum[i-1]+Math.hypot(c.path[i][0]-c.path[i-1][0], c.path[i][1]-c.path[i-1][1])); }
   if(!c.tracks) c.tracks=[];
   const p0=c.path[0], p1=c.path[Math.min(3,c.path.length-1)];
@@ -2042,8 +2048,8 @@ function boardCat(c){
   popup('CAT RIDE TO THE TOP', 0, '#bfe3ff'); sfx('chime'); P.tracks.push(null); P.lastTrack=null;
 }
 function updCat(dt){                              // the cat drives itself up its track; press a drive key to take the wheel
-  const c=P.cat, pth=c.path, end=pth[pth.length-1];
-  if(!P.catManual && (pressed.up || pressed.down || pressed.left || pressed.right)){ P.catManual=true; popup("YOU'RE DRIVING", 0, '#ffe066'); }
+  const c=P.cat, pth=c.path||[[c.x,c.y]], end=pth[pth.length-1];
+  if(!c.free && !P.catManual && (pressed.up || pressed.down || pressed.left || pressed.right)){ P.catManual=true; popup("YOU'RE DRIVING", 0, '#ffe066'); }
   let steer, thr;
   if(P.catManual){ steer=(keys.right?1:0)-(keys.left?1:0); thr=keys.up?1:keys.down?-1:0; }   // up = forward, down = reverse, sides = steer
   else {
@@ -2062,11 +2068,12 @@ function updCat(dt){                              // the cat drives itself up it
   { const Fx=Math.sin(P.catH), Fy=Math.cos(P.catH), Rx=-Fy, Ry=Fx, th=Math.abs(P.catV)/CFG.CAT_MAX;   // diesel exhaust puffing from the stack
     if(Math.random()<dt*(7+16*th)) game.parts.push({ x:P.x+2.5*Rx+5*Fx, y:P.y+2.5*Ry+5*Fy, z:13, vx:4+(Math.random()-0.5)*8-Fx*P.catV*0.15, vy:-Fy*P.catV*0.15,
       vz:10+Math.random()*8, life:1.1+Math.random()*0.5, col:Math.random()<0.5?'rgba(95,100,110,0.7)':'rgba(140,146,156,0.65)', s:2, smoke:true }); }
-  if(Math.hypot(P.x-end[0],P.y-end[1])<26 || Math.hypot(P.x-c.top.x,P.y-c.top.y)<50){   // made it to the top of the in-run
+  if(c.free){ c.x=P.x; c.y=P.y; c.h=P.catH; }                         // a stolen cat stays wherever you park it
+  else if(Math.hypot(P.x-end[0],P.y-end[1])<26 || Math.hypot(P.x-c.top.x,P.y-c.top.y)<50){   // made it to the top of the in-run
     Object.assign(P,{ state:'ride', x:c.top.x, y:c.top.y, z:0, v:0, h:0, inv:1, cat:null }); popup('DROP IN!', 0, '#ffe066'); return; }
   if(pressed.jump){                                                 // hop out anywhere; the cat goes back to its spot
     const ox=Math.cos(P.catH)*14, oy=-Math.sin(P.catH)*14;
-    Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null }); popup('HOPPED OUT', 0, '#bfe3ff'); }
+    Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null, catCool:2 }); popup('HOPPED OUT', 0, '#bfe3ff'); }
 }
 const CAT_SPR={};
 function catSprite(dir,ci,retro){                 // built once per heading from little 3D boxes, then cached
@@ -2577,7 +2584,7 @@ function drawObj(o,cx,cy){
     ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.fillRect(x-4+wt,y-13,9,1);
     ctx.fillStyle='#ffffff'; ctx.fillRect(x-1+wt,y-11,3,3); }
   else if(o.t==='tower'){ ctx.fillStyle='#555'; ctx.fillRect(x,y-16,1,16); ctx.fillRect(x-4,y-16,9,1); ctx.fillStyle='rgba(120,140,170,0.3)'; ctx.fillRect(x-1,y,3,1); }
-  else if(o.t==='bldg'){ if(o.hut) drawRefuge(o,cx,cy); else if(o.modern) drawModern(o,cx,cy); else if(o.spa) drawSpa(o,cx,cy); else if(o.sauna) drawSauna(o,cx,cy); else if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy); else if(o.shrine) drawShrine(o,cx,cy);
+  else if(o.t==='bldg'){ if(o.clinic) drawClinic(o,cx,cy); else if(o.hut) drawRefuge(o,cx,cy); else if(o.modern) drawModern(o,cx,cy); else if(o.spa) drawSpa(o,cx,cy); else if(o.sauna) drawSauna(o,cx,cy); else if(o.castle) drawCastle(o,cx,cy); else if(o.airport) drawAirportBldg(o,cx,cy); else if(o.curry) drawCurry(o,cx,cy); else if(o.shrine) drawShrine(o,cx,cy);
     else if(WORLD.jp) drawJpHouse(o,cx,cy); else drawCottage(o,cx,cy); }
   else if(o.t==='party') drawParty(o,x,y);
 }
@@ -2698,6 +2705,24 @@ function drawSpa(o,cx,cy){
     for(let k=0;k<4;k++){ const tt=(t*0.35+k/4)%1; ctx.fillStyle='rgba(255,255,255,'+(0.55*(1-tt))+')';
       ctx.fillRect(Math.round(px-rx/2+k*rx/3+Math.sin(tt*5+k)*2), Math.round(py-4-tt*16), 2+Math.round(tt*3), 2+Math.round(tt*2)); } }
   for(const cxp of [x0+w+4, x0+w+12]){ ctx.fillStyle='#e0402a'; ctx.fillRect(cxp,yb+6,5,2); ctx.fillRect(cxp,yb+2,1,5); ctx.fillStyle='#ffffff'; ctx.fillRect(cxp,yb+1,1,1); }   // Muskoka chairs
+}
+// ski patrol clinic: white building, big red cross, ambulance sled outside, helipad beside it
+function drawClinic(o,cx,cy){
+  const w=o.w, x0=Math.round(o.x-w/2-cx), yb=Math.round(o.y-cy), mx=Math.round(o.x-cx), t=game.t;
+  const hx=x0+w+24, hy=yb+4;                                                                   // helipad
+  ctx.fillStyle='#8d939c'; ctx.beginPath(); ctx.ellipse(hx,hy,16,7,0,0,7); ctx.fill();
+  ctx.fillStyle='#ffd23f'; ctx.beginPath(); ctx.ellipse(hx,hy,13,5.5,0,0,7); ctx.fill(); ctx.fillStyle='#8d939c'; ctx.beginPath(); ctx.ellipse(hx,hy,11,4.5,0,0,7); ctx.fill();
+  ctx.fillStyle='#ffffff'; ctx.fillRect(hx-4,hy-3,2,6); ctx.fillRect(hx+3,hy-3,2,6); ctx.fillRect(hx-2,hy-1,5,2);   // H
+  ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(x0-3,yb,w+6,3);
+  ctx.fillStyle='#eef1f5'; ctx.fillRect(x0,yb-20,w,20); ctx.fillStyle='#d3d8e0'; ctx.fillRect(x0,yb-4,w,4);
+  ctx.fillStyle='#9fd0ff'; for(let i=x0+5;i<x0+w-5;i+=10){ if(Math.abs(i+3-mx)<7) continue; ctx.fillRect(i,yb-15,6,6); }   // windows
+  ctx.fillStyle='#7fa7c8'; ctx.fillRect(mx-5,yb-12,10,12); ctx.fillStyle='#bfe3ff'; ctx.fillRect(mx-4,yb-11,3,10); ctx.fillRect(mx+1,yb-11,3,10);   // glass doors
+  ctx.fillStyle='#d8282a'; ctx.fillRect(x0,yb-22,w,3);                                          // red band
+  ctx.fillStyle='#f6f8fb'; ctx.fillRect(x0-3,yb-27,w+6,5);                                       // snowy flat roof
+  ctx.fillStyle='#ffffff'; ctx.fillRect(mx-8,yb-40,16,14); ctx.fillStyle='#d8282a'; ctx.fillRect(mx-2,yb-38,4,10); ctx.fillRect(mx-6,yb-35,12,4);   // red cross sign
+  if(Math.floor(t*2)%2){ ctx.fillStyle='#ff3a2a'; ctx.fillRect(mx-1,yb-43,3,2); }
+  ctx.fillStyle='#d8282a'; ctx.fillRect(x0-16,yb-6,10,5); ctx.fillStyle='#ffffff'; ctx.fillRect(x0-14,yb-5,6,1);   // rescue toboggan
+  ctx.fillStyle='#555'; ctx.fillRect(x0-17,yb-2,12,1);
 }
 // backcountry refuge hut: stone ground floor, timber bunkroom above, steep snowy roof, solar panel, lit windows, smoke
 function drawRefuge(o,cx,cy){
@@ -3204,9 +3229,10 @@ function render(){
     if(top<cy+VH+20 && bot>cy-20 && c.x2>cx-10 && c.x1<cx+VW+10) list.push({ t:'cliff', y:c.y, c }); }
   if(P.state!=='lift') list.push({ t:'skier', y:P.y+0.1 });
   for(const pk of PARKS) if(pk.cat && P.state!=='cat' && pk.cat.y>cy-30 && pk.cat.y<cy+VH+30) list.push({ t:'cat', y:pk.cat.y, c:pk.cat });
+  for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && fc.y>cy-30 && fc.y<cy+VH+30) list.push({ t:'cat', y:fc.y, c:fc });
   if(game.jerry.active) list.push({ t:'jerry', y:game.jerry.y });
   list.sort((a,b)=>a.y-b.y);
-  for(const o of list) o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),-Math.PI/2,false) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
+  for(const o of list) o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
   drawGear(cx,cy);
   for(const p of game.parts){ ctx.fillStyle=p.col; const sz=Math.round(p.s||1); ctx.fillRect(Math.round(p.x-cx-(p.smoke?sz/2:0)), Math.round(p.y-cy-p.z-(p.smoke?sz/2:0)), sz, sz); }
   drawSteam(cx,cy);
