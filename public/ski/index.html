@@ -1424,6 +1424,7 @@ function crash(msg, forceYard){
     if(msg.startsWith('JERRY')) popup(msg, 0, '#ff6b5a', true);
   } else { popup(destroyed?'DESTROYED!':msg.toUpperCase(), 0, destroyed?'#ff3a2a':'#ff6b5a', destroyed); puff(22); sfx('crash'); }
   if(avy && P.packs.bc) setTimeout(()=>popup('BEACON, PROBE + SHOVEL: DUG OUT!', 0, '#bfe3ff', true), 1600);
+  if(!healOnly && WORLD){ (WORLD.marks=WORLD.marks||[]).push({ x:P.x, y:P.y, yard, h:P.h||0, n:(Math.random()*1000)|0 }); if(WORLD.marks.length>160) WORLD.marks.shift(); }   // a bomb hole in the snow
   if(destroyed){ P.destroyed=true; P.crashT=1e9; game.heli={ t:0 }; setTimeout(()=>{ if(game.heli) popup('SKI PATROL IS ON THE WAY', 0, '#ffe066'); }, 900); }
   P.tracks.push(null); P.lastTrack=null;
 }
@@ -2051,6 +2052,13 @@ function catBlocked(x,y){                         // what the snowcat can't driv
       if(o.t==='bldg' && x>o.x-o.w/2-8 && x<o.x+o.w/2+8 && y>o.y-o.h*0.6-6 && y<o.y+6) return true; } }
   return false;
 }
+const PILE_MAX=3;
+function dumpPile(){                              // leave the pile of snow on the blade where it is: instant kicker
+  const p=P.pile||0; P.pile=0; if(p<0.3) return;
+  const fx=P.x+Math.sin(P.catH)*17, fy=P.y+Math.cos(P.catH)*17, w=Math.round(16+p*9), len=Math.round(9+p*7);
+  KICKERS.push({ x:fx, y:Math.round(fy+len/2), w, len, pow:0.5+p*0.32, mound:true });
+  popup(p>2.4?'MONSTER SNOW JUMP!':p>1.2?'SNOW JUMP BUILT!':'LITTLE SNOW BUMP', 0, '#ffe066'); puffAt(fx,fy,10);
+}
 function puffAt(x,y,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.3, r=Math.random()*40; game.parts.push({ x, y, z:2, vx:Math.cos(a)*r, vy:Math.sin(a)*r*0.6, vz:20+Math.random()*40, life:0.7+Math.random()*0.4, col:'#ffffff' }); } }
 function catPoint(c,s){                          // point at distance s along the cat's route
   const p=c.path; let i=0; while(i<p.length-2 && s>c.cum[i+1]) i++;
@@ -2075,15 +2083,22 @@ function updCat(dt){                              // the cat drives itself up it
     while(P.catI<pth.length-1 && Math.hypot(pth[P.catI][0]-P.x,pth[P.catI][1]-P.y)<24) P.catI++;
     const tg=pth[Math.min(pth.length-1,P.catI+1)], e=wrapPi(Math.atan2(tg[0]-P.x,tg[1]-P.y)-P.catH);
     steer=clamp(-e*2.5,-1,1); thr=1-Math.min(0.65,Math.abs(e)*0.9); }
-  const want=thr>0?CFG.CAT_MAX*thr:thr<0?(P.catV>10?0:-CFG.CAT_REV):0;
+  if(pressed.g1){ P.plow=!P.plow; if(P.plow){ P.pile=P.pile||0; popup('PLOW DOWN', 0, '#bfe3ff'); } else { dumpPile(); popup('PLOW UP', 0, '#bfe3ff'); } sfx('tap'); }
+  if(P.plow && P.catV>6) P.pile=Math.min(PILE_MAX, (P.pile||0)+P.catV*dt/80);   // the longer you push, the bigger the pile
+  if(P.plow && P.catV<-4 && P.pile>0.3) dumpPile();                     // back away and the pile stays put
+  const load = P.plow ? Math.max(0, 1-(P.pile||0)/PILE_MAX) : 1;
+  if(P.plow && P.pile>=PILE_MAX && thr>0 && !P.pileMsg){ P.pileMsg=true; popup('TOO MUCH SNOW TO PUSH!', 0, '#ff9a6a'); }
+  if(P.pile<PILE_MAX) P.pileMsg=false;
+  const want=thr>0?CFG.CAT_MAX*thr*Math.max(0.12,load)*(load<=0?0:1):thr<0?(P.catV>10?0:-CFG.CAT_REV):0;
   P.catV+=clamp(want-P.catV,-CFG.CAT_ACC*1.6*dt,CFG.CAT_ACC*dt);
   P.catH-=steer*CFG.CAT_TURN*dt*(P.catV<-5?-1:1);                   // tracks let it turn on the spot
   const nx=P.x+Math.sin(P.catH)*P.catV*dt, ny=P.y+Math.cos(P.catH)*P.catV*dt;
   const blk=catBlocked(nx,ny);
-  if(blk && blk.t==='tree'){                                        // shove the tree: slow to a crawl, then it goes over
-    P.catV=clamp(P.catV,-18,18); blk.push=(blk.push||0)+dt*(Math.abs(thr)>0.1?1:0.3); blk.shake=0.5;
+  if(blk && blk.t==='tree'){                                        // shove the tree: slow to a crawl, keep creeping, then it goes over
+    P.catV=clamp(P.catV,-16,16); blk.push=(blk.push||0)+dt*(Math.abs(thr)>0.1?1:0.3); blk.shake=0.5;
+    { const cx2=P.x+Math.sin(P.catH)*P.catV*dt, cy2=P.y+Math.cos(P.catH)*P.catV*dt, b2=catBlocked(cx2,cy2); if(!b2 || b2===blk || b2.t==='tree'){ P.x=cx2; P.y=cy2; } }
     if(Math.random()<dt*10) game.parts.push({ x:blk.x+(Math.random()-0.5)*8, y:blk.y-6, z:8+Math.random()*6, vx:(Math.random()-0.5)*20, vy:0, vz:-10, life:0.6, col:'#ffffff' });
-    if(blk.push>1.3){ blk.fallen=true; blk.fellAt=game.t; blk.fallDir=Math.sin(P.catH)>=0?1:-1; sfx('crash'); popup('TIMBER!', 50, '#ffe066'); puffAt(blk.x,blk.y,14); } }
+    if(blk.push>1.0){ blk.fallen=true; blk.fellAt=game.t; blk.fallDir=Math.sin(P.catH)>=0?1:-1; sfx('crash'); popup('TIMBER!', 50, '#ffe066'); puffAt(blk.x,blk.y,14); } }
   else if(blk){ if(Math.abs(P.catV)>70){ sfx('tap'); popup('BONK', 0, '#bfe3ff'); } P.catV=0; }
   else { P.x=nx; P.y=ny; }
   P.z=0; P.v=Math.abs(P.catV)*0.3;                                 // shown on the speedo: a cat isn't fast
@@ -2095,6 +2110,7 @@ function updCat(dt){                              // the cat drives itself up it
   if(c.free){ c.x=P.x; c.y=P.y; c.h=P.catH; }                         // a stolen cat stays wherever you park it
   else if(Math.hypot(P.x-end[0],P.y-end[1])<26 || Math.hypot(P.x-c.top.x,P.y-c.top.y)<50){   // made it to the top of the in-run
     Object.assign(P,{ state:'ride', x:c.top.x, y:c.top.y, z:0, v:0, h:0, inv:1, cat:null }); popup('DROP IN!', 0, '#ffe066'); return; }
+  if(pressed.jump && P.plow){ P.plow=false; dumpPile(); }
   if(pressed.jump){                                                 // hop out anywhere; the cat goes back to its spot
     const ox=Math.cos(P.catH)*14, oy=-Math.sin(P.catH)*14;
     Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null, catCool:2 }); popup('HOPPED OUT', 0, '#bfe3ff'); }
@@ -2393,6 +2409,13 @@ function drawGroundFeatures(cx,cy){
     drawZone(X-LZ.hw, Y-19, LZ.hw*2, 38);                                                                        // boarding zone: stop here to fly
     ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a little plane painted in it
     txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?36:32), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
+  if(WORLD.marks) for(const m of WORLD.marks){ if(!vis(m.y,20)) continue; const X=Math.round(m.x-cx), Y=Math.round(m.y-cy);   // crash marks
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.ellipse(X,Y,9,4.5,0,0,7); ctx.fill();          // thrown-up rim
+    ctx.fillStyle='rgba(120,142,178,0.55)'; ctx.beginPath(); ctx.ellipse(X,Y+0.5,7,3.2,0,0,7); ctx.fill();    // the hole
+    ctx.fillStyle='rgba(90,110,150,0.45)'; ctx.fillRect(X-4,Y,8,1);
+    if(m.yard){ for(let i=0;i<6;i++){ const a=(m.n*0.37+i*1.1)%6.28, r=10+((m.n*(i+3))%14); ctx.fillStyle=i%3===0?'rgba(120,142,178,0.5)':'rgba(255,255,255,0.85)';   // yard sale: bits everywhere
+        ctx.fillRect(Math.round(X+Math.cos(a)*r), Math.round(Y+Math.sin(a)*r*0.5), i%3===0?3:2, 1); }
+      ctx.fillStyle='rgba(120,142,178,0.45)'; ctx.fillRect(X+11,Y-3,5,1); ctx.fillRect(X-15,Y+3,5,1); } }
   for(const pk of PARKS) if(pk.cat && P.cat!==pk.cat && vis(pk.cat.y,40)) drawZone(Math.round(pk.cat.x-cx)-CZ.hw, Math.round(pk.cat.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);   // cat boarding zones
   for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && vis(fc.y,40)) drawZone(Math.round(fc.x-cx)-CZ.hw, Math.round(fc.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);
   if(WORLD.bc && WORLD.bc.track){ const q=WORLD.bc.track[0]; if(vis(q[1],40)) drawZone(Math.round(q[0]-cx)-LZ.hw, Math.round(q[1]-cy)-19, LZ.hw*2, 38); }   // skin track start
@@ -2508,6 +2531,13 @@ function drawGroundFeatures(cx,cy){
     ctx.fillRect(Math.round(t[0]-cx-ox*1.5), Math.round(t[1]-cy-oy*1.5), 1, 1); }
   for(const k of KICKERS){ if(!(k.y>cy-(k.comp?1800:k.mega?520:40) && k.y<cy+VH+k.len+40)) continue;
     const x0=Math.round(k.x-k.w/2-cx), y0=Math.round(k.y-k.len-cy);
+    if(k.mound){                                    // a pile of plowed snow: rounded, lumpy, with its shadow
+      ctx.fillStyle='rgba(120,140,175,0.35)'; ctx.fillRect(x0+2,y0+k.len,k.w-4,4);
+      for(let i=0;i<k.len;i++){ const t=i/k.len, hw=Math.round(k.w/2*(0.45+0.55*Math.sin(Math.PI*(0.15+0.85*t)))), xc=Math.round(k.x-cx);
+        ctx.fillStyle=t<0.4?'#ffffff':t<0.75?'#eef3f9':'#d4dfec'; ctx.fillRect(xc-hw,y0+i,hw*2,1);
+        if((i*7+(k.x|0))%5===0){ ctx.fillStyle='#dfe8f2'; ctx.fillRect(xc-hw+((i*13)%Math.max(1,hw*2)),y0+i,2,1); } }
+      ctx.fillStyle='#b9c8dc'; ctx.fillRect(Math.round(k.x-cx)-Math.round(k.w*0.42),y0+k.len-1,Math.round(k.w*0.84),1);
+      continue; }
     for(let i=0;i<k.len;i++){ const t=i/k.len; ctx.fillStyle=t<0.33?'#f6f9fd':t<0.66?'#e7eef7':'#d7e2ef'; ctx.fillRect(x0,y0+i,k.w,1); }
     ctx.fillStyle='#9fb2c9'; ctx.fillRect(x0,y0,1,k.len); ctx.fillRect(x0+k.w-1,y0,1,k.len);
     ctx.fillStyle='#6f86a6'; ctx.fillRect(x0,y0+k.len-2,k.w,2);
@@ -2523,10 +2553,7 @@ function drawGroundFeatures(cx,cy){
       ctx.fillStyle='rgba(120,140,175,0.35)'; ctx.fillRect(x0+4,ly+d1+2,k.w-8,6);
       for(let d=90; d<far; d+=50){ ctx.fillStyle='#f28c28'; ctx.fillRect(x0-6,ly+d,2,2); ctx.fillRect(x0+k.w+4,ly+d,2,2); }
     } }
-  for(const pk of PARKS) if(pk.cat && vis(pk.cat.y-60,110)){ const X=Math.round(pk.cat.x-cx), Y=Math.round(pk.cat.y-cy);   // snowcat loading pad
-    ctx.fillStyle='rgba(40,110,220,0.35)'; ctx.fillRect(X-45,Y-60,90,110); ctx.fillStyle='rgba(40,110,220,0.7)';
-    ctx.fillRect(X-45,Y-60,90,1); ctx.fillRect(X-45,Y+49,90,1); ctx.fillRect(X-45,Y-60,1,110); ctx.fillRect(X+44,Y-60,1,110);
-    txt('STOP HERE FOR THE CAT', X, Y+36, '#2463c9', 8, 'center', false); }
+  for(const pk of PARKS) if(pk.cat && P.cat!==pk.cat && vis(pk.cat.y,60)) txt('STOP HERE FOR THE CAT', Math.round(pk.cat.x-cx), Math.round(pk.cat.y-cy)+CZ.y1+3, '#3b6fc1', 8, 'center', false);
   for(const pk of PARKS) if(vis(pk.y1-40,20)) txt(pk.name.toUpperCase(), (pk.kickers[0]?pk.kickers[0][0]:pipeX(pk,pk.y1))-cx, pk.y1-40-cy, '#e07a1f', pk.mega?16:8, 'center', false);
   for(const b of BOXES){ if(!vis(b.y,b.len+10)) continue;
     if(b.len>100){ ctx.fillStyle='#4b525c'; ctx.fillRect(b.x-1-cx, b.y-cy+1, 3, b.len); ctx.fillStyle='#c9d1db'; ctx.fillRect(b.x-1-cx, b.y-cy, 2, b.len);
@@ -3130,7 +3157,12 @@ function drawRider(C,sx,by,ang,up,o){
 function drawSkier(cx,cy){
   const C=CHARS[game.char];
   const sx=Math.round(P.x-cx), sy=Math.round(P.y-cy);
-  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true,P.cat && P.cat.free); return; }
+  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true,P.cat && P.cat.free);
+    if(P.plow){ const fx=Math.round(sx+Math.sin(P.catH)*15), fy=Math.round(sy+Math.cos(P.catH)*15*0.7), r=2+(P.pile||0)*2.6;   // the pile riding on the blade
+      ctx.fillStyle='rgba(120,140,175,0.4)'; ctx.beginPath(); ctx.ellipse(fx,fy+1,r+1,r*0.5+1,0,0,7); ctx.fill();
+      ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(fx,fy-r*0.35,r,r*0.75,0,0,7); ctx.fill();
+      ctx.fillStyle='#dfe8f2'; ctx.fillRect(fx-Math.round(r*0.6),fy,Math.round(r*1.2),1); }
+    return; }
   if(P.state==='lift'){
     if(P.lift.gondola){ ctx.fillStyle='#333'; ctx.fillRect(sx,sy-18,1,3);                     // you, inside a cabin
       ctx.fillStyle='#c8402f'; ctx.fillRect(sx-4,sy-15,9,11); ctx.fillStyle='#bfe3ff'; ctx.fillRect(sx-3,sy-13,7,4);
@@ -3214,7 +3246,7 @@ function drawHUD(){
   if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
   else if(P.state==='ride' && WORLD.air && !P.inZone && Math.hypot(P.x-WORLD.air.x,P.y-WORLD.air.y)<150)
     txt(WORLD.jp?'STOP IN THE BLUE BOX TO FLY HOME':'STOP IN THE BLUE BOX TO FLY TO JAPAN', VW/2, TOUCH?46:VH-26, '#ffe066', 8, 'center');
-  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  '+(TOUCH?'GRAB':'J')+' PLOW  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', VW/2, VH-26, '#bfe3ff', 8, 'center');
   if(P.state==='tbar') txt('A/D SWING ON THE ROPE   SPACE LET GO', VW/2, VH-26, '#bfe3ff', 8, 'center');
   if(P.state==='skintrack') txt('SPACE: STEP OFF THE SKIN TRACK', VW/2, VH-26, '#bfe3ff', 8, 'center');
   if(WORLD.bc && P.state==='ride' && P.nearTrack && !P.skins && P.skinHold<0.15) txt('HOLD S FOR SKINS TO JOIN THE SKIN TRACK', VW/2, VH-54, '#ffe066', 8, 'center');
