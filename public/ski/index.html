@@ -1551,7 +1551,7 @@ function update(dt){
       P.lastTrack=[P.x,P.y,P.h]; P.tracks.push(P.lastTrack); if(P.tracks.length>900) P.tracks.shift(); }
     // lift loading zones: stop in one and the lift takes you up
     let zone=null;
-    for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<14 && P.y>L.y1+4 && P.y<L.y1+24){ zone=L; break; }
+    for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<LZ.hw && P.y>L.y1+LZ.y0 && P.y<L.y1+LZ.y1){ zone=L; break; }
     let cat=null;
     if(!zone) for(const pk of PARKS) if(pk.cat && Math.abs(P.x-pk.cat.x)<45 && P.y>pk.cat.y-60 && P.y<pk.cat.y+50){ cat=pk.cat; break; }
     if(!zone && !cat && !(P.catCool>0)) for(const fc of (WORLD.fcats||[])) if(Math.hypot(P.x-fc.x,P.y-fc.y)<20){ cat=fc; break; }   // a parked PistenBully
@@ -1869,7 +1869,7 @@ function rideSkins(dt,steer){
   if(P.v>0 && (!P.lastTrack || Math.hypot(P.x-P.lastTrack[0],P.y-P.lastTrack[1])>3)){
     P.lastTrack=[P.x,P.y,P.h]; P.tracks.push(P.lastTrack); if(P.tracks.length>900) P.tracks.shift(); }
   let zone=null;                                                  // you can still load a lift on skins
-  for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<14 && P.y>L.y1+4 && P.y<L.y1+24){ zone=L; break; }
+  for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<LZ.hw && P.y>L.y1+LZ.y0 && P.y<L.y1+LZ.y1){ zone=L; break; }
   P.inZone=zone;
   const A=WORLD.air, pad = !zone && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // ...and get on the plane
   if(pad) P.inZone=pad;
@@ -1908,6 +1908,7 @@ function tapPack(sx,sy){                         // screen point -> nearest pack
 }
 // ski patrol rescue: the heli flies in, hovers, lowers a stretcher, winches you up and flies you to the base
 const HELI_T=[1.6, 3.6, 4.8, 6.0, 7.8];               // wait, fly in, lower, winch up, fly out
+function helipad(){ const C=BUILDINGS.find(b=>b.clinic); return C ? { x:C.x+C.w/2+24, y:C.y+4, C } : null; }
 function heliPos(){ const H=game.heli, t=H.t, e=u=>u*u*(3-2*u);
   if(!H.sx){ H.sx=P.x+(P.x<WORLD.w/2?280:-280); H.sy=P.y-160; H.ex=P.x-(P.x<WORLD.w/2?-320:320); H.ey=P.y-340; }
   if(t<HELI_T[1] || H.bx===undefined){ H.bx=P.x; H.by=P.y; }               // home in on where you're lying
@@ -1915,18 +1916,25 @@ function heliPos(){ const H=game.heli, t=H.t, e=u=>u*u*(3-2*u);
   if(t<HELI_T[1]){ const u=e((t-HELI_T[0])/(HELI_T[1]-HELI_T[0])); return { x:H.sx+(H.bx-H.sx)*u, y:H.sy+(H.by-H.sy)*u, a:110-40*u, rope:0, show:true }; }
   if(t<HELI_T[2]){ const u=(t-HELI_T[1])/(HELI_T[2]-HELI_T[1]); return { x:H.bx, y:H.by, a:70, rope:70*u, show:true }; }
   if(t<HELI_T[3]){ const u=(t-HELI_T[2])/(HELI_T[3]-HELI_T[2]); return { x:H.bx, y:H.by, a:70+20*u, rope:70*(1-u)+20*u, lifted:true, show:true }; }
+  const hp=H.pad;
+  if(hp){ const fl=H.flyT, t0=HELI_T[3], t1=t0+fl, t2=t1+1.6;                        // fly to the clinic helipad, then set down on it
+    if(t<t1){ const u=e((t-t0)/fl), up=Math.sin(Math.PI*u); return { x:H.bx+(hp.x-H.bx)*u, y:H.by+(hp.y-H.by)*u, a:90+60*up, rope:20*(1-u)+6*u, lifted:true, show:true }; }
+    const u=e(Math.min(1,(t-t1)/(t2-t1))); return { x:hp.x, y:hp.y, a:90*(1-u), rope:6*(1-u), lifted:true, show:true, landed:u>=1 }; }
   const u=e(Math.min(1,(t-HELI_T[3])/(HELI_T[4]-HELI_T[3]))); return { x:H.bx+(H.ex-H.bx)*u, y:H.by+(H.ey-H.by)*u, a:90+60*u, rope:20, lifted:true, show:true };
 }
 function updHeli(dt){
   const H=game.heli; H.t+=dt;
-  if(pressed.enter && H.t>HELI_T[3]) H.t=Math.max(H.t, HELI_T[4]);        // once you're on board, Enter skips the flight out
+  if(H.pad===undefined){ H.pad=helipad(); }
+  if(H.pad && H.t>=HELI_T[3] && !H.flyT){ H.flyT=clamp(Math.hypot(H.pad.x-H.bx,H.pad.y-H.by)/650, 2.2, 9); }   // longer trips take a little longer
+  const tEnd = H.pad ? HELI_T[3]+(H.flyT||2.2)+2.2 : HELI_T[4];
+  if(pressed.enter && H.t>HELI_T[3]) H.t=Math.max(H.t, tEnd);             // once you're on board, Enter skips the flight
   const h=heliPos(); H.pos=h;
   if(h.show && h.a<100 && Math.random()<0.8) for(let i=0;i<3;i++){ const a=Math.random()*6.3, r=10+Math.random()*30;   // rotor downwash kicks up snow
     game.parts.push({ x:h.x+Math.cos(a)*r, y:h.y+Math.sin(a)*r*0.5, z:1, vx:Math.cos(a)*90, vy:Math.sin(a)*45, vz:20+Math.random()*30, life:0.5, col:'#ffffff' }); }
   const ty=(h.lifted ? h.y-h.a : P.y)-VH*0.5, tx=clamp((h.lifted?h.x:P.x)-VW/2,0,WORLD.w-VW);
   cam.x+=(tx-cam.x)*Math.min(1,dt*2.5); cam.y+=(ty-cam.y)*Math.min(1,dt*2.5);
-  if(H.t>=HELI_T[4]){ const sc=game.score, tm=game.time, C=BUILDINGS.find(b=>b.clinic); game.heli=null;
-    resetSkier(C ? { x:C.x, y:C.y+22 } : TELE); P.inv=2; P.destroyed=false; P.hp=100; game.score=sc; game.time=tm;       // dropped at the clinic
+  if(H.t>=tEnd){ const sc=game.score, tm=game.time, C=BUILDINGS.find(b=>b.clinic); game.heli=null;
+    resetSkier(H.pad ? { x:H.pad.x-20, y:H.pad.y+16 } : C ? { x:C.x, y:C.y+22 } : TELE); P.inv=2; P.destroyed=false; P.hp=100; game.score=sc; game.time=tm;       // dropped at the clinic
     const t=camTarget(); cam.x=t.x; cam.y=t.y; popup(C?'PATCHED UP AT THE SKI PATROL CLINIC':'PATCHED UP BY SKI PATROL', 0, '#bfe3ff', true); }
 }
 function drawHeli(cx,cy){
@@ -2993,14 +3001,19 @@ function drawParty(o,x,y){
   }
 }
 
+const LZ={ hw:24, y0:2, y1:40 };                   // lift loading zone: half width, top and bottom below the station
 function drawTerminal(L,top,cx,cy){
   const x=top?L.x2:L.x1, y=top?L.y2:L.y1;
   const X=Math.round(x-cx), Y=Math.round(y-cy); if(Y<-40 || Y>VH+40 || X<-60 || X>VW+60) return;
   if(top && !onMountain(x,y)) return;
   if(top && !L.to) txt(L.name.toUpperCase(), X+4, Y+4, '#3b6fc1', 8, 'center', false);
-  if(!top){ ctx.fillStyle='rgba(40,110,220,0.45)'; ctx.fillRect(X-10, Y+4, 28, 20);          // blue loading zone
-    ctx.fillStyle='#ffd23f'; ctx.fillRect(X-10, Y+23, 28, 1); ctx.fillRect(X-10, Y+4, 28, 1);
-    txt(L.name.toUpperCase(), X+4, Y+27, L.to?'#c8402f':'#3b6fc1', 8, 'center', false);
+  if(!top){ const zx=X+4-LZ.hw, zw=LZ.hw*2, zy=Y+LZ.y0, zh=LZ.y1-LZ.y0;                 // loading zone: faint shading, flags in the corners
+    ctx.fillStyle='rgba(40,110,220,0.13)'; ctx.fillRect(zx, zy, zw, zh);
+    for(const [fx,fy,k] of [[zx,zy,0],[zx+zw-1,zy,1],[zx,zy+zh,1],[zx+zw-1,zy+zh,0]]){ const wv=Math.sin(game.t*4+fx*0.3)>0?1:0;
+      ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(fx-1,fy,3,1);
+      ctx.fillStyle='#5a5e66'; ctx.fillRect(fx,fy-8,1,8);
+      ctx.fillStyle=k?'#ffd23f':'#2463c9'; ctx.fillRect(fx+1,fy-8,4,3); ctx.fillRect(fx+1+wv,fy-5,3,1); }
+    txt(L.name.toUpperCase(), X+4, Y+LZ.y1+3, L.to?'#c8402f':'#3b6fc1', 8, 'center', false);
     if(L.to){ ctx.fillStyle='#5a3b24'; ctx.fillRect(X-22, Y-30, 2, 26); ctx.fillRect(X+28, Y-30, 2, 26);       // big red sign
       ctx.fillStyle='#c8402f'; ctx.fillRect(X-26, Y-44, 60, 16); ctx.fillStyle='#ffffff'; ctx.fillRect(X-26, Y-44, 60, 1);
       txt('P2P', X+4, Y-40, '#ffffff', 8, 'center', false); } }
