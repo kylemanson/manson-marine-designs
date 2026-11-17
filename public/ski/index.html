@@ -263,6 +263,9 @@ const DEFS = {
                 { name:'Peak Express top', x:1000, y:105, w:44, h:20, c:'#6b4a35' } ],
     labels:[ ['WHISTLER PEAK',1000,6], ['ROUNDHOUSE LODGE',1180,5880], ['CREEKSIDE',1700,13700], ['VILLAGE',430,13700], ['PEAK 2 PEAK',784,6045], ['APRES SKI PARTY',270,13648], ['POND SKIM',1672,13150], ['CREEKSIDE AIRPORT',1860,13345], ['AIRPORT >>',1860,13530], ['BACKCOUNTRY ACCESS',808,370] ],
     bcGate:{ x:808, y:422, arrive:{ x:322, y:3944 }, name:'BACKCOUNTRY ACCESS' },        // Whistler side: skin through to the far side of the backcountry
+    freeCats:[ { x:1188, y:5990, h:-Math.PI/2 }, { x:1220, y:5990, h:-Math.PI/2 },                       // groomers parked behind the Roundhouse
+               { x:440, y:13560, h:-Math.PI/2 }, { x:472, y:13560, h:-Math.PI/2 },                         // at the Village base
+               { x:1632, y:13571, h:-Math.PI/2 }, { x:1664, y:13571, h:-Math.PI/2 } ],                     // and at Creekside
     extras:[ { name:'GLASSHOUSE LODGE', x:737, y:5993, w:96, h:30, modern:true },                    // modern restaurants by the Peak 2 Peak station
              { name:'ALPINE GRILL', x:746, y:6217, w:96, h:30, modern:true },
              { name:'SKI PATROL CLINIC', x:1000, y:5895, w:64, h:26, clinic:true },                 // where the heli drops you off
@@ -378,6 +381,8 @@ const DEFS = {
             { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:4760,                            // huge rails and boxes, a jump line and a long run-out
               kickers:[[null,3430,80,1.6],[null,3800,96,1.6]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
     jumps:[],
+    freeCats:[ { x:1199, y:3249, h:-Math.PI/2 }, { x:1231, y:3249, h:-Math.PI/2 },                       // groomers at the top of the Hirafu gondola
+               { x:1250, y:8560, h:-Math.PI/2 }, { x:1282, y:8560, h:-Math.PI/2 } ],                       // and at the Grand Hirafu base
     road:{ pts:[[20,7080],[180,7190],[330,7110],[470,7240],[620,7160],[780,7300],[950,7200],[1120,7330],[1290,7220],[1460,7350],[1640,7250],[1810,7370],[1985,7290]],
            tunnels:['ニセコトンネル','ひらふトンネル','羊蹄トンネル','花園トンネル','ビレッジトンネル','アンヌプリトンネル','昆布トンネル','倶知安トンネル','狩太トンネル'],
            gates:true, scatter:34 },                                                                  // winding mountain road: tunnels under the runs, snow gates to jump it
@@ -496,7 +501,8 @@ const DEFS = {
     labels:[ ['BLACKCOMB PEAK',1000,6], ['RENDEZVOUS LODGE',800,5830], ['BLACKCOMB BASE',790,13700], ['PEAK 2 PEAK',1124,5905], ['FAIRMONT CHATEAU',320,13395], ['SCANDINAVE SPA',300,13072], ['BACKCOUNTRY ACCESS',1120,318], ['WHISTLER VILLAGE',1510,13700], ['SKI CROSS',1600,10800] ],
     extras:[ { name:'SKY BISTRO', x:1141, y:5870, w:96, h:30, modern:true },
              { name:'CEDAR LODGE', x:1197, y:6023, w:96, h:30, modern:true } ],
-    freeCats:[ { x:889, y:5976, h:-Math.PI/2 }, { x:921, y:5978, h:-Math.PI/2 }, { x:953, y:5974, h:-Math.PI/2 } ],   // PistenBullys you can steal
+    freeCats:[ { x:889, y:5976, h:-Math.PI/2 }, { x:921, y:5978, h:-Math.PI/2 }, { x:953, y:5974, h:-Math.PI/2 },   // PistenBullys you can steal at Rendezvous
+               { x:1400, y:13560, h:-Math.PI/2 }, { x:1432, y:13560, h:-Math.PI/2 } ],                                 // and at the base
     range:[[720,220,150],[820,110,60],[1200,150,140],[1290,230,110]],
     clouds:[[760,40,40],[860,-20,50],[1150,60,44],[1230,-10,36]]
   }
@@ -1810,6 +1816,7 @@ function collide(){
         continue;
       }
       if(o.t==='party') continue;                              // the party crowd gets out of your way
+      if(o.fallen) continue;                                   // pushed-over trees lie flat in the snow
       const hgt = o.t==='tree' ? (o.s?10:14) : o.t==='rock' ? 5 : 16;
       if(o.t==='tree'){
         if(P.state==='air' && !o.tapped && P.z>=hgt-4 && P.z<hgt+10 && Math.hypot(P.x-o.x,P.y-o.y)<7){ tapTree(o,hgt); continue; }   // tree tap!
@@ -1826,7 +1833,7 @@ function dodgeTrees(dt){
   const speed=air?Math.hypot(P.vx,P.vy):P.v, look=10+speed*0.08;
   const i0=Math.floor(P.y/BUCKET)-1; let push=0;
   for(let i=i0;i<=i0+2;i++){ const b=buckets[i]; if(!b) continue;
-    for(const o of b){ if(o.t!=='tree') continue;
+    for(const o of b){ if(o.t!=='tree' || o.fallen) continue;
       const dx=o.x-P.x, dy=o.y-P.y, ahead=dx*tx+dy*ty; if(ahead<-2 || ahead>look) continue;
       const lat=dx*ty-dy*tx; if(Math.abs(lat)>7) continue;
       push += (lat>=0?-1:1)*(1-Math.max(0,ahead)/look)*(1.3-Math.abs(lat)/7);
@@ -2034,15 +2041,17 @@ function pipeLift(){                              // how high up the wall you ar
 function catBlocked(x,y){                         // what the snowcat can't drive through
   if(!onMountain(x,y)) return true;
   for(const k of KICKERS) if(Math.abs(x-k.x)<k.w/2+9 && y>k.y-k.len-8 && y<k.y+8) return true;
-  for(const c of CLIFFS) if(x>c.x1-6 && x<c.x2+6 && y>c.y-8 && y<c.y+c.h+6) return true;
+  for(const c of CLIFFS) if(x>c.x1-1 && x<c.x2+1 && y>c.y-3 && y<c.y+c.h+1) return true;   // right up to the face before the tracks lose grip
   for(const q of PONDS) if(q.rect ? (Math.abs(x-q.x)<q.rx+8 && Math.abs(y-q.y)<q.ry+8) : (((x-q.x)/(q.rx+8))**2+((y-q.y)/(q.ry+6))**2<1)) return true;
   const i0=Math.floor(y/BUCKET)-1;
   for(let i=i0;i<=i0+2;i++){ const b=buckets[i]; if(!b) continue;
     for(const o of b){
-      if((o.t==='tree' || o.t==='rock' || o.t==='tower') && Math.hypot(x-o.x,y-o.y)<(o.r||4)+6) return true;
+      if(o.t==='tree' && !o.fallen && Math.hypot(x-o.x,y-o.y)<(o.r||4)+6) return o;                 // a tree: you can push this one over
+      if((o.t==='rock' || o.t==='tower') && Math.hypot(x-o.x,y-o.y)<(o.r||4)+6) return true;
       if(o.t==='bldg' && x>o.x-o.w/2-8 && x<o.x+o.w/2+8 && y>o.y-o.h*0.6-6 && y<o.y+6) return true; } }
   return false;
 }
+function puffAt(x,y,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.3, r=Math.random()*40; game.parts.push({ x, y, z:2, vx:Math.cos(a)*r, vy:Math.sin(a)*r*0.6, vz:20+Math.random()*40, life:0.7+Math.random()*0.4, col:'#ffffff' }); } }
 function catPoint(c,s){                          // point at distance s along the cat's route
   const p=c.path; let i=0; while(i<p.length-2 && s>c.cum[i+1]) i++;
   const L=c.cum[i+1]-c.cum[i]||1, t=clamp((s-c.cum[i])/L,0,1);
@@ -2070,11 +2079,16 @@ function updCat(dt){                              // the cat drives itself up it
   P.catV+=clamp(want-P.catV,-CFG.CAT_ACC*1.6*dt,CFG.CAT_ACC*dt);
   P.catH-=steer*CFG.CAT_TURN*dt*(P.catV<-5?-1:1);                   // tracks let it turn on the spot
   const nx=P.x+Math.sin(P.catH)*P.catV*dt, ny=P.y+Math.cos(P.catH)*P.catV*dt;
-  if(catBlocked(nx,ny)){ if(Math.abs(P.catV)>70){ sfx('tap'); popup('BONK', 0, '#bfe3ff'); } P.catV=0; }
+  const blk=catBlocked(nx,ny);
+  if(blk && blk.t==='tree'){                                        // shove the tree: slow to a crawl, then it goes over
+    P.catV=clamp(P.catV,-18,18); blk.push=(blk.push||0)+dt*(Math.abs(thr)>0.1?1:0.3); blk.shake=0.5;
+    if(Math.random()<dt*10) game.parts.push({ x:blk.x+(Math.random()-0.5)*8, y:blk.y-6, z:8+Math.random()*6, vx:(Math.random()-0.5)*20, vy:0, vz:-10, life:0.6, col:'#ffffff' });
+    if(blk.push>1.3){ blk.fallen=true; blk.fellAt=game.t; blk.fallDir=Math.sin(P.catH)>=0?1:-1; sfx('crash'); popup('TIMBER!', 50, '#ffe066'); puffAt(blk.x,blk.y,14); } }
+  else if(blk){ if(Math.abs(P.catV)>70){ sfx('tap'); popup('BONK', 0, '#bfe3ff'); } P.catV=0; }
   else { P.x=nx; P.y=ny; }
   P.z=0; P.v=Math.abs(P.catV)*0.3;                                 // shown on the speedo: a cat isn't fast
   const lt=c.tracks[c.tracks.length-1];
-  if(!lt || Math.hypot(P.x-lt[0],P.y-lt[1])>5){ c.tracks.push([P.x,P.y,P.catH]); if(c.tracks.length>1400) c.tracks.shift(); }
+  if(!lt || Math.hypot(P.x-lt[0],P.y-lt[1])>(c.free?3:5)){ c.tracks.push([P.x,P.y,P.catH]); if(c.tracks.length>(c.free?4000:1400)) c.tracks.shift(); }
   { const Fx=Math.sin(P.catH), Fy=Math.cos(P.catH), Rx=-Fy, Ry=Fx, th=Math.abs(P.catV)/CFG.CAT_MAX;   // diesel exhaust puffing from the stack
     if(Math.random()<dt*(7+16*th)) game.parts.push({ x:P.x+2.5*Rx+5*Fx, y:P.y+2.5*Ry+5*Fy, z:13, vx:4+(Math.random()-0.5)*8-Fx*P.catV*0.15, vy:-Fy*P.catV*0.15,
       vz:10+Math.random()*8, life:1.1+Math.random()*0.5, col:Math.random()<0.5?'rgba(95,100,110,0.7)':'rgba(140,146,156,0.65)', s:2, smoke:true }); }
@@ -2479,6 +2493,9 @@ function drawGroundFeatures(cx,cy){
         for(let i=i0;i<=i1;i++){ const a=pth[Math.max(0,i-1)], b=pth[Math.min(pth.length-1,i+1)], dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
           const X=pth[i][0]-cx-dy/L*o+0.5, Y=pth[i][1]-cy+dx/L*o+0.5; i===i0 ? ctx.moveTo(X,Y) : ctx.lineTo(X,Y); } ctx.stroke(); }
       ctx.lineCap='butt'; ctx.lineJoin='miter'; } }
+  for(const fc of (WORLD.fcats||[])) for(const t of fc.tracks){ if(t[1]<cy-12 || t[1]>cy+VH+12 || t[0]<cx-12 || t[0]>cx+VW+12) continue;   // groomed corduroy behind a PistenBully
+    const px=Math.cos(t[2]), py=-Math.sin(t[2])*0.7;
+    for(let k=-8;k<=8;k++){ ctx.fillStyle=(k+8)%3===0?'rgba(170,188,212,0.5)':'rgba(255,255,255,0.6)'; ctx.fillRect(Math.round(t[0]-cx+px*k), Math.round(t[1]-cy+py*k)-1, 2, 3); } }
   for(const pk of PARKS) if(pk.cat && pk.cat.tracks) for(const t of pk.cat.tracks){ if(t[1]<cy-5 || t[1]>cy+VH+5) continue;   // snowcat treads
     const ox=Math.cos(t[2]), oy=-Math.sin(t[2])*0.7;
     for(const sd of [-6,6]){ ctx.fillStyle='rgba(150,168,195,0.55)'; ctx.fillRect(Math.round(t[0]-cx+ox*sd)-1, Math.round(t[1]-cy+oy*sd), 3, 2); } }
@@ -2595,6 +2612,12 @@ function drawPillow(c,cx,cy){
 }
 function drawObj(o,cx,cy){
   const x=Math.round(o.x-cx), y=Math.round(o.y-cy);
+  if(o.t==='tree' && (o.fallen || o.push>0)){ const birch=!!WORLD.birch;          // being pushed: wobble; pushed over: lying in the snow
+    const s=birch ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?TREE_SM_BARE:TREE_BIG_BARE);
+    const ang=o.fallen ? o.fallDir*Math.PI/2*Math.min(1,(game.t-o.fellAt)/0.6)**2 : Math.sin(game.t*40)*0.06*Math.min(1,o.push);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(s, -(s.width>>1), -s.height+1); ctx.restore();
+    if(o.fallen){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(x-2,y-1,5,2); }
+    if(!o.fallen) o.push=Math.max(0,o.push-0.002); return; }
   if(o.t==='tree'){ const birch=!!WORLD.birch;                                  // Niseko: all birch
     const s = birch ? (o.tapped ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?BIRCH_SM:BIRCH_BIG))
                     : o.tapped ? (o.s?TREE_SM_BARE:TREE_BIG_BARE) : (o.s?TREE_SM:TREE_BIG);
