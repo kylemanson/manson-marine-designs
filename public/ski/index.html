@@ -44,7 +44,7 @@
   .tb.act small { font-size:8px; margin-top:4px; }
   .tb.jump { width:80px; height:80px; font-size:11px; }
   .tb.sm { width:46px; height:34px; border-radius:10px; font-size:9px; }
-  .tb.wingb { display:none; right:calc(196px + env(safe-area-inset-right)); bottom:calc(70px + env(safe-area-inset-bottom)); }
+  .tb.wingb { display:none; left:max(184px, calc(50% - 23px)); bottom:calc(30px + env(safe-area-inset-bottom)); }
   body.para .tb.wingb { display:block; }
   .tb.left  { left:calc(14px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
   .tb.right { left:calc(102px + env(safe-area-inset-left)); bottom:calc(20px + env(safe-area-inset-bottom)); }
@@ -409,7 +409,7 @@ const DEFS = {
     world:{ w:2000, h:14000, treeline:5200, forest:7000, village:13620, finish:13760 },
     peak:{ x:1000, y:30 },
     outline:[[30,0],[400,220],[2000,460],[5400,640],[9000,820],[14000,990]],
-    start:{ x:1050, y:190 }, tele:{ x:1040, y:5850, name:'RENDEZVOUS' },
+    start:{ x:1050, y:190 }, tele:{ x:1144, y:735, name:'7TH HEAVEN' },
     bases:[ { x1:520, x2:1060, name:'BLACKCOMB BASE' }, { x1:200, x2:520, name:'CHATEAU' }, { x1:1120, x2:1900, name:'WHISTLER VILLAGE' } ],
     runs:[
       { id:'seventh', name:'7th Heaven', grade:'blue', w:200, slope:0.66, fixed:true, fun:true,
@@ -1553,9 +1553,10 @@ function update(dt){
     let zone=null;
     for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<LZ.hw && P.y>L.y1+LZ.y0 && P.y<L.y1+LZ.y1){ zone=L; break; }
     let cat=null;
-    if(!zone) for(const pk of PARKS) if(pk.cat && Math.abs(P.x-pk.cat.x)<45 && P.y>pk.cat.y-60 && P.y<pk.cat.y+50){ cat=pk.cat; break; }
-    if(!zone && !cat && !(P.catCool>0)) for(const fc of (WORLD.fcats||[])) if(Math.hypot(P.x-fc.x,P.y-fc.y)<20){ cat=fc; break; }   // a parked PistenBully
-    const A=WORLD.air, pad = !zone && !cat && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // airport box
+    const inCZ=c=>Math.abs(P.x-c.x)<CZ.hw && P.y>c.y+CZ.y0 && P.y<c.y+CZ.y1;
+    if(!zone) for(const pk of PARKS) if(pk.cat && inCZ(pk.cat)){ cat=pk.cat; break; }
+    if(!zone && !cat && !(P.catCool>0)) for(const fc of (WORLD.fcats||[])) if(inCZ(fc)){ cat=fc; break; }   // a parked PistenBully
+    const A=WORLD.air, pad = !zone && !cat && A && Math.abs(P.x-A.x)<LZ.hw && Math.abs(P.y-A.y)<19 ? A : null;   // airport boarding zone
     P.inZone=zone||cat||pad;
     if((zone||cat||pad) && P.v<(cat?40:25)){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ if(pad){ flyTo(pad.to); return; } if(zone) boardLift(zone); else boardCat(cat); followCam(dt); return; } } else P.loadT=0;
     { const i0=Math.floor(P.y/BUCKET);                                  // ski over a pack to grab it
@@ -1687,6 +1688,7 @@ function update(dt){
         else { const q=nearChute(P.x,P.y); if(q){ const sd=Math.sign(P.x-q[1])||1; P.x=q[1]+sd*(q[2]-1.5); } } }   // stuck inside: pop out into the nearest chute
       if(P.v<25){ let bi=-1, bd=13;                                  // stop on the skin track (with skins on) and it takes you up
         for(let i=0;i<B.track.length-20;i+=2){ const q=B.track[i], d=Math.abs(q[0]-P.x)+Math.abs(q[1]-P.y); if(d<bd){ bd=d; bi=i; } }
+        if(bi<0 && Math.abs(P.x-B.track[0][0])<LZ.hw && Math.abs(P.y-B.track[0][1])<19) bi=0;   // the flagged zone at the bottom of the track
         P.nearTrack=bi>=0;
         if(bi>=0 && P.skins){ P.inZone=true; P.stLoad=(P.stLoad||0)+dt; if(P.stLoad>0.5){ boardSkinTrack(bi); return; } } else P.stLoad=0; }
       else { P.nearTrack=false; P.stLoad=0; }
@@ -1871,7 +1873,7 @@ function rideSkins(dt,steer){
   let zone=null;                                                  // you can still load a lift on skins
   for(const L of LIFTS) if(Math.abs(P.x-(L.x1+4))<LZ.hw && P.y>L.y1+LZ.y0 && P.y<L.y1+LZ.y1){ zone=L; break; }
   P.inZone=zone;
-  const A=WORLD.air, pad = !zone && A && Math.abs(P.x-A.x)<17 && Math.abs(P.y-A.y)<11 ? A : null;   // ...and get on the plane
+  const A=WORLD.air, pad = !zone && A && Math.abs(P.x-A.x)<LZ.hw && Math.abs(P.y-A.y)<19 ? A : null;   // ...and get on the plane
   if(pad) P.inZone=pad;
   if((zone||pad) && P.v<25){ P.loadT+=dt; if(P.loadT>(pad?0.6:0.5)){ P.skins=false; if(pad){ flyTo(pad.to); return; } boardLift(zone); return; } } else P.loadT=0;
   if(pressed.jump){ P.skins=false; P.h=0; P.v=0; popup('SKINS OFF - TIME TO SHRED', 0, '#bfe3ff'); }
@@ -2084,8 +2086,8 @@ function updCat(dt){                              // the cat drives itself up it
     Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null, catCool:2 }); popup('HOPPED OUT', 0, '#bfe3ff'); }
 }
 const CAT_SPR={};
-function catSprite(dir,ci,retro){                 // built once per heading from little 3D boxes, then cached
-  const key=dir+'_'+ci+(retro?'_r':''); if(CAT_SPR[key]) return CAT_SPR[key];
+function catSprite(dir,ci,retro,groom){           // built once per heading from little 3D boxes, then cached
+  const key=dir+'_'+ci+(retro?'_r':'')+(groom?'_g':''); if(CAT_SPR[key]) return CAT_SPR[key];
   const cv=document.createElement('canvas'); cv.width=44; cv.height=40; const g=cv.getContext('2d');
   const h=dir/16*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
   const RED=retro?['#ffb04a','#f0881c','#bf630e']:['#f2606a','#d8283a','#a51b2c'],   // retro Japanese cat: orange chassis, cream cabin, red stripe
@@ -2102,6 +2104,20 @@ function catSprite(dir,ci,retro){                 // built once per heading from
   box(-7,-4.5,-9,9,0,3,tread); box(4.5,7,-9,9,0,3,tread);                          // tracks
   box(-6,6,-8,8,3,5,RED);                                                         // chassis
   box(-3,3,8,10,2,3,TR); box(-8,8,10,11,0.5,4.5,BL);                              // blade
+  if(groom){                                                                       // PistenBully groomer: big driver cab, tiller out the back
+    box(-5,5,-1,7,5.5,12,(l,f,z,s)=>{
+      if(s.F1 && z>=7.5 && z<=11 && Math.abs(l)<=4) return (Math.abs(l)<=1 && z<=10 && ci>=0) ? HEL : WIN;
+      if((s.L0||s.L1) && z>=7.5 && z<=11 && f>=0 && f<=6) return WIN;
+      if(s.F0 && z>=8 && z<=11 && Math.abs(l)<=3) return WIN;
+      if(s.Z1) return [RED[0],RED[0],RED[0]]; return RED; });
+    box(-6,6,-9,-1,5.5,6.5,RED);                                                   // rear deck
+    box(-1,1,-12,-9,3,4,TL); box(-7,7,-15,-12,1,3.5,TL);                            // arm and tiller
+    box(-7,7,-16,-15,0.5,1.5,(l)=>Math.round(l*2)%2?TR:BL);                         // comb (corduroy maker)
+    box(3,4,-3,-2,12,15,TR);                                                       // exhaust stack
+    box(-3,-2,2,3,12,13.5,['#ffb04a','#f0881c','#bf630e']);                        // amber light bar
+    vox.sort((a,b)=>a[2]-b[2] || a[3]-b[3]);
+    for(const v of vox){ g.fillStyle=v[4]; g.fillRect(Math.round(22+v[0]), Math.round(30+v[1]), 1, 1); }
+    return CAT_SPR[key]=cv; }
   box(-4,4,3,8,5.5,10,(l,f,z,s)=>{                                                // driver cab up front
     if(s.F1 && z>=7 && z<=9.5 && Math.abs(l)<=3) return WIN;
     if((s.L0||s.L1) && z>=7 && z<=9.5 && f>=4 && f<=7) return WIN; return RED; });
@@ -2119,10 +2135,10 @@ function catSprite(dir,ci,retro){                 // built once per heading from
   for(const v of vox){ g.fillStyle=v[4]; g.fillRect(Math.round(22+v[0]), Math.round(30+v[1]), 1, 1); }
   return CAT_SPR[key]=cv;
 }
-function drawCat(sx,sy,h,rider){                  // cute cat-skiing snowcat, seen from any of 16 headings
+function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, seen from any of 16 headings
   const dir=((Math.round(h/(Math.PI*2)*16)%16)+16)%16, a=dir/16*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
-  ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp), sx-22, sy-30+bob);
+  ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp && !groom, !!groom), sx-22, sy-30+bob);
   const bx=Math.round(sx-2*Math.sin(a)), by=Math.round(sy-2*Math.cos(a)*0.6-15+bob);   // flashing beacon on the cabin roof
   ctx.fillStyle=Math.floor(game.t*4)%2?'#ff9b2f':'#ffd23f'; ctx.fillRect(bx,by,1,2);
 }
@@ -2359,11 +2375,13 @@ function drawGroundFeatures(cx,cy){
     ctx.fillStyle='#f2f2f2'; for(let yy=Y-290; yy<Y+30; yy+=16) ctx.fillRect(rx+11,yy,2,8);                     // centre line
     for(let k=0;k<5;k++){ ctx.fillRect(rx+2+k*4,Y+34,2,7); ctx.fillRect(rx+2+k*4,Y-298,2,7); }                   // thresholds
     for(let yy=Y-296; yy<Y+44; yy+=20){ const on=Math.floor(game.t*2+yy/40)%2; ctx.fillStyle=on?'#ffd23f':'#a07a20'; ctx.fillRect(rx-2,yy,1,1); ctx.fillRect(rx+25,yy,1,1); }
-    ctx.fillStyle='#6a7079'; ctx.fillRect(X+16,Y-3,34,7);                                                        // taxiway to the box
-    ctx.fillStyle='rgba(40,110,220,0.45)'; ctx.fillRect(X-17,Y-11,34,22);                                        // the box: stop here to fly
-    ctx.fillStyle='#ffd23f'; ctx.fillRect(X-17,Y-11,34,1); ctx.fillRect(X-17,Y+10,34,1);
-    ctx.fillStyle='#ffffff'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a plane painted in the box
-    txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?27:23), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
+    ctx.fillStyle='#6a7079'; ctx.fillRect(X+LZ.hw,Y-3,50-LZ.hw,7);                                                        // taxiway to the box
+    drawZone(X-LZ.hw, Y-19, LZ.hw*2, 38);                                                                        // boarding zone: stop here to fly
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a little plane painted in it
+    txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?36:32), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
+  for(const pk of PARKS) if(pk.cat && P.cat!==pk.cat && vis(pk.cat.y,40)) drawZone(Math.round(pk.cat.x-cx)-CZ.hw, Math.round(pk.cat.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);   // cat boarding zones
+  for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && vis(fc.y,40)) drawZone(Math.round(fc.x-cx)-CZ.hw, Math.round(fc.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);
+  if(WORLD.bc && WORLD.bc.track){ const q=WORLD.bc.track[0]; if(vis(q[1],40)) drawZone(Math.round(q[0]-cx)-LZ.hw, Math.round(q[1]-cy)-19, LZ.hw*2, 38); }   // skin track start
   if(WORLD.road){ const R=WORLD.road;                                                       // the winding road: snowbanks, asphalt, lines, white guardrail
     for(let sx=0; sx<VW; sx+=2){ const x=clamp((cx+sx)|0,0,WORLD.w); if(R.tun[x]) continue; const Y=Math.round(R.ry[x]-cy); if(Y<-30 || Y>VH+30) continue;
       ctx.fillStyle='rgba(90,110,150,0.35)'; ctx.fillRect(sx,Y-13,2,3);
@@ -3002,17 +3020,19 @@ function drawParty(o,x,y){
 }
 
 const LZ={ hw:24, y0:2, y1:40 };                   // lift loading zone: half width, top and bottom below the station
+function drawZone(zx,zy,zw,zh){                   // any boarding spot: faint blue tint with little flags in the corners
+  ctx.fillStyle='rgba(40,110,220,0.13)'; ctx.fillRect(zx, zy, zw, zh);
+  for(const [fx,fy,k] of [[zx,zy,0],[zx+zw-1,zy,1],[zx,zy+zh,1],[zx+zw-1,zy+zh,0]]){ const wv=Math.sin(game.t*4+fx*0.3)>0?1:0;
+    ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(fx-1,fy,3,1);
+    ctx.fillStyle='#5a5e66'; ctx.fillRect(fx,fy-8,1,8);
+    ctx.fillStyle=k?'#ffd23f':'#2463c9'; ctx.fillRect(fx+1,fy-8,4,3); ctx.fillRect(fx+1+wv,fy-5,3,1); } }
+const CZ={ hw:26, y0:-26, y1:20 };                 // snowcat boarding zone around where the cat is parked
 function drawTerminal(L,top,cx,cy){
   const x=top?L.x2:L.x1, y=top?L.y2:L.y1;
   const X=Math.round(x-cx), Y=Math.round(y-cy); if(Y<-40 || Y>VH+40 || X<-60 || X>VW+60) return;
   if(top && !onMountain(x,y)) return;
   if(top && !L.to) txt(L.name.toUpperCase(), X+4, Y+4, '#3b6fc1', 8, 'center', false);
-  if(!top){ const zx=X+4-LZ.hw, zw=LZ.hw*2, zy=Y+LZ.y0, zh=LZ.y1-LZ.y0;                 // loading zone: faint shading, flags in the corners
-    ctx.fillStyle='rgba(40,110,220,0.13)'; ctx.fillRect(zx, zy, zw, zh);
-    for(const [fx,fy,k] of [[zx,zy,0],[zx+zw-1,zy,1],[zx,zy+zh,1],[zx+zw-1,zy+zh,0]]){ const wv=Math.sin(game.t*4+fx*0.3)>0?1:0;
-      ctx.fillStyle='rgba(60,80,110,0.3)'; ctx.fillRect(fx-1,fy,3,1);
-      ctx.fillStyle='#5a5e66'; ctx.fillRect(fx,fy-8,1,8);
-      ctx.fillStyle=k?'#ffd23f':'#2463c9'; ctx.fillRect(fx+1,fy-8,4,3); ctx.fillRect(fx+1+wv,fy-5,3,1); }
+  if(!top){ drawZone(X+4-LZ.hw, Y+LZ.y0, LZ.hw*2, LZ.y1-LZ.y0);                        // loading zone
     txt(L.name.toUpperCase(), X+4, Y+LZ.y1+3, L.to?'#c8402f':'#3b6fc1', 8, 'center', false);
     if(L.to){ ctx.fillStyle='#5a3b24'; ctx.fillRect(X-22, Y-30, 2, 26); ctx.fillRect(X+28, Y-30, 2, 26);       // big red sign
       ctx.fillStyle='#c8402f'; ctx.fillRect(X-26, Y-44, 60, 16); ctx.fillStyle='#ffffff'; ctx.fillRect(X-26, Y-44, 60, 1);
@@ -3087,7 +3107,7 @@ function drawRider(C,sx,by,ang,up,o){
 function drawSkier(cx,cy){
   const C=CHARS[game.char];
   const sx=Math.round(P.x-cx), sy=Math.round(P.y-cy);
-  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true); return; }
+  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true,P.cat && P.cat.free); return; }
   if(P.state==='lift'){
     if(P.lift.gondola){ ctx.fillStyle='#333'; ctx.fillRect(sx,sy-18,1,3);                     // you, inside a cabin
       ctx.fillStyle='#c8402f'; ctx.fillRect(sx-4,sy-15,9,11); ctx.fillStyle='#bfe3ff'; ctx.fillRect(sx-3,sy-13,7,4);
@@ -3245,7 +3265,7 @@ function render(){
   for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && fc.y>cy-30 && fc.y<cy+VH+30) list.push({ t:'cat', y:fc.y, c:fc });
   if(game.jerry.active) list.push({ t:'jerry', y:game.jerry.y });
   list.sort((a,b)=>a.y-b.y);
-  for(const o of list) o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
+  for(const o of list) o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false,o.c.free) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
   drawGear(cx,cy);
   for(const p of game.parts){ ctx.fillStyle=p.col; const sz=Math.round(p.s||1); ctx.fillRect(Math.round(p.x-cx-(p.smoke?sz/2:0)), Math.round(p.y-cy-p.z-(p.smoke?sz/2:0)), sz, sz); }
   drawSteam(cx,cy);
