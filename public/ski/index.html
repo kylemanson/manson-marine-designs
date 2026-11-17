@@ -1057,6 +1057,10 @@ function buildMap(def){
     }
   }
 
+  for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i]; if(o.t!=='rock') continue;   // thin the core-shot rocks
+    const e=edgeAt(o.x,o.y), hv=hash(o.x|0,o.y|0)%100;
+    const keep = e<2 ? 0 : e<14 ? 12 : e<50 ? 60 : 22;                 // never on the runs; mostly just inside the trees
+    if(hv>=keep) bk.splice(i,1); }
   for(const e of (d.extras||[])){ const x0=e.x-e.w/2-16, x1=e.x+e.w/2+16, y0=e.y-e.h-18, y1=e.y+(e.spa?50:26);
     for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
       if((o.t==='tree'||o.t==='rock') && o.x>x0 && o.x<x1 && o.y>y0 && o.y<y1 && !(e.keepTrees && (o.x<x0+10 || o.x>x1-10))) bk.splice(i,1); }
@@ -2041,7 +2045,7 @@ function pipeLift(){                              // how high up the wall you ar
 }
 function catBlocked(x,y){                         // what the snowcat can't drive through
   if(!onMountain(x,y)) return true;
-  for(const k of KICKERS) if(Math.abs(x-k.x)<k.w/2+9 && y>k.y-k.len-8 && y<k.y+8) return true;
+  for(const k of KICKERS) if(!k.mound && Math.abs(x-k.x)<k.w/2+9 && y>k.y-k.len-8 && y<k.y+8) return true;   // plowed snow: the cat drives over it
   for(const c of CLIFFS) if(x>c.x1-1 && x<c.x2+1 && y>c.y-3 && y<c.y+c.h+1) return true;   // right up to the face before the tracks lose grip
   for(const q of PONDS) if(q.rect ? (Math.abs(x-q.x)<q.rx+8 && Math.abs(y-q.y)<q.ry+8) : (((x-q.x)/(q.rx+8))**2+((y-q.y)/(q.ry+6))**2<1)) return true;
   const i0=Math.floor(y/BUCKET)-1;
@@ -2053,11 +2057,20 @@ function catBlocked(x,y){                         // what the snowcat can't driv
   return false;
 }
 const PILE_MAX=3;
-function dumpPile(){                              // leave the pile of snow on the blade where it is: instant kicker
-  const p=P.pile||0; P.pile=0; if(p<0.3) return;
-  const fx=P.x+Math.sin(P.catH)*17, fy=P.y+Math.cos(P.catH)*17, w=Math.round(16+p*9), len=Math.round(9+p*7);
-  KICKERS.push({ x:fx, y:Math.round(fy+len/2), w, len, pow:0.5+p*0.32, mound:true });
-  popup(p>2.4?'MONSTER SNOW JUMP!':p>1.2?'SNOW JUMP BUILT!':'LITTLE SNOW BUMP', 0, '#ffe066'); puffAt(fx,fy,10);
+function moundShape(k){                          // size from how many full blade loads are in it: 1 small, 2 medium, 3 large, 10 massive
+  const L=k.loads, u=Math.min(1,(L-1)/9);
+  k.w=Math.round(L<3 ? 18+L*6 : 30+u*30); k.len=Math.round(L<3 ? 8+L*6 : 20+u*36);
+  k.pow = L<2 ? 0.5+L*0.25 : L<3 ? 1.0+(L-2)*0.3 : 1.3+u*1.1; k.mega = L>=6;            // the big ones launch like the Mega Park
+  k.y = Math.round(k.cy + k.len/2);
+}
+function dumpPile(){                              // leave the pile on the blade: a snow jump, or add it to the one it's on
+  const p=(P.pile||0)/PILE_MAX; P.pile=0; if(p<0.1) return;
+  const fx=P.x+Math.sin(P.catH)*17, fy=P.y+Math.cos(P.catH)*17;
+  let k=KICKERS.find(q=>q.mound && Math.hypot(q.x-fx,q.cy-fy)<Math.max(24,q.w*0.7));
+  if(k) k.loads+=p; else { k={ x:fx, cy:fy, loads:p, mound:true }; KICKERS.push(k); }
+  moundShape(k); const L=k.loads;
+  popup(L>=9.5?'MASSIVE KICKER! (10 LOADS)':L>=2.6?'LARGE KICKER ('+Math.round(L)+' LOADS)':L>=1.6?'MEDIUM KICKER (2 LOADS)':L>=0.8?'SMALL JUMP (1 LOAD)':'SNOW BUMP', 0, '#ffe066');
+  puffAt(fx,fy,10);
 }
 function puffAt(x,y,n){ for(let i=0;i<n;i++){ const a=Math.random()*6.3, r=Math.random()*40; game.parts.push({ x, y, z:2, vx:Math.cos(a)*r, vy:Math.sin(a)*r*0.6, vz:20+Math.random()*40, life:0.7+Math.random()*0.4, col:'#ffffff' }); } }
 function catPoint(c,s){                          // point at distance s along the cat's route
@@ -3102,7 +3115,7 @@ function drawLifts(cx,cy){
     for(const side of [-4,4]){
       ctx.strokeStyle='#4a4f58'; ctx.lineWidth=1; ctx.beginPath();
       ctx.moveTo(L.x1+side-cx+0.5, L.y1-16-cy+0.5); ctx.lineTo(L.x2+side-cx+0.5, L.y2-16-cy+0.5); ctx.stroke();
-      const gap=L.tbar?45:L.gondola?70:50, off=(game.t*(L.tbar?CFG.TBAR_SPEED:25))%gap;
+      const gap=L.tbar?45:L.gondola?70:50, off=(game.t*(L.tbar?(P.lift===L && P.state==='tbar'?CFG.TBAR_SPEED:30):25))%gap;   // T-bar: calm when nobody's on it
       for(let d=off; d<len; d+=gap){ const t=side>0 ? d/len : 1-d/len;
         const x=Math.round(L.x1+dx*t+side-cx), y=Math.round(L.y1+dy*t-16-cy); if(y<-12||y>VH+12||x<-8||x>VW+8) continue;
         ctx.fillStyle='#333';
