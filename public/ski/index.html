@@ -1466,6 +1466,7 @@ function land(){
 function update(dt){
   game.t += dt;
   for(const p of game.popups) p.t-=dt; game.popups=game.popups.filter(p=>p.t>0);
+  if(game.camShake>0) game.camShake=Math.max(0,game.camShake-dt);          // camera shake always dies away
   game.popups.forEach((p,k)=>{ p.row+=(k-p.row)*Math.min(1,dt*9); });          // slide down to make room for the new one
   for(const p of game.parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.z=Math.max(0,p.z+p.vz*dt); p.life-=dt;
     if(p.plume){ p.s=Math.min(11,p.s+dt*2.4); }
@@ -1506,7 +1507,7 @@ function update(dt){
   if(P.state==='tbar'){ updTbar(dt); followCam(dt); return; }
   if(P.state==='skintrack'){ updSkinTrack(dt); followCam(dt); return; }
   if(P.inv>0) P.inv-=dt;
-  if(P.wingCool>0) P.wingCool-=dt; if(P.catCool>0) P.catCool-=dt; if(P.revT>0) P.revT-=dt; if(game.camShake>0) game.camShake-=dt;
+  if(P.wingCool>0) P.wingCool-=dt; if(P.catCool>0) P.catCool-=dt; if(P.revT>0) P.revT-=dt;
   if(P.state!=='crash') P.hp=Math.min(100,P.hp+dt*1.2);                    // health comes back slowly
   if(P.state==='ride' && P.v<60 && P.hp<99.5) for(const b of BUILDINGS){ if(b.name==='airport' || b.name==='Peak Express top' || b.name==='hut') continue;   // stop at a restaurant, lodge, spa or sauna to heal up
     if(Math.abs(P.x-b.x)<b.w/2+14 && P.y>b.y-6 && P.y<b.y+(b.spa?48:30)){ P.hp=100; sfx('chime');
@@ -1592,7 +1593,8 @@ function update(dt){
     if(P.loopT>0){ P.loopT-=dt; P.flip=(1-Math.max(0,P.loopT)/0.9)*Math.PI*2;
       if(P.loopT<=0){ P.flip=0; P.loops=(P.loops||0)+1; const nm=['LOOP!','DOUBLE LOOP!','TRIPLE LOOP!','QUAD LOOP!'][Math.min(3,P.loops-1)]; popup(nm, 300*P.loops, '#ffe066'); game.score+=300*P.loops; } }
     P.x+=P.vx*dt; P.y+=P.vy*dt;
-    P.z=Math.min(150, P.z + P.vz*dt + Math.min(1.2,Math.max(0,slopeAt(P.x,P.y)))*Math.max(0,P.vy)*dt*0.1);   // the hill falls away beneath you
+    P.z += P.vz*dt + Math.min(1.2,Math.max(0,slopeAt(P.x,P.y)))*Math.max(0,P.vy)*dt*0.1;
+    if(P.z>150) P.z-=(P.z-150)*Math.min(1,dt*0.9);                      // above the ceiling (e.g. after soaring off a cliff): settle down gently, never snap   // the hill falls away beneath you
     if(P.z<14) dodgeTrees(dt);
     if(P.z<=0){ P.z=0;
       if(P.loopT>0){ P.loopT=0; P.flip=0; P.wing=false; crash('LOOPED INTO THE SNOW'); }
@@ -2433,21 +2435,21 @@ function drawGroundFeatures(cx,cy){
     drawZone(X-LZ.hw, Y-19, LZ.hw*2, 38);                                                                        // boarding zone: stop here to fly
     ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.fillRect(X-6,Y-1,13,2); ctx.fillRect(X-1,Y-5,3,10); ctx.fillRect(X-3,Y+3,7,1);   // a little plane painted in it
     txt(WORLD.jp ? 'ウィスラー行き' : 'FLY TO '+a.dest, X, Y-(WORLD.jp?36:32), WORLD.jp?'#3b6fc1':'#c8402f', 8, 'center', false); }
-  if(WORLD.marks) for(const m of WORLD.marks){ if(!vis(m.y,24)) continue; const X=Math.round(m.x-cx), Y=Math.round(m.y-cy);   // crash marks: a cartoon skier-shaped hole
-    ctx.save(); ctx.translate(X,Y); ctx.rotate(((m.n%7)-3)*0.35);
-    const body=(c,g)=>{ ctx.fillStyle=c;                                       // head, torso, flung-out arms and legs
-      ctx.beginPath(); ctx.arc(0,-8,3+g,0,7); ctx.fill();
-      ctx.fillRect(-3-g,-5-g,6+2*g,8+2*g);
-      ctx.save(); ctx.rotate(-0.9); ctx.fillRect(-1-g,-12-g,2+2*g,9+2*g); ctx.restore(); ctx.save(); ctx.rotate(0.9); ctx.fillRect(-1-g,-12-g,2+2*g,9+2*g); ctx.restore();   // arms up
-      ctx.save(); ctx.translate(-2,3); ctx.rotate(0.35); ctx.fillRect(-1-g,0,2+2*g,8+g); ctx.restore(); ctx.save(); ctx.translate(2,3); ctx.rotate(-0.35); ctx.fillRect(-1-g,0,2+2*g,8+g); ctx.restore(); };
-    body('rgba(255,255,255,0.95)',1);                                           // snow thrown up around the outline
-    body('rgba(110,134,172,0.6)',0);                                            // the dent
-    ctx.restore();
-    for(let i=0;i<(m.yard?10:6);i++){ const a=(m.n*0.37+i*1.3)%6.28, r=11+((m.n*(i+3))%(m.yard?18:9));   // splats
+  if(WORLD.marks) for(const m of WORLD.marks){ if(!vis(m.y,24)) continue; const X=Math.round(m.x-cx), Y=Math.round(m.y-cy);   // crash marks: a lumpy, skier-sized dent
+    const rnd=k=>((Math.sin(m.n*12.9898+k*78.233)*43758.5453)%1+1)%1;                     // steady per-mark wobble
+    const ang=((m.n%7)-3)*0.35, ca=Math.cos(ang), sa=Math.sin(ang);
+    const blobs=[[0,-5.5,2.2,2],[0,-1.5,2.4,3.2],[-3.8,-6,1.1,2.8,-0.9],[3.8,-6,1.1,2.8,0.9],[-1.6,3.6,1.2,3,0.35],[1.8,3.6,1.2,3,-0.35],[rnd(9)*4-2,rnd(10)*4-1,1.4,1.1]];
+    for(const pass of [0,1]){ ctx.fillStyle=pass?'rgba(110,134,172,0.55)':'rgba(255,255,255,0.95)';
+      blobs.forEach((b,k)=>{ const jx=(rnd(k)-0.5)*1.4, jy=(rnd(k+20)-0.5)*1.4, g=pass?0:0.9, sc=0.8+rnd(k+40)*0.45;
+        const bx=b[0]+jx, by=b[1]+jy; ctx.beginPath(); ctx.ellipse(X+bx*ca-by*sa, Y+bx*sa+by*ca, b[2]*sc+g, b[3]*sc+g, ang+(b[4]||0)+(rnd(k+60)-0.5)*0.5, 0, 7); ctx.fill(); }); }
+    ctx.strokeStyle='rgba(110,134,172,0.45)'; ctx.lineWidth=1;                                // ski tracks skidding in, splayed at the end
+    for(const sd of [-1,1]){ const a2=ang+sd*(0.15+rnd(sd+5)*0.3), l=7+rnd(sd+7)*5, ox=sd*2.5;
+      ctx.beginPath(); ctx.moveTo(X+ox*ca, Y+ox*sa-10); ctx.lineTo(X+ox*ca+Math.sin(a2)*l*0.3, Y+ox*sa-10-l); ctx.stroke(); }
+    ctx.fillStyle='rgba(110,134,172,0.55)'; ctx.fillRect(X-7+Math.round(rnd(3)*3),Y-2,1,1); ctx.fillRect(X+6-Math.round(rnd(4)*3),Y+1,1,1);   // pole holes
+    for(let i=0;i<(m.yard?7:4);i++){ const a=rnd(i+80)*6.28, r=7+rnd(i+90)*(m.yard?12:5);       // splats
       const sx=Math.round(X+Math.cos(a)*r), sy=Math.round(Y+Math.sin(a)*r*0.55);
-      ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fillRect(sx-1,sy-1,3+(i%2),2+(i%3>1?1:0));
-      ctx.fillStyle='rgba(120,142,178,0.5)'; ctx.fillRect(sx-1,sy+1,3+(i%2),1); }
-    if(m.yard){ ctx.fillStyle='rgba(120,142,178,0.5)'; ctx.fillRect(X+14,Y-4,7,1); ctx.fillRect(X-20,Y+5,7,1); ctx.fillRect(X+6,Y+9,1,4); } }
+      ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fillRect(sx,sy,1+(i%2),1+(i%3>1?1:0)); ctx.fillStyle='rgba(120,142,178,0.45)'; ctx.fillRect(sx,sy+1,1+(i%2),1); }
+    if(m.yard){ ctx.fillStyle='rgba(120,142,178,0.5)'; ctx.fillRect(X+9,Y-3,5,1); ctx.fillRect(X-13,Y+4,5,1); } }
   for(const pk of PARKS) if(pk.cat && P.cat!==pk.cat && vis(pk.cat.y,40)) drawZone(Math.round(pk.cat.x-cx)-CZ.hw, Math.round(pk.cat.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);   // cat boarding zones
   for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && vis(fc.y,40)) drawZone(Math.round(fc.x-cx)-CZ.hw, Math.round(fc.y-cy)+CZ.y0, CZ.hw*2, CZ.y1-CZ.y0);
   if(WORLD.bc && WORLD.bc.track){ const q=WORLD.bc.track[0]; if(vis(q[1],40)) drawZone(Math.round(q[0]-cx)-LZ.hw, Math.round(q[1]-cy)-19, LZ.hw*2, 38); }   // skin track start
@@ -3349,7 +3351,7 @@ function panel(lines, title, size){
 
 function render(){
   if(game.mode==='flight' && game.flight){ drawFlight(); return; }
-  const sh=game.camShake>0?game.camShake*8:0, cx=Math.round(cam.x+(Math.random()-0.5)*sh), cy=Math.round(cam.y+(Math.random()-0.5)*sh);
+  const sh=game.camShake>0?game.camShake*6:0, cx=Math.round(cam.x+(Math.random()-0.5)*sh), cy=Math.round(cam.y+(Math.random()-0.5)*sh);
   drawSnow(cx,cy);
   drawGroundFeatures(cx,cy);
   drawPonds(cx,cy);
