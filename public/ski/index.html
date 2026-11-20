@@ -1517,6 +1517,7 @@ function update(dt){
       vx:(Math.random()-0.5)*30, vy:150+Math.random()*90, vz:8+Math.random()*16, life:0.8+Math.random()*0.6, col:Math.random()<0.6?'rgba(255,255,255,0.85)':'rgba(214,224,238,0.8)', s:2, smoke:true });
     if(P.state==='crash' && P.avyRide && A.t<2.2) P.y+=190*dt*(1-A.t/2.4);
     if(A.t>2.6) game.avy=null; }
+  if(P.wingCool>0) P.wingCool-=dt; if(P.catCool>0) P.catCool-=dt; if(P.sledCool>0) P.sledCool-=dt; if(P.revT>0) P.revT-=dt;   // timers run in every state (in the cat too)
   if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.004,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }   // you lie still for the heli
   if(P.state==='crash'){
     P.crashT-=dt; P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f;
@@ -1529,7 +1530,6 @@ function update(dt){
   if(P.state==='tbar'){ updTbar(dt); followCam(dt); return; }
   if(P.state==='skintrack'){ updSkinTrack(dt); followCam(dt); return; }
   if(P.inv>0) P.inv-=dt;
-  if(P.wingCool>0) P.wingCool-=dt; if(P.catCool>0) P.catCool-=dt; if(P.sledCool>0) P.sledCool-=dt; if(P.revT>0) P.revT-=dt;
   if(P.state!=='crash') P.hp=Math.min(100,P.hp+dt*1.2);                    // health comes back slowly
   if(P.state==='ride' && P.v<60 && P.hp<99.5) for(const b of BUILDINGS){ if(b.name==='airport' || b.name==='Peak Express top' || b.name==='hut') continue;   // stop at a restaurant, lodge, spa or sauna to heal up
     if(Math.abs(P.x-b.x)<b.w/2+14 && P.y>b.y-6 && P.y<b.y+(b.spa?48:30)){ P.hp=100; sfx('chime');
@@ -2324,7 +2324,9 @@ function catSprite(dir,ci,retro,groom){           // built once per heading from
       if(s.F1 && z>=7.5 && z<=11 && Math.abs(l)<=4) return (Math.abs(l)<=1 && z<=10 && ci>=0) ? HEL : WIN;
       if((s.L0||s.L1) && z>=7.5 && z<=11 && f>=0 && f<=6) return WIN;
       if(s.F0 && z>=8 && z<=11 && Math.abs(l)<=3) return WIN;
+      if(retro){ if(s.Z1) return [CRM[0],CRM[0],CRM[0]]; return z>=6.5 && z<=7.2 ? STR : CRM; }   // retro Japanese groomer: cream cab, red stripe
       if(s.Z1) return [RED[0],RED[0],RED[0]]; return RED; });
+    if(retro){ box(-4.5,-3,7.5,8,5.5,6.5,YEL); box(3,4.5,7.5,8,5.5,6.5,YEL); }     // round retro headlights
     box(-6,6,-9,-1,5.5,6.5,RED);                                                   // rear deck
     box(-1,1,-12,-9,3,4,TL); box(-7,7,-15,-12,1,3.5,TL);                            // arm and tiller
     box(-7,7,-16,-15,0.5,1.5,(l)=>Math.round(l*2)%2?TR:BL);                         // comb (corduroy maker)
@@ -2353,7 +2355,7 @@ function catSprite(dir,ci,retro,groom){           // built once per heading from
 function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, seen from any of 32 headings
   const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, a=dir/32*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
-  ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp && !groom, !!groom), sx-22, sy-30+bob);
+  ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp, !!groom), sx-22, sy-30+bob);
   const bx=Math.round(sx-2*Math.sin(a)), by=Math.round(sy-2*Math.cos(a)*0.6-15+bob);   // flashing beacon on the cabin roof
   ctx.fillStyle=Math.floor(game.t*4)%2?'#ff9b2f':'#ffd23f'; ctx.fillRect(bx,by,1,2);
 }
