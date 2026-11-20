@@ -1589,12 +1589,12 @@ function update(dt){
     { const i0=Math.floor(P.y/BUCKET);                                  // ski over a pack to grab it
       for(let ii=i0-1;ii<=i0+1;ii++) for(const o of buckets[ii]||[]) if(o.kind==='pack' && Math.hypot(P.x-o.x,P.y-o.y)<12) takePack(o); }
     if((zone||cat||pad) && P.wing) P.wing=false;                         // pack the wing away for the lift
+    P.nearSled=null; if(!(P.sledCool>0) && !P.wing) for(const sl of (WORLD.sleds||[])) if(Math.hypot((P.x-sl.x)/44,(P.y-(sl.y-6))/34)<1){ P.nearSled=sl; break; }   // anywhere around the sled counts, not just its back end
     // hold S while stopped (not in a lift line) to put your skins on - skins come in the backcountry pack
-    if(stopKey && P.v<5 && !zone && !P.wing){ if(!P.packs.bc){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
+    if(stopKey && P.v<5 && !zone && !P.wing && !P.nearSled){ if(!P.packs.bc){ P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; popup('NO SKINS - GRAB A BACKCOUNTRY PACK AT A LIFT TOP', 0, '#ff9a6a'); } }
       else { P.skinHold+=dt; if(P.skinHold>=CFG.SKIN_HOLD){ P.skinHold=0; P.skinAnim=1.0; P.v=0; } } } else P.skinHold=0;
     if(P.wing && !P.skins && P.v>CFG.WING_TAKEOFF && !(P.wingCool>0)){ launch(70,false); P.glide=true; popup('TAKE OFF!', 0, '#ffe066'); return; }
-    P.nearSled=null; if(!(P.sledCool>0) && !P.wing) for(const sl of (WORLD.sleds||[])) if(Math.hypot(P.x-sl.x,P.y-sl.y)<22){ P.nearSled=sl; break; }
-    if(P.nearSled && pressed.jump && P.v<70){ boardSled(P.nearSled); followCam(dt); return; }   // hop on the patrol sled
+    if(P.nearSled && pressed.jump && P.v<110){ boardSled(P.nearSled); followCam(dt); return; }   // hop on the patrol sled
     if(pressed.jump){ launch(CFG.OLLIE, false); P.hop=true; }  // small hop - time it at a lip for a pop
   }
   else if(P.state==='air' && P.wing && !P.minor){                  // paragliding: steer, dive (tuck), flare (stop), JUMP = loop
