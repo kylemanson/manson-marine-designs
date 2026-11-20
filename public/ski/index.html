@@ -475,7 +475,8 @@ const DEFS = {
             { x:366, y:13201, rx:21, ry:9,  capys:1, fall:true } ],
     gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 } ],
     rescue:{ x:1190, y:6010, name:'BLACKCOMB MID-STATION' },                               // no clinic here: ski patrol sets you down at the mid-station
-    skicross:{ run:'skix', y1:10880, y2:13440, top:6090, startX:1250, w:50,   // timed: start hut by the mid-station, finish line at the bottom; a wide fenced U-channel
+    skicross:{ run:'skix', y1:10880, y2:13440, top:6090, startX:1250, w:50,
+      gondola:{ name:'Ski Cross Gondola', x1:1690, y1:13560, x2:1040, y2:5980, fast:1.6 },   // finish to just beside the start hut   // timed: start hut by the mid-station, finish line at the bottom; a wide fenced U-channel
       features:[ [11050,'roller'], [11215,'roller'], [11380,'jump'], [11545,'stepdown',26], [11710,'stepup'], [11875,'roller'], [12040,'jump'],
                  [12205,'stepdown',32], [12370,'roller'], [12535,'stepup'], [12700,'jump'], [12865,'stepdown',24], [13030,'roller'], [13195,'stepup'], [13340,'jump'] ] },
     parties:[ { x:1600, y:13540, name:'SKI CROSS FINISH' }, { x:1205, y:6560, name:'PIPE PARTY', pipe:true } ],
@@ -1456,7 +1457,7 @@ function crash(msg, forceYard){
   P.wing=false; P.glide=false; P.loopT=0;
   if(P.sled){ const sl=P.sled, d=Math.min(30,speed*0.12);   // thrown off the sled: it skids on a little way and waits for you
     Object.assign(sl,{ x:P.x+Math.sin(head)*d, y:P.y+Math.cos(head)*d, h:head+(Math.random()-0.5)*1.6 }); sl.tracks.push(null); P.sled=null; P.sledCool=2; P.sledBack=sl; }
-  P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } endSxRace(); P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
+  P.state='crash'; P.yard=yard; P.pl=null; if(destroyed){ if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } endSxRace(); } else if(P.sx) popup('GET UP, KEEP RACING!', 0, '#ffe066'); P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
   game.crashes++; P.gear=[];
   if(yard){
@@ -1545,6 +1546,7 @@ function update(dt){
   if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.004,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }   // you lie still for the heli
   if(P.state==='crash'){
     P.crashT-=dt; P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f;
+    if(P.sx && WORLD.sx && WORLD.sx.pk){ const pk=WORLD.sx.pk, c=pipeX(pk,P.y), W=WORLD.sx.W-4; P.x=clamp(P.x,c-W,c+W); }   // racing: you slide, but stay inside the course
     if(P.crashT<=0){ P.state='ride'; P.h=0; P.v=0; P.inv=1.5; P.gear=[]; P.yard=false; P.avyRide=false;
       if(P.sledBack && !P.destroyed && P.hp>0){ const sl=P.sledBack; P.sledBack=null; Object.assign(sl,{ x:P.x, y:P.y }); boardSled(sl); popup('BACK ON THE SLED', 0, '#ffe066'); P.inv=1.5; } }
     followCam(dt); return;
@@ -1713,11 +1715,13 @@ function update(dt){
   const hw=halfW(P.y); P.x=clamp(P.x, PEAK.x-hw+8, PEAK.x+hw-8);
   interact(px,py);
   if(P.state!=='crash') collide();
-  if(P.state==='ride' && !P.skins){ let q=pipeAt(P.x,P.y); if(q && q[0].pipe.cross && !P.sxIn) q=null;       // halfpipe walls (ski cross: racers only)
+  if(P.state==='ride' && !P.skins){ let q=pipeAt(P.x,P.y); if(q && q[0].pipe.cross && !P.sxIn && !P.sx) q=null;       // halfpipe walls (ski cross: racers only)
     if(q){ const [pk,dx]=q, W=pk.pipe.w/2, sd=Math.sign(dx)||1, out=Math.sin(P.h)*sd, xc=pk.pipe.cross;
       if(Math.abs(dx)>W-3 && out>0.12){
-        if(xc && P.v>45){ const vz=Math.min(105, 25+P.v*Math.abs(Math.sin(P.h))*0.7);          // ski cross bank: up, and back into the course with your speed
-          launch(vz,true); P.z=6; P.vx=-sd*(25+P.v*Math.abs(Math.sin(P.h))*0.25); P.vy=Math.max(60,P.v*Math.cos(P.h)*0.92); P.pipeAir=sd; sfx('pop'); }
+        if(xc && !P.sx && P.v>160){ launch(Math.min(110,40+P.v*Math.abs(Math.sin(P.h))*0.5),false);       // not racing: fast enough and you hop out over the fence
+          P.vx=sd*(60+P.v*Math.abs(Math.sin(P.h))*0.3); P.vy=Math.max(40,P.v*Math.cos(P.h)*0.8); P.sxIn=false; P.canPop=true; sfx('pop'); }
+        else if(xc && P.v>45){ const vz=Math.min(55, 15+P.v*Math.abs(Math.sin(P.h))*0.35);   // racing: the bank just bumps you up a little and back into the course
+          launch(vz,true); P.z=4; P.vx=-sd*(20+P.v*Math.abs(Math.sin(P.h))*0.2); P.vy=Math.max(60,P.v*Math.cos(P.h)*0.94); P.pipeAir=sd; sfx('tap'); }
         else if(!xc && P.v>55){ const vz=Math.min(CFG.PIPE_MAX, 30+P.v*Math.abs(Math.sin(P.h))*0.95+P.v*0.2);
           launch(vz,false); P.z=10; P.vx=-sd*8; P.vy=Math.max(30,P.v*Math.cos(P.h)*0.55); P.pipeAir=sd; P.canPop=true; sfx('pop'); }
         else { P.h=-P.h*0.7; P.v*=0.8; } }                            // too slow: you slide back down the wall
@@ -1813,7 +1817,13 @@ function update(dt){
 function interact(px,py){
   if(WORLD.sx && WORLD.sx.pk && (P.state==='air' || P.state==='ride')){ const pk=WORLD.sx.pk;
     if(P.y>pk.y1+30 && P.y<pk.y2-30){ const W=pk.pipe.w/2, c=pipeX(pk,P.y), dx=P.x-c, sd=Math.sign(dx)||1;
-      if(P.sxIn && Math.abs(dx)>W-1){ P.x=c+sd*(W-2); if(P.state==='air') P.vx=-sd*Math.abs(P.vx)*0.4; else P.h=-sd*0.25; } } }   // racing: the fence on the lip sends you back in
+      if((P.sx || (P.sxJump && sd*P.vx>0)) && Math.abs(dx)>W-1){ P.x=c+sd*(W-2); if(P.state==='air') P.vx=-sd*Math.abs(P.vx)*0.4; else P.h=-sd*0.25; }   // racing: the fence on the lip sends you back in
+      if(!P.sxIn && P.sxJump && Math.abs(dx)<W-2 && P.state==='ride'){ P.sxIn=true; P.sxJump=false; }                 // landed inside after jumping the fence
+      if(P.sxIn && !P.sx && Math.abs(dx)>W+4) P.sxIn=false;
+      if(P.state==='ride' && !P.sxIn && !P.skins){ const d0=Math.abs(px-pipeX(pk,py)), d1=Math.abs(dx), lipW=W+13;   // the berm outside the fence: a lip like the run edges, only bigger
+        if(d0>lipW && d1<=lipW){ const vin=-Math.sin(P.h)*sd*P.v;
+          if(vin>25){ launch(Math.min(115,50+vin*0.35),false); P.vx=-sd*clamp(vin*0.5,55,85); P.canPop=true; P.sxJump=true; sfx('pop'); popup('OVER THE FENCE!', 50, '#ffe066'); game.score+=50; } } } }
+    else if(!P.sx && !game.sxGate){ P.sxIn=false; P.sxJump=false; } }
   for(const c of CLIFFS){                                       // cliffs, ridges, pillows
     if(P.x<=c.x1 || P.x>=c.x2) continue;
     const h=cliffH(c,P.x); if(h<=0) continue;
@@ -2103,6 +2113,18 @@ function buildSkiCross(d){                        // post-generation: the ski cr
   const kick=KICKERS.filter(k=>k.sx).map(k=>({ y:k.y, pow:k.pow })).sort((a,b)=>a.y-b.y);
   const drops=CLIFFS.filter(c=>c.snow && inC((c.x1+c.x2)/2,c.y)).map(c=>({ y:c.y, h:c.h }));
   const flags=feats.map(f=>f.y);
+  if(X.gondola){ const G=Object.assign({ gondola:true }, X.gondola); G.dx=G.x2-G.x1; G.dy=G.y2-G.y1; G.len=Math.hypot(G.dx,G.dy); LIFTS.push(G);   // gondola from the finish to the start
+    for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
+      if((o.t==='tree'||o.t==='rock') && (Math.hypot(o.x-G.x1,o.y-G.y1)<46 || Math.hypot(o.x-G.x2,o.y-G.y2)<46)) bk.splice(i,1); }
+    const n=Math.round(G.len/280); for(let i=1;i<=n;i++){ const t=i/(n+1), x=G.x1+G.dx*t, y=G.y1+G.dy*t;
+      if(!onMountain(x,y) || runAt(x,y) || inC(x,y) || Math.abs(x-cxAt(y))<W+30) continue; const o={ t:'tower', x, y, r:3 }; TOWERS.push(o); addObj(o); } }
+  const cols=['#ff6fb0','#2f6fd6','#ffd23f','#2a8f5a','#e0402a','#8b5a2b','#7a3cff','#f2f2f2','#ff8c1a'], hs=k=>((Math.sin(k*12.9898)*43758.5453)%1+1)%1;
+  let fn=0; const fanAt=(x,y)=>{ if(!onMountain(x,y)) return; fn++;                                                // the crowd along the fences
+    for(const bk of [buckets[Math.floor(y/BUCKET)],buckets[Math.floor(y/BUCKET)+1],buckets[Math.floor(y/BUCKET)-1]]) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i]; if((o.t==='tree'||o.t==='rock') && Math.hypot(o.x-x,o.y-y)<9) bk.splice(i,1); }
+    addObj({ t:'party', kind:'dude', x, y, col:cols[(hs(fn)*cols.length)|0], hat:cols[(hs(fn+99)*cols.length)|0], ph:hs(fn+7)*6, cup:hs(fn+3)<0.2 }); };
+  for(const f of feats) if(f.t!=='roller') for(const sd of [-1,1]){ const k=4+((hs(f.y+sd)*4)|0);                 // most of them at the big jumps and steps
+    for(let i=0;i<k;i++){ const y=f.y-24+hs(f.y*3+i*7+sd)*90; fanAt(cxAt(y)+sd*(W+20+hs(f.y+i*13+sd*5)*20), y); } }
+  for(const sd of [-1,1]) for(let i=0;i<8;i++){ const y=X.y2-70+i*12; fanAt(cxAt(y)+sd*(W+20+hs(i*31+sd)*18), y); }   // and at the finish
   WORLD.sx=Object.assign({}, X, { y1:top, pk, kick, drops, flags, feats, W });
 }
 function inSxCourse(){ const X=WORLD.sx; if(!X || !X.pk) return false; const pk=X.pk; return P.y>pk.y1 && P.y<pk.y2 && Math.abs(P.x-pipeX(pk,P.y))<X.W+6; }
@@ -2349,7 +2371,7 @@ function updTbar(dt){                             // dragged up on a rope: swing
 function pipeX(pk,y){ const a=pk.pipe.cx, i=clamp(Math.round((y-pk.y1+20)/4),0,a.length-1); return a[i]; }
 function pipeAt(x,y){ for(const pk of PARKS) if(pk.pipe && y>pk.y1 && y<pk.y2){ const dx=x-pipeX(pk,y); if(Math.abs(dx)<pk.pipe.w/2+2) return [pk,dx]; } return null; }
 function pipeLift(){                              // how high up the wall you are (just for drawing)
-  if(P.state!=='ride') return 0; const q=pipeAt(P.x,P.y); if(!q || (q[0].pipe.cross && !P.sxIn)) return 0;
+  if(P.state!=='ride') return 0; const q=pipeAt(P.x,P.y); if(!q || (q[0].pipe.cross && !P.sxIn && !P.sx)) return 0;
   const pp=q[0].pipe, W=pp.w/2, F=W*(pp.f||0.5), a=Math.abs(q[1]); if(a<F) return 0; const t=Math.min(1,(a-F)/(W-F)); return Math.round(t*t*(pp.hmax||16));
 }
 function catBlocked(x,y){                         // what the snowcat can't drive through
@@ -2631,7 +2653,7 @@ function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, se
   ctx.fillStyle=Math.floor(game.t*4)%2?'#ff9b2f':'#ffd23f'; ctx.fillRect(bx,by,1,2);
 }
 function updLift(dt){
-  const L=P.lift; P.liftD+=CFG.LIFT_SPEED*dt; const t=Math.min(1,P.liftD/L.len), u=P.liftRev?1-t:t;
+  const L=P.lift; P.liftD+=CFG.LIFT_SPEED*(L.fast||1)*dt; const t=Math.min(1,P.liftD/L.len), u=P.liftRev?1-t:t;
   P.x=L.x1+L.dx*u+(P.liftRev?-4:4); P.y=L.y1+L.dy*u; P.z=10;
   if(t<1) return;
   if(P.liftRev){ const ar=L.arrive||{ x:L.x1+34, y:L.y1+40 };       // step off above the hub so every lift is downhill
@@ -3016,6 +3038,8 @@ function drawGroundFeatures(cx,cy){
       if((y>>1)%3===0){ ctx.fillStyle='rgba(170,188,212,0.35)'; ctx.fillRect(X-Math.round(F)+2,Y,Math.round(2*F)-4,1); }   // corduroy
       ctx.fillStyle='#9fb3cf'; ctx.fillRect(X-W,Y,1,2); ctx.fillRect(X+W-1,Y,1,2);
       ctx.fillStyle='#ffffff'; ctx.fillRect(X-W-3,Y,3,2); ctx.fillRect(X+W,Y,3,2);                         // snow berm along the top of each bank
+      ctx.fillStyle='rgba(175,192,218,0.55)'; ctx.fillRect(X-W-13,Y,6,2); ctx.fillRect(X+W+7,Y,6,2);       // and outside the fence: a bigger lip like the run edges
+      ctx.fillStyle='rgba(205,217,234,0.6)'; ctx.fillRect(X-W-7,Y,4,2); ctx.fillRect(X+W+3,Y,4,2);
       ctx.fillStyle='rgba(255,106,26,0.9)'; ctx.fillRect(X-W-2,Y-6,1,2); ctx.fillRect(X+W+1,Y-6,1,2); ctx.fillRect(X-W-2,Y-2,1,1); ctx.fillRect(X+W+1,Y-2,1,1);   // orange fence on top of the banks
       if(y%12===0){ ctx.fillStyle='#5a4a3a'; ctx.fillRect(X-W-2,Y-8,1,8); ctx.fillRect(X+W+1,Y-8,1,8); } } }
   if(WORLD.sx && WORLD.sx.pk) drawSxMarks(WORLD.sx,cx,cy);
