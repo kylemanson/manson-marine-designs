@@ -87,7 +87,7 @@
   <button data-tap="pause">KEEP SKIING</button>
   <button data-tap="reset">RESTART AT THE PEAK</button>
   <button data-tap="tele">WHISTLER ROUNDHOUSE</button>
-  <button data-tap="bctele">BLACKCOMB MID-STATION</button>
+  <button data-tap="bctele">SKI CROSS START</button>
   <button data-tap="p2p">PEAK 2 PEAK GONDOLA</button>
   <button data-tap="niseko">START AT NISEKO, JAPAN</button>
   <button data-tap="party">PARTY LAP ON / OFF</button>
@@ -474,9 +474,7 @@ const DEFS = {
             { x:390, y:13174, rx:30, ry:12, capys:2, fall:true, name:'ONSEN' },
             { x:366, y:13201, rx:21, ry:9,  capys:1, fall:true } ],
     gates:[ { run:'cruiser', y1:6500, y2:9800 }, { run:'spring', y1:8300, y2:10200 } ],
-    skicross:{ run:'skix', y1:10880, y2:13440, top:10300,      // timed: start hut at the top, finish line at the bottom; a fenced U-channel
-      ext:y=>1552+12*Math.sin((y-10300)/260*Math.PI*2),          // the extra top section, between the gondola and Gear Jammer
-      extFeatures:[ [10420,'roller'], [10540,'jump'], [10650,'stepdown',22], [10760,'roller'] ],
+    skicross:{ run:'skix', y1:10880, y2:13440, top:6090, startX:1250, w:50,   // timed: start hut by the mid-station, finish line at the bottom; a wide fenced U-channel
       features:[ [11050,'roller'], [11215,'roller'], [11380,'jump'], [11545,'stepdown',26], [11710,'stepup'], [11875,'roller'], [12040,'jump'],
                  [12205,'stepdown',32], [12370,'roller'], [12535,'stepup'], [12700,'jump'], [12865,'stepdown',24], [13030,'roller'], [13195,'stepup'], [13340,'jump'] ] },
     parties:[ { x:1600, y:13540, name:'SKI CROSS FINISH' }, { x:1205, y:6560, name:'PIPE PARTY', pipe:true } ],
@@ -1253,6 +1251,7 @@ document.getElementById('c').addEventListener('pointerdown',e=>{
     for(let i=0;i<CHARS.length;i++){ const row=i<perRow?0:1, col=row?i-perRow:i, n=row?CHARS.length-perRow:perRow;
       const cp=VH<250, cx=VW/2+(col-(n-1)/2)*slot, y0=(cp?50:52)+row*(cp?72:VH<300?88:96);
       if(Math.abs(x-cx)<=hw && y>=y0 && y<=y0+(cp?68:88)){ if(game.char===i) pressed.enter=true; else game.char=i; return; } }
+    const py2=Math.min(250,VH-22)-14; if(Math.abs(y-(py2+3))<8 && Math.abs(x-VW/2)<76){ game.partyPick=!game.partyPick; return; }   // party lap toggle
     if(y>Math.min(236,VH-40)) pressed.enter=true; }
 });
 // ---------- 5b. SOUND (soft retro effects synthesized live - no files, no music) ----------
@@ -1712,7 +1711,7 @@ function update(dt){
   const hw=halfW(P.y); P.x=clamp(P.x, PEAK.x-hw+8, PEAK.x+hw-8);
   interact(px,py);
   if(P.state!=='crash') collide();
-  if(P.state==='ride' && !P.skins){ const q=pipeAt(P.x,P.y);       // halfpipe walls
+  if(P.state==='ride' && !P.skins){ let q=pipeAt(P.x,P.y); if(q && q[0].pipe.cross && !P.sxIn) q=null;       // halfpipe walls (ski cross: racers only)
     if(q){ const [pk,dx]=q, W=pk.pipe.w/2, sd=Math.sign(dx)||1, out=Math.sin(P.h)*sd, xc=pk.pipe.cross;
       if(Math.abs(dx)>W-3 && out>0.12){
         if(xc && P.v>45){ const vz=Math.min(105, 25+P.v*Math.abs(Math.sin(P.h))*0.7);          // ski cross bank: up, and back into the course with your speed
@@ -1727,11 +1726,11 @@ function update(dt){
     else if(P.state==='air'){ P.z-=u.h; if(P.z<=0){ P.z=0; P.v*=0.7; popup('CASED IT!', 0, '#ff6b5a'); } } }
   if(WORLD.sx && WORLD.sx.pk && (P.state==='ride' || P.state==='air')){   // ski cross: start hut at the top, timed to the finish line
     const X=WORLD.sx, pk=X.pk, inC=Math.abs(P.x-pipeX(pk,P.y))<pk.pipe.w/2+4;
-    if(!P.sx && !game.sxGate && P.state==='ride' && !P.sled && py<X.y1-26 && P.y>=X.y1-26 && inC) startGate();
+    if(!P.sx && !game.sxGate && P.state==='ride' && !P.sled && !(game.t<(P.sxCool||0)) && P.y>X.y1-46 && P.y<X.y1-2 && Math.abs(P.x-pipeX(pk,P.y))<X.W-2) startGate();   // on the start deck, however you got there
     if(P.sx){ P.sx.off = (inC || P.state==='air') ? 0 : P.sx.off+dt;
       if(P.sx.off>1.5){ P.sx=null; endSxRace(); popup('OFF COURSE', 0, '#ff6b5a'); }
       else if(P.y>=X.y2){ const t=game.time-P.sx.t0; P.sx=null;
-        const best=WORLD.sxBest||1e9; WORLD.sxBest=Math.min(best,t); let pts=Math.max(200,Math.round(3600-t*90));
+        const best=WORLD.sxBest||1e9; WORLD.sxBest=Math.min(best,t); let pts=Math.max(300,Math.round(7000-t*110));
         const field=game.sxRace && game.sxRace.field, place=field ? 1+(game.crew||[]).filter(f=>f.race && f.race.done && f.race.time<t).length : 0;
         if(place){ pts+=[0,1000,500,250,0,0,0][place]; popup(['','1ST PLACE!','2ND PLACE','3RD PLACE','4TH','5TH','6TH'][place], 0, place===1?'#ffd23f':'#bfe3ff', true); if(place===1) crewSay(['YOU WON!','CHAMP!','PODIUM!']); }
         popup('SKI CROSS '+t.toFixed(1)+' S'+(t<best?'  BEST!':''), pts, '#7ee0ff', true); game.score+=pts; sfx('beast'); endSxRace(); } } }
@@ -1812,8 +1811,7 @@ function update(dt){
 function interact(px,py){
   if(WORLD.sx && WORLD.sx.pk && (P.state==='air' || P.state==='ride')){ const pk=WORLD.sx.pk;
     if(P.y>pk.y1+30 && P.y<pk.y2-30){ const W=pk.pipe.w/2, c=pipeX(pk,P.y), dx=P.x-c, sd=Math.sign(dx)||1;
-      if(P.inSx && Math.abs(dx)>W-1){ P.x=c+sd*(W-2); if(P.state==='air') P.vx=-sd*Math.abs(P.vx)*0.4; else P.h=-sd*0.25; }   // the fence on the lip: back you come
-      P.inSx=Math.abs(P.x-c)<=W; } else P.inSx=false; }
+      if(P.sxIn && Math.abs(dx)>W-1){ P.x=c+sd*(W-2); if(P.state==='air') P.vx=-sd*Math.abs(P.vx)*0.4; else P.h=-sd*0.25; } } }   // racing: the fence on the lip sends you back in
   for(const c of CLIFFS){                                       // cliffs, ridges, pillows
     if(P.x<=c.x1 || P.x>=c.x2) continue;
     const h=cliffH(c,P.x); if(h<=0) continue;
@@ -2041,32 +2039,64 @@ function drawHeli(cx,cy){
   txt('SKI PATROL', X, Y-22, '#ffffff', 6, 'center');
 }
 // the Niseko road: little kei trucks drive it, the asphalt slows you right down, and jumping it scores a ROAD GAP
-function buildSkiCross(d){                        // post-generation: the ski cross becomes a weaving U-channel, longer, with a start hut
+function buildSkiCross(d){                        // post-generation: the ski cross becomes a wide, weaving U-channel from the mid-station to the bottom
   const X=d.skicross, pk=PARKS.find(q=>q.cross), r=RUNS.find(q=>q.id===X.run); if(!pk || !r) return;
-  const top=X.top||X.y1, W=34, r0=r.S[0].y;
+  const W=X.w||50, r0=r.S[0].y, Wd=WORLD.w|0, BIG=1e9;
   const runX=y=>{ let b=r.S[0]; for(const p of r.S) if(Math.abs(p.y-y)<Math.abs(b.y-y)) b=p; return b.x; };
-  const ext=X.ext||runX, cxAt=y=>{ if(y>=r0+30) return runX(y); if(y<=r0-90) return ext(y); const u=(y-(r0-90))/120, e=u*u*(3-2*u); return ext(y)*(1-e)+runX(Math.max(y,r0))*e; };
-  pk.y1=top-34; pk.y2=X.y2+30; pk.pipe={ w:W*2, f:0.6, hmax:9, cross:true, cx:[] };
+  let top=X.top||X.y1;
+  // route the upper section: a smooth downhill line clear of cliffs, lodges, lift stations and other features (rows of 10px, columns of 4px)
+  const DY=10, DX=4, NR=Math.ceil((r0-top)/DY)+1, NC=Math.floor(Wd/DX)+1, cost=new Float32Array(NR*NC);
+  for(let i=0;i<NR;i++){ const y=top+i*DY, hw=halfW(y); for(let j=0;j<NC;j++){ const x=j*DX;
+    cost[i*NC+j] = (Math.abs(x-PEAK.x)>hw-W-24 || !onMountain(x,y)) ? BIG : runAt(x,y) ? 4 : 0; } }
+  const block=(x1,x2,y1,y2)=>{ for(let i=Math.max(0,Math.floor((y1-top)/DY)); i<=Math.min(NR-1,Math.ceil((y2-top)/DY)); i++)
+    for(let j=Math.max(0,Math.floor((x1-W-12)/DX)); j<=Math.min(NC-1,Math.ceil((x2+W+12)/DX)); j++) cost[i*NC+j]=BIG; };
+  for(const c of CLIFFS) block(c.x1,c.x2,c.y-30,c.y+(c.bh||c.h||20)+30);
+  for(const q of BUILDINGS) block(q.x-q.w/2,q.x+q.w/2,q.y-q.h-24,q.y+24);
+  for(const L of LIFTS) for(const [lx,ly] of [[L.x1,L.y1],[L.x2,L.y2]]) block(lx-34,lx+34,ly-44,ly+54);
+  for(const k of KICKERS) block(k.x-k.w/2,k.x+k.w/2,k.y-(k.len||20)-24,k.y+34);
+  for(const u of STEPUPS) block(u.x1,u.x2,u.y-30,u.y+40);
+  for(const q of PARKS) if(q.pipe && !q.pipe.cross){ let lo=1e9, hi=-1e9; for(const v of q.pipe.cx){ lo=Math.min(lo,v); hi=Math.max(hi,v); } block(lo-q.pipe.w/2-14,hi+q.pipe.w/2+14,q.y1-30,q.y2+30); }
+  if(typeof PONDS!=='undefined') for(const q of PONDS) block(q.x-q.rx,q.x+q.rx,q.y-q.ry,q.y+q.ry);
+  const acc=new Float32Array(NR*NC).fill(BIG), from=new Int16Array(NR*NC), sx0=X.startX||runX(r0);
+  for(let j=0;j<NC;j++) if(cost[j]<BIG) acc[j]=Math.abs(j*DX-sx0)*0.8;
+  for(let i=1;i<NR;i++) for(let j=0;j<NC;j++){ const c=cost[i*NC+j]; if(c>=BIG) continue; let best=BIG, bj=-1;
+    for(let k=-2;k<=2;k++){ const jj=j+k; if(jj<0 || jj>=NC) continue; const a=acc[(i-1)*NC+jj]; if(a>=BIG) continue; const v=a+Math.abs(k)*1.2; if(v<best){ best=v; bj=jj; } }
+    if(bj>=0){ acc[i*NC+j]=best+c+1; from[i*NC+j]=bj; } }
+  const je=Math.round(runX(r0)/DX); let ej=-1, ev=BIG; for(let j=Math.max(0,je-3);j<=Math.min(NC-1,je+3);j++){ const v=acc[(NR-1)*NC+j]; if(v<ev){ ev=v; ej=j; } }
+  let path=null;
+  if(ej>=0){ path=new Float32Array(NR); for(let i=NR-1,j=ej;i>=0;i--){ path[i]=j*DX; j=from[i*NC+j]; }
+    const sm=path.slice(); for(let i=0;i<NR;i++){ let s2=0,n=0; for(let k=-4;k<=4;k++){ const q=clamp(i+k,0,NR-1); s2+=path[q]; n++; } sm[i]=s2/n; }   // ease the corners
+    for(let i=0;i<NR;i++){ const y=top+i*DY, j=Math.round(sm[i]/DX);                                           // weave where there's room
+      let dl=0, dr=0; while(dl<40 && j-dl-1>=0 && cost[i*NC+j-dl-1]<BIG) dl++; while(dr<40 && j+dr+1<NC && cost[i*NC+j+dr+1]<BIG) dr++;
+      const room=Math.min(dl,dr)*DX*0.8, taper=Math.min(1,(y-top)/120,(r0-y)/160), off=Math.min(32,room)*Math.max(0,taper)*Math.sin((y-top)/560*Math.PI*2);
+      const x=sm[i]+off, jj=Math.round(x/DX); path[i]= (jj>=0 && jj<NC && cost[i*NC+jj]<BIG) ? x : sm[i]; }
+    const p2=path.slice(); for(let i=0;i<NR;i++){ let s2=0,n=0; for(let k=-3;k<=3;k++){ const q=clamp(i+k,0,NR-1); s2+=p2[q]; n++; } path[i]=s2/n; } }
+  else top=X.y1;                                                                                                   // no clear route: keep the old course
+  const cxAt=y=>{ if(y>=r0 || !path) return runX(Math.max(y,r0-0)); const f=(y-top)/DY, i=clamp(Math.floor(f),0,NR-1), i2=Math.min(NR-1,i+1), u=clamp(f-i,0,1); return path[i]*(1-u)+path[i2]*u; };
+  pk.y1=top-34; pk.y2=X.y2+30; pk.pipe={ w:W*2, f:0.6, hmax:18, cross:true, cx:[] };
   for(let y=pk.y1-20; y<=pk.y2+20; y+=4) pk.pipe.cx.push(cxAt(y));
-  const jx=y=>{ const j=RUNS.find(q=>q.id==='jammer'); if(!j) return cxAt(top)+60; let b=j.S[0]; for(const p of j.S) if(Math.abs(p.y-y)<Math.abs(b.y-y)) b=p; return b.x-b.hw+6; };
-  for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i]; if(!(o.t==='tree'||o.t==='rock'||o.t==='mogul')) continue;
-    const inCh = o.y>top-70 && o.y<X.y2+40 && Math.abs(o.x-cxAt(o.y))<W+10;                          // carve the channel
-    const inApp = o.y>top-80 && o.y<top-20 && o.x>cxAt(top)-W && o.x<jx(top-50);                     // and a way in from Gear Jammer
-    if(inCh || inApp) bk.splice(i,1); }
-  for(const [y,type,h] of (X.extFeatures||[])){ const x=cxAt(y);                                     // jumps in the new top section
-    if(type==='roller') KICKERS.push({ x, y, w:52, pow:0.6, len:26, park:true });
-    if(type==='jump') KICKERS.push({ x, y, w:52, pow:1.1, len:26, park:true });
-    if(type==='stepdown') CLIFFS.push({ x1:x-W+4, x2:x+W-4, y, h:h||24, snow:true, line:'sxe'+y, prof:[1,1,1], lip:[0,0,0] }); }
+  for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i]; if(!(o.t==='tree'||o.t==='rock'||o.t==='mogul'||o.t==='tower')) continue;   // carve the channel
+    if((o.y>top-120 && o.y<X.y2+40 && Math.abs(o.x-cxAt(o.y))<W+10)) bk.splice(i,1); }
+  const crossesRun=y=>{ const c=cxAt(y); for(let x=c-W;x<=c+W;x+=8) if(runAt(x,y) && runAt(x,y).id!==X.run) return true; return false; };
+  const plan=['roller','jump','stepdown','roller','stepup','jump','roller','stepdown','jump'];   // the new upper section: rollers, jumps, steps
+  if(path) for(let y=top+150, n=0; y<r0-140; y+=190){ if(crossesRun(y) || crossesRun(y+40)){ continue; } const x=cxAt(y), t=plan[n++%plan.length];
+    if(t==='roller') KICKERS.push({ x, y, w:2*W-12, pow:0.6, len:26, park:true });
+    if(t==='jump') KICKERS.push({ x, y, w:2*W-12, pow:1.1, len:26, park:true });
+    if(t==='stepup'){ KICKERS.push({ x, y, w:2*W-12, pow:1.25, len:26, park:true }); const c=cxAt(y+50); STEPUPS.push({ x1:c-W+4, x2:c+W-4, y:y+50, h:18 }); }
+    if(t==='stepdown') CLIFFS.push({ x1:x-W+4, x2:x+W-4, y, h:22, snow:true, line:'sxe'+y, prof:[1,1,1], lip:[0,0,0] }); }
   const inC=(x,y)=>y>=top && y<=X.y2 && Math.abs(x-cxAt(y))<W;
+  for(const k of KICKERS) if(inC(k.x,k.y)) k.w=Math.max(k.w,2*W-12);                                              // the old jumps go wall to wall
+  for(const u of STEPUPS) if(inC((u.x1+u.x2)/2,u.y)){ const c=cxAt(u.y); u.x1=c-W+4; u.x2=c+W-4; }
+  for(const c of CLIFFS) if(c.snow && inC((c.x1+c.x2)/2,c.y)){ const m=cxAt(c.y); c.x1=m-W+4; c.x2=m+W-4; }
   const kick=KICKERS.filter(k=>inC(k.x,k.y)).map(k=>({ y:k.y, pow:k.pow })).sort((a,b)=>a.y-b.y);
   const drops=CLIFFS.filter(c=>c.snow && inC((c.x1+c.x2)/2,c.y)).map(c=>({ y:c.y, h:c.h }));
   const flags=[...kick.map(k=>k.y), ...drops.map(c=>c.y), ...STEPUPS.filter(u=>inC((u.x1+u.x2)/2,u.y)).map(u=>u.y)].sort((a,b)=>a-b);
-  WORLD.sx=Object.assign({}, X, { y1:top, pk, kick, drops, flags });
+  WORLD.sx=Object.assign({}, X, { y1:top, pk, kick, drops, flags, W });
 }
 function startGate(){                              // into the start hut: you (and the crew) in the gates, lights, beep beep beep, GO
-  const X=WORLD.sx, c=pipeX(X.pk,X.y1-8), lanes=[-25,-15,-5,5,15,25].map(o=>c+o);
+  const X=WORLD.sx, c=pipeX(X.pk,X.y1-8), lanes=[-35,-21,-7,7,21,35].map(o=>c+o);
   let mine=2, bd=1e9; lanes.forEach((x,i)=>{ const d=Math.abs(x-P.x); if(d<bd){ bd=d; mine=i; } });
-  game.sxGate={ t:0, lanes, mine, lit:0 }; X.openAt=-9;
+  game.sxGate={ t:0, lanes, mine, lit:0 }; X.openAt=-9; P.sxIn=true;
   Object.assign(P,{ x:lanes[mine], y:X.y1-8, v:0, h:0, z:0, tuck:false, lat:0 });
   if(game.party && game.crew.length){ game.crewHidden=false; const free=lanes.map((x,i)=>i).filter(i=>i!==mine), tops=[178,192,204,214,226].sort(()=>Math.random()-0.5);
     game.crew.forEach((f,k)=>{ f.race={ lx:lanes[free[k%free.length]], y:X.y1-8, v:0, vz:0, z:0, top:tops[k]+Math.random()*10-5, ox:lanes[free[k%free.length]]-c, want:0, wt:0, done:false }; }); }
@@ -2079,7 +2109,7 @@ function updGate(dt){                              // hold in the gate through t
     popup('GO!', 0, '#7ee0ff', true); P.sx={ t0:game.time, off:0 }; P.v=80; P.h=0;
     game.sxRace={ field:(game.crew||[]).some(f=>f.race) }; }
 }
-function endSxRace(){ game.sxRace=null; game.sxGate=null; for(const f of (game.crew||[])) f.race=null; }
+function endSxRace(){ if(game.sxRace || game.sxGate) P.sxCool=game.t+3; game.sxRace=null; game.sxGate=null; P.sxIn=false; for(const f of (game.crew||[])) f.race=null; }
 function updCrewRace(dt){                          // the crew racing the course alongside you
   const X=WORLD.sx, pk=X.pk, go=!!game.sxRace;
   for(const f of game.crew){ const R=f.race; if(!R) continue;
@@ -2097,19 +2127,19 @@ function updCrewRace(dt){                          // the crew racing the course
     if(R.y>X.y2+70){ R.y=X.y2+70; R.v=0; } }
 }
 function drawSxStart(X,cx,cy){                     // the start hut: six gates, a light panel, wands that drop on GO
-  const c=Math.round(pipeX(X.pk,X.y1-8)-cx), Y=Math.round(X.y1-cy), G=game.sxGate, open=game.t-(X.openAt||-9)<2.5;
-  ctx.fillStyle='#eef3f9'; ctx.fillRect(c-40,Y-30,80,24);                                                // start deck
-  ctx.fillStyle='#8b6a44'; ctx.fillRect(c-42,Y-52,84,20); ctx.fillStyle='#6d5234'; ctx.fillRect(c-42,Y-34,84,3);   // timber hut behind
-  ctx.fillStyle='#2a8f5a'; ctx.fillRect(c-44,Y-58,88,7); txt('SKI CROSS', c, Y-55, '#ffffff', 8, 'center');
-  ctx.fillStyle='#2b2f36'; ctx.fillRect(c-10,Y-47,20,8);                                                 // light panel: one, two, three, then off for GO
-  for(let k=0;k<3;k++){ const on=G && G.lit>k; ctx.fillStyle=on?'#ff3b30':'#55595f'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-43,2,0,7); ctx.fill();
-    if(on){ ctx.fillStyle='rgba(255,80,60,0.35)'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-43,3.5,0,7); ctx.fill(); } }
-  if(open && game.t-X.openAt<0.4){ for(let k=0;k<3;k++){ ctx.fillStyle='#45e07a'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-43,2,0,7); ctx.fill(); } }
-  for(let i=0;i<6;i++){ const gx=c+[-25,-15,-5,5,15,25][i];                                               // gate posts and wands
+  const c=Math.round(pipeX(X.pk,X.y1-8)-cx), Y=Math.round(X.y1-cy), G=game.sxGate, open=game.t-(X.openAt||-9)<2.5, W=X.W||40;
+  ctx.fillStyle='#eef3f9'; ctx.fillRect(c-W,Y-46,2*W,40);                                                // start deck
+  ctx.fillStyle='#8b6a44'; ctx.fillRect(c-W-2,Y-68,2*W+4,20); ctx.fillStyle='#6d5234'; ctx.fillRect(c-W-2,Y-50,2*W+4,3);   // timber hut behind
+  ctx.fillStyle='#2a8f5a'; ctx.fillRect(c-W-4,Y-74,2*W+8,7); txt('SKI CROSS', c, Y-71, '#ffffff', 8, 'center');
+  ctx.fillStyle='#2b2f36'; ctx.fillRect(c-10,Y-63,20,8);                                                 // light panel: one, two, three, then off for GO
+  for(let k=0;k<3;k++){ const on=G && G.lit>k; ctx.fillStyle=on?'#ff3b30':'#55595f'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-59,2,0,7); ctx.fill();
+    if(on){ ctx.fillStyle='rgba(255,80,60,0.35)'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-59,3.5,0,7); ctx.fill(); } }
+  if(open && game.t-X.openAt<0.4){ for(let k=0;k<3;k++){ ctx.fillStyle='#45e07a'; ctx.beginPath(); ctx.arc(c-6+k*6,Y-59,2,0,7); ctx.fill(); } }
+  for(let i=0;i<6;i++){ const gx=c+[-35,-21,-7,7,21,35][i];                                               // gate posts and wands
     ctx.fillStyle='#4a4f58'; ctx.fillRect(gx-5,Y-12,1,8); ctx.fillRect(gx+4,Y-12,1,8);
     ctx.fillStyle=i%2?'#e0302a':'#ffffff';
     if(open) ctx.fillRect(gx-4,Y-4,8,1); else ctx.fillRect(gx-4,Y-9,8,2); }                             // wand up across the gate, or dropped flat
-  ctx.fillStyle='#ffffff'; for(let x=-38;x<38;x+=4) ctx.fillRect(c+x,Y-2,2,1);                            // start line
+  ctx.fillStyle='#ffffff'; for(let x=-W+2;x<W-2;x+=4) ctx.fillRect(c+x,Y-2,2,1);                            // start line
 }
 function finishWay(R, names){                      // tunnels start well clear of the runs; a compact portal dug into the trees with a pillow on its headwall
   const W=WORLD.w|0, M=56, t=R.tun, t0=t.slice();
@@ -2284,7 +2314,7 @@ function updTbar(dt){                             // dragged up on a rope: swing
 function pipeX(pk,y){ const a=pk.pipe.cx, i=clamp(Math.round((y-pk.y1+20)/4),0,a.length-1); return a[i]; }
 function pipeAt(x,y){ for(const pk of PARKS) if(pk.pipe && y>pk.y1 && y<pk.y2){ const dx=x-pipeX(pk,y); if(Math.abs(dx)<pk.pipe.w/2+2) return [pk,dx]; } return null; }
 function pipeLift(){                              // how high up the wall you are (just for drawing)
-  if(P.state!=='ride') return 0; const q=pipeAt(P.x,P.y); if(!q) return 0;
+  if(P.state!=='ride') return 0; const q=pipeAt(P.x,P.y); if(!q || (q[0].pipe.cross && !P.sxIn)) return 0;
   const pp=q[0].pipe, W=pp.w/2, F=W*(pp.f||0.5), a=Math.abs(q[1]); if(a<F) return 0; const t=Math.min(1,(a-F)/(W-F)); return Math.round(t*t*(pp.hmax||16));
 }
 function catBlocked(x,y){                         // what the snowcat can't drive through
@@ -2952,15 +2982,16 @@ function drawGroundFeatures(cx,cy){
       ctx.fillStyle=on?'#222':'#fff'; ctx.fillRect(x-cx,WORLD.finish-cy,4,3); ctx.fillStyle=on?'#fff':'#222'; ctx.fillRect(x-cx+4,WORLD.finish-cy,4,3); }
     txt('FINISH', (b.x1+b.x2)/2-cx, WORLD.finish-cy-14, '#d33', 8, 'center'); }
   for(const pk of PARKS) if(pk.pipe && pk.pipe.cross && pk.y2>cy-20 && pk.y1-30<cy+VH){   // ski cross: a groomed U-channel, banked sides, orange fence along each lip
-    const W=pk.pipe.w/2, F=W*pk.pipe.f, lit=['#ffffff','#f3f7fc','#e7eef7'], shd=['#b3c3da','#c2cfe2','#cfd9ea'];
+    const W=pk.pipe.w/2, F=W*pk.pipe.f, lit=['#ffffff','#f6f9fd','#eef3f9','#e5ecf6','#dde6f2'], shd=['#a3b6d1','#b0c1d9','#bccbe0','#c7d4e7','#d1dcec'];
     for(let y=Math.max(pk.y1+34,Math.floor(cy)-4); y<Math.min(pk.y2-30,cy+VH+8); y+=2){ const X=Math.round(pipeX(pk,y)-cx), Y=Math.round(y-cy);
-      for(let k=0;k<3;k++){ const a=W-(W-F)*k/3, b=W-(W-F)*(k+1)/3;
+      for(let k=0;k<5;k++){ const a=W-(W-F)*k/5, b=W-(W-F)*(k+1)/5;
         ctx.fillStyle=lit[k]; ctx.fillRect(Math.round(X-a),Y,Math.ceil(a-b),2); ctx.fillStyle=shd[k]; ctx.fillRect(Math.round(X+b),Y,Math.ceil(a-b),2); }
       ctx.fillStyle='#e2eaf4'; ctx.fillRect(X-Math.round(F),Y,Math.round(2*F),2);
       if((y>>1)%3===0){ ctx.fillStyle='rgba(170,188,212,0.35)'; ctx.fillRect(X-Math.round(F)+2,Y,Math.round(2*F)-4,1); }   // corduroy
       ctx.fillStyle='#9fb3cf'; ctx.fillRect(X-W,Y,1,2); ctx.fillRect(X+W-1,Y,1,2);
-      ctx.fillStyle='rgba(255,106,26,0.9)'; ctx.fillRect(X-W-1,Y-4,1,2); ctx.fillRect(X+W,Y-4,1,2); ctx.fillRect(X-W-1,Y-1,1,1); ctx.fillRect(X+W,Y-1,1,1);   // orange fence on the lips
-      if(y%12===0){ ctx.fillStyle='#5a4a3a'; ctx.fillRect(X-W-1,Y-6,1,6); ctx.fillRect(X+W,Y-6,1,6); } } }
+      ctx.fillStyle='#ffffff'; ctx.fillRect(X-W-3,Y,3,2); ctx.fillRect(X+W,Y,3,2);                         // snow berm along the top of each bank
+      ctx.fillStyle='rgba(255,106,26,0.9)'; ctx.fillRect(X-W-2,Y-6,1,2); ctx.fillRect(X+W+1,Y-6,1,2); ctx.fillRect(X-W-2,Y-2,1,1); ctx.fillRect(X+W+1,Y-2,1,1);   // orange fence on top of the banks
+      if(y%12===0){ ctx.fillStyle='#5a4a3a'; ctx.fillRect(X-W-2,Y-8,1,8); ctx.fillRect(X+W+1,Y-8,1,8); } } }
   for(const pk of PARKS) if(pk.pipe && !pk.pipe.cross && pk.y2>cy-20 && pk.y1-30<cy+VH){       // the superpipe: two curved walls with a flat floor
     const W=pk.pipe.w/2, F=W*0.5, lit=['#ffffff','#f4f8fc','#e8eff8','#dbe5f1','#d0dcec'], shd=['#a9bbd4','#b5c5dc','#c1cfe3','#cbd7e9','#d3deee'];
     for(let y=Math.max(pk.y1,Math.floor(cy)-4); y<Math.min(pk.y2,cy+VH+4); y+=2){ const X=Math.round(pipeX(pk,y)-cx), Y=Math.round(y-cy);
@@ -3039,7 +3070,7 @@ function drawGroundFeatures(cx,cy){
       for(let d=90; d<far; d+=50){ ctx.fillStyle='#f28c28'; ctx.fillRect(x0-6,ly+d,2,2); ctx.fillRect(x0+k.w+4,ly+d,2,2); }
     } }
   for(const pk of PARKS) if(pk.cat && P.cat!==pk.cat && vis(pk.cat.y,60)) txt('STOP HERE FOR THE CAT', Math.round(pk.cat.x-cx), Math.round(pk.cat.y-cy)+CZ.y1+3, '#3b6fc1', 8, 'center', false);
-  for(const pk of PARKS) if(vis(pk.y1-40,20)) txt(pk.name.toUpperCase(), (pk.kickers[0]?pk.kickers[0][0]:pipeX(pk,pk.y1))-cx, pk.y1-40-cy, '#e07a1f', pk.mega?16:8, 'center', false);
+  for(const pk of PARKS) if(!(pk.pipe && pk.pipe.cross) && vis(pk.y1-40,20)) txt(pk.name.toUpperCase(), (pk.kickers[0]?pk.kickers[0][0]:pipeX(pk,pk.y1))-cx, pk.y1-40-cy, '#e07a1f', pk.mega?16:8, 'center', false);
   for(const b of BOXES){ if(!vis(b.y,b.len+10)) continue;
     if(b.len>100){ ctx.fillStyle='#4b525c'; ctx.fillRect(b.x-1-cx, b.y-cy+1, 3, b.len); ctx.fillStyle='#c9d1db'; ctx.fillRect(b.x-1-cx, b.y-cy, 2, b.len);
       for(let y=b.y; y<b.y+b.len; y+=30){ ctx.fillStyle='#4b525c'; ctx.fillRect(b.x-cx, y-cy, 1, 4); } continue; }
@@ -3714,6 +3745,8 @@ function drawSelect(){
     txt(c.name.toUpperCase(), x, y0+ch+4, sel?'#ffe066':'#e8eef6', 8, 'center');
     if(!cp) txt(c.type==='ski'?'SKIER':'BOARDER', x, y0+79, '#93a6bf', 8, 'center');
   });
+  const py2=Math.min(250,VH-22)-14; ctx.fillStyle=game.partyPick?'rgba(255,224,102,0.25)':'rgba(255,255,255,0.08)'; ctx.fillRect(VW/2-74,py2-3,148,12);   // party lap toggle
+  txt((TOUCH?'TAP: ':'Y: ')+'PARTY LAP (5 FRIENDS) '+(game.partyPick?'ON':'OFF'), VW/2, py2, game.partyPick?'#ffe066':'#93a6bf', 8, 'center');
   txt(TOUCH ? 'TAP A RIDER, TAP AGAIN TO DROP IN' : 'A / D  CHOOSE     ENTER  DROP IN', VW/2, Math.min(250,VH-22), '#ffe066', 8, 'center');
 }
 
@@ -3849,7 +3882,7 @@ function render(){
     if(game.mode==='play' && game.holdT>0){ ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,VH/2-22,VW,40);
       txt('FULL SCREEN ON', VW/2, VH/2-16, '#ffffff', 8, 'center'); txt('GET READY... '+Math.ceil(game.holdT), VW/2, VH/2-2, '#ffe066', 8, 'center'); }
     if(game.mode==='travel') panel(['', game.travelMsg||'', ''], 'LOADING');
-    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'V  PARAGLIDER (WITH THE PACK)', 'Y  PARTY LAP (5 FRIENDS)', 'C  CHANGE RIDER'], 'PAUSED');
+    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  SKI CROSS START (BLACKCOMB)', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'V  PARAGLIDER (WITH THE PACK)', 'Y  PARTY LAP (5 FRIENDS)', 'C  CHANGE RIDER'], 'PAUSED');
     if(game.mode==='finish'){ const t=game.time;
       panel(['', 'TIME     '+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'),
         'SCORE    '+game.score, 'CRASHES  '+game.crashes, 'BEST     '+game.best, '', TOUCH?'>TAP: RIDE THE LIFT BACK UP':'>ENTER: RIDE THE LIFT BACK UP'], 'RUN COMPLETE'); } }
@@ -3913,7 +3946,8 @@ function frame(now){
   else if(game.mode==='select'){
     if(pressed.left) game.char=(game.char+CHARS.length-1)%CHARS.length;
     if(pressed.right) game.char=(game.char+1)%CHARS.length;
-    if(pressed.enter){ try{ localStorage.setItem('kdawRider', game.char); }catch(e){} newRun(WORLD.id==='whistler'?START:TELE); }
+    if(pressed.party) game.partyPick=!game.partyPick;
+    if(pressed.enter){ try{ localStorage.setItem('kdawRider', game.char); }catch(e){} newRun(WORLD.id==='whistler'?START:TELE); if(game.partyPick && !game.party) partyLap(true); }
   }
   else if(game.mode==='finish' && pressed.enter) newRun(WORLD.id==='whistler'?START:TELE);
   else if(game.mode==='play' || game.mode==='pause'){
@@ -3921,7 +3955,7 @@ function frame(now){
     if(pressed.reset) newRun(START);
     if(pressed.tele){ if(WORLD.id!=='whistler') switchMap('whistler'); newRun(TELE); }
     if(pressed.secret){ P.packs.bc=true; travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
-    if(pressed.bctele){ if(WORLD.id!=='blackcomb') switchMap('blackcomb'); newRun(TELE); }
+    if(pressed.bctele){ if(WORLD.id!=='blackcomb') switchMap('blackcomb'); const X=WORLD.sx; if(X && X.pk){ const keep=game.party; newRun({ x:pipeX(X.pk,X.y1-70), y:X.y1-70 }); if(keep && !game.party) partyLap(true); } else newRun(TELE); }   // just above the ski cross start hut
     if(pressed.char && game.mode==='pause') game.mode='select';
     if(pressed.party) partyLap(!game.party);
     if(pressed.niseko){ if(WORLD.id==='niseko') newRun(TELE);
