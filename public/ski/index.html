@@ -1931,7 +1931,7 @@ function brushTree(o){
 // skins: pull them out (they flap in the wind for a second), then walk uphill slowly
 function rideSkins(dt,steer){
   if(P.skinAnim>0){ P.v=0; P.skinAnim-=dt;
-    if(P.skinAnim<=0){ P.skins=true; P.h=Math.PI*0.72; popup('SKINS ON', 0, '#bfe3ff'); }   // start on a traverse
+    if(P.skinAnim<=0){ P.skins=true; P.h=Math.PI*0.72; popup('SKINS ON', 0, '#bfe3ff'); if(game.party) crewSay(['SKINS ON, CREW!','EARN YOUR TURNS!','UP WE GO!']); }   // start on a traverse
     return; }
   P.h=wrapPi(P.h+steer*2.2*dt);                                   // turn any direction, including uphill
   const uphill=Math.max(0,-Math.cos(P.h)), s=slopeAt(P.x,P.y);
@@ -2076,41 +2076,46 @@ const CREW_CHEER=['SEND IT!','YEWWW!','SICK!','BEAUTY!','FULL SEND!','STEEZY!','
 function partyLap(on){
   game.party=on; game.crew=[]; game.trail=[]; game.crewHidden=true;
   if(on){ const pool=CHARS.map((c,i)=>i).filter(i=>i!==game.char);
-    for(let k=0;k<5;k++) game.crew.push({ ci:pool[k%pool.length], k, lag:0.5+k*0.42, off:(k%2?1:-1)*(10+(k>>1)*8), ph:Math.random()*6.3, x:P.x, y:P.y, z:0, h:0, say:null, sayT:0 }); }
+    const LAG=[0.18,0.28,0.4,0.55,0.75], OFF=[-28,30,-50,52,-10];               // close behind and spread out beside you
+    for(let k=0;k<5;k++) game.crew.push({ ci:pool[k%pool.length], k, lag:LAG[k], off:OFF[k], ph:Math.random()*6.3, x:P.x, y:P.y, z:0, h:0, say:null, sayT:0 }); }
   popup(on?'PARTY LAP! THE CREW IS IN':'PARTY LAP OVER', 0, '#ffe066', true); sfx('chime');
 }
 function crewSay(lines){ if(!game.party || !game.crew.length || game.crewHidden) return; const f=game.crew[Math.random()*game.crew.length|0]; f.say=lines[Math.random()*lines.length|0]; f.sayT=1.6; }
 function updCrew(dt){
-  const T=game.trail, ok=(P.state==='ride' || P.state==='air' || P.state==='crash') && !P.sled && !P.inTun && !P.skins;
+  const T=game.trail, skin=P.skins || P.state==='skintrack';
+  const ok=(P.state==='ride' || P.state==='air' || P.state==='crash' || P.state==='skintrack') && !P.sled && !P.inTun;
   if(!ok){ game.crewHidden=true; T.length=0; return; }                            // lifts, cats, sled, tunnels: they meet you after
   const last=T[T.length-1];
   if(game.crewHidden || (last && Math.hypot(last.x-P.x,last.y-P.y)>220)){        // regroup just uphill of you
     game.crewHidden=false; T.length=0;
-    for(const f of game.crew){ f.x=P.x+f.off*1.4; f.y=P.y-24-f.k*16; f.z=0; f.h=0; } }
-  if(P.state!=='crash'){ const air=P.state==='air';
-    T.push({ t:game.t, x:P.x, y:P.y, z:air?Math.max(0,P.z):0, h:air?Math.atan2(P.vx,P.vy):P.h, air });
-    while(T.length && game.t-T[0].t>4.5) T.shift(); }
-  const sp=P.state==='air'?Math.hypot(P.vx,P.vy):Math.abs(P.v||0);
+    for(const f of game.crew){ f.x=P.x+f.off*0.8; f.y=P.y-20-f.k*10; f.z=0; f.h=0; } }
+  if(P.state!=='crash'){ const air=P.state==='air', L=T[T.length-1], step=L?Math.hypot(P.x-L.x,P.y-L.y):0;
+    if(!L || step>0.5 || game.t-L.t>0.2) T.push({ t:game.t, x:P.x, y:P.y, z:air?Math.max(0,P.z):0, h:air?Math.atan2(P.vx,P.vy):P.h, air, d:(L?L.d:0)+step });
+    while(T.length>2 && game.t-T[0].t>12) T.shift(); }
+  const sp=P.state==='air'?Math.hypot(P.vx,P.vy):Math.abs(P.v||0), lastD=T.length?T[T.length-1].d:0;
   for(const f of game.crew){
     if(f.sayT>0){ f.sayT-=dt; if(f.sayT<=0) f.say=null; }
-    let tx, ty, tz=0, th=0, air=false;
-    if(P.state==='crash'){ tx=P.x+f.off*1.6; ty=P.y-18-f.k*7; }                     // gather round and laugh
+    let tx, ty, tz=0, th=f.h, air=false;
+    if(P.state==='crash'){ tx=P.x+f.off*1.1; ty=P.y-16-f.k*6; }                     // gather round and laugh
+    else if(skin){ const want=lastD-(f.k+1)*15; let s=T[0];                       // skinning: single file in your track
+      for(let i=T.length-1;i>=0;i--) if(T[i].d<=want){ s=T[i]; break; }
+      if(!s) continue; tx=s.x; ty=s.y; }
     else { const want=game.t-f.lag; let s=T[0]; for(let i=T.length-1;i>=0;i--) if(T[i].t<=want){ s=T[i]; break; }
-      if(!s) continue; const wob=f.off+Math.sin(game.t*0.8+f.ph)*7;              // loose: each keeps their own side and weaves a bit
+      if(!s) continue; const wob=f.off+Math.sin(game.t*0.8+f.ph)*8;              // loose: each keeps their own side and weaves a bit
       tx=s.x+Math.cos(s.h)*wob; ty=s.y-Math.sin(s.h)*wob*0.6; tz=s.z; th=s.h; air=s.air; }
     const dx=tx-f.x, dy=ty-f.y, d=Math.hypot(dx,dy);
     if(d>420){ f.x=tx; f.y=ty; continue; }                                         // way behind: catch up
-    const step=Math.min(d, (Math.max(70, sp*1.25)+d*2.2)*dt);
+    const step=Math.min(d, (Math.max(skin?30:70, sp*1.25)+d*(skin?1.5:2.2))*dt);
     if(d>0.5){ f.x+=dx/d*step; f.y+=dy/d*step; }
-    f.z+=(tz-f.z)*Math.min(1,dt*14); f.air=air && f.z>2;
-    const mv=step/Math.max(dt,1e-3); f.moving=mv>12;
-    if(f.moving) f.h=f.air ? th : clamp(Math.atan2(dx,dy),-1.8,1.8);
+    f.z+=(tz-f.z)*Math.min(1,dt*14); f.air=air && f.z>2; f.skins=skin;
+    const mv=step/Math.max(dt,1e-3); f.moving=mv>(skin?4:12);
+    if(f.moving) f.h=f.air ? th : skin ? Math.atan2(dx,dy) : clamp(Math.atan2(dx,dy),-1.8,1.8);
   }
 }
 function drawCrew(f,cx,cy){
   const C=CHARS[f.ci], sx=Math.round(f.x-cx), sy=Math.round(f.y-cy), by=sy-Math.round(f.z), sh=Math.max(0.35,1-f.z/160);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.fillRect(Math.round(sx-4*sh), sy, Math.round(8*sh), 2);
-  drawRider(C, sx, by, f.h, 1, { low:f.air, poles:!f.air && f.moving, grab:f.air && f.k%2===0, skid:f.moving?0:0.6, skidDir:f.off>0?1:-1 });
+  drawRider(C, sx, by, f.h, 1, { low:f.air, poles:!f.air && (f.moving || f.skins), grab:f.air && f.k%2===0, skins:!!f.skins, skid:f.moving||f.skins?0:0.6, skidDir:f.off>0?1:-1 });
   if(f.say){ const a=Math.min(1,f.sayT*2); ctx.globalAlpha=a; txt(f.say, sx, by-28, '#ffe066', 8, 'center'); ctx.globalAlpha=1; }
 }
 function updRail(dt){                              // the Hayabusa: every so often it flashes through, in and out of its tunnels
