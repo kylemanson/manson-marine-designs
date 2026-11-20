@@ -1632,7 +1632,7 @@ function update(dt){
       const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+steer*CFG.TURN*dt;
       P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp;
     } else {
-      if(P.sled){ const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)-steer*0.5*dt; P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp; P.h=wrapPi(P.h-steer*0.9*dt); }   // sled: lean to nudge it in the air
+      if(P.sled){ const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+(P.sMode||1)*steer*0.5*dt; P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp; P.h=wrapPi(P.h+(P.sMode||1)*steer*0.9*dt); }   // sled: lean to nudge it in the air
       else P.spin += steer*CFG.SPIN*dt;                         // A/D spin
       if(!keys.down) P.holdDown=false; if(!keys.up) P.holdUp=false;
       const late=P.airT>0.25;                                   // still holding it a moment after takeoff = you mean it
@@ -2121,7 +2121,7 @@ function catPoint(c,s){                          // point at distance s along th
   return [p[i][0]+(p[i+1][0]-p[i][0])*t, p[i][1]+(p[i+1][1]-p[i][1])*t];
 }
 function boardSled(sl){
-  Object.assign(P,{ sled:sl, x:sl.x, y:sl.y, h:sl.h, v:0, lat:0, sSteer:0, z:0, wing:false, skins:false, skinAnim:0, tuck:false, skid:0, loadT:0, inZone:null, nearSled:null });
+  Object.assign(P,{ sled:sl, x:sl.x, y:sl.y, h:sl.h, v:0, lat:0, sSteer:0, sMode:0, z:0, wing:false, skins:false, skinAnim:0, tuck:false, skid:0, loadT:0, inZone:null, nearSled:null });
   popup('SKI PATROL SLED!', 0, '#ffe066', true); sfx('chime'); P.tracks.push(null); P.lastTrack=null; sl.tracks.push(null);
 }
 function sledBlocked(x,y){                        // lodges and huts stop the sled
@@ -2134,7 +2134,8 @@ function rideSled(dt,steer){                      // snowmobile: throttle, brake
   P.sSteer=(P.sSteer||0)+(steer-(P.sSteer||0))*Math.min(1,dt*20);         // steering answers quickly, without a jerk
   const sp=Math.abs(P.v), Hx0=Math.sin(P.h), Hy0=Math.cos(P.h), vx=Hx0*P.v+Math.cos(P.h)*(P.lat||0), vy=Hy0*P.v-Math.sin(P.h)*(P.lat||0);
   const rate=CFG.SLED_TURN*(0.5+0.5*Math.min(1,sp/45))*(1-0.22*Math.min(1,sp/CFG.SLED_MAX));    // full bite from walking pace, a touch calmer flat out
-  P.h=wrapPi(P.h-P.sSteer*rate*dt*(P.v<-3?-1:1));                         // same steering as the cats: sides turn the sled's nose
+  if(!steer || !P.sMode) P.sMode=Math.cos(P.h)>0.25?1:Math.cos(P.h)<-0.25?-1:(P.sMode||1);   // which way is 'right' is set when you press, then held for the whole turn
+  P.h=wrapPi(P.h+P.sMode*P.sSteer*rate*dt*(P.v<-3?-1:1));                  // RIGHT turns toward screen-right, downhill or up
   const Hx=Math.sin(P.h), Hy=Math.cos(P.h), Rx=Math.cos(P.h), Ry=-Math.sin(P.h);
   P.v=vx*Hx+vy*Hy; P.lat=(vx*Rx+vy*Ry)*Math.exp(-CFG.SLED_GRIP*dt);       // the skis bite and the track slides a little
   let a=CFG.G*s*Hy*0.55 - 0.0008*P.v*Math.abs(P.v) - Math.sign(P.v)*25;   // hills, air drag, snow
