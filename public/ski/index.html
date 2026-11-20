@@ -134,7 +134,7 @@ const CFG = {
   SKINTRACK_SPEED: 620, // backcountry skin track: expedited climb
   CAT_MAX: 200,       // snowcat top speed (you drive it: W go, S reverse, A/D steer)
   CAT_REV: 90, CAT_ACC: 220, CAT_TURN: 1.9,
-  SLED_MAX: 340, SLED_ACC: 300, SLED_REV: 60, SLED_BRAKE: 360, SLED_TURN: 2.5, SLED_GRIP: 7,   // ski patrol snowmobile: quicker, grippier, and it flies
+  SLED_MAX: 340, SLED_ACC: 300, SLED_REV: 60, SLED_BRAKE: 360, SLED_TURN: 2.3, SLED_GRIP: 13,   // ski patrol snowmobile: quicker, grippier, and it flies
   TBAR_SPEED: 230,    // pond skim T-bar
   TBAR_ROPE: 24,      // how far you can swing out on the T-bar rope
   SKIM_DECEL: 112,    // pond skim: speed lost per second on the water (a full tuck just makes it across)
@@ -1382,8 +1382,11 @@ function rideFromAir(){                          // back on the snow: speed and 
   const sp=Math.hypot(P.vx,P.vy), a=Math.atan2(P.vx,P.vy);
   if(P.sled){ if(Math.sin(P.h)*P.vx+Math.cos(P.h)*P.vy<0) P.v=-sp; else { P.v=sp; P.h=wrapPi(a); } P.lat=0; }   // the sled can face any way
   else { P.v=sp; P.h=clamp(a,-1.8,1.8); } }
-function resetAir(){ Object.assign(P,{ spin:0, flip:0, grab:null, bestGrab:null, grabT:0, airT:0, drop:0, minor:false, airBonus:0 }); }
+function resetAir(){ Object.assign(P,{ spin:0, flip:0, grab:null, bestGrab:null, grabT:0, airT:0, drop:0, minor:false, airBonus:0, butter:false, cross:false, crossArm:false, crossT:0 }); }
+function butterCheck(){                          // skidded just before the lip: buttered into it
+  if(!P.sled && !P.minor && game.t-(P.skidAt||-9)<0.6){ P.butter=true; popup('BUTTER!', 0, '#ffe9a8'); } }
 function resetSkier(at){
+  P.sledBack=null;
   if(P.sled){ Object.assign(P.sled,{ x:P.x, y:P.y, h:P.h||0 }); P.sled=null; }
   Object.assign(P,{ x:at.x, y:at.y, h:0, v:0, z:0, vz:0, vx:0, vy:0, state:'ride', inv:0, crashT:0, sx:null, pl:null,
     tuck:false, lastMogul:null, box:null, grindT:0, tracks:[], lastTrack:null, treeHits:0, lastTree:null,
@@ -1430,7 +1433,7 @@ function crash(msg, forceYard){
   const destroyed = !healOnly && (out || P.hp<=0);                       // health bar empty: the ski patrol heli is on its way
   P.wing=false; P.glide=false; P.loopT=0;
   if(P.sled){ const sl=P.sled, d=Math.min(30,speed*0.12);   // thrown off the sled: it skids on a little way and waits for you
-    Object.assign(sl,{ x:P.x+Math.sin(head)*d, y:P.y+Math.cos(head)*d, h:head+(Math.random()-0.5)*1.6 }); sl.tracks.push(null); P.sled=null; P.sledCool=2; }
+    Object.assign(sl,{ x:P.x+Math.sin(head)*d, y:P.y+Math.cos(head)*d, h:head+(Math.random()-0.5)*1.6 }); sl.tracks.push(null); P.sled=null; P.sledCool=2; P.sledBack=sl; }
   P.state='crash'; P.yard=yard; P.pl=null; if(P.sx){ P.sx=null; popup('DNF', 0, '#ff6b5a'); } P.skins=false; P.skinAnim=0; P.crashT=yard?2.4:1.3; P.v=0; P.z=0; P.vz=0; resetAir();
   P.svx=Math.sin(head)*speed*0.35; P.svy=Math.cos(head)*speed*0.35;     // body slides a bit
   game.crashes++; P.gear=[];
@@ -1443,18 +1446,21 @@ function crash(msg, forceYard){
   } else { popup(destroyed?'DESTROYED!':msg.toUpperCase(), 0, destroyed?'#ff3a2a':'#ff6b5a', destroyed); puff(22); sfx('crash'); }
   if(avy && P.packs.bc) setTimeout(()=>popup('BEACON, PROBE + SHOVEL: DUG OUT!', 0, '#bfe3ff', true), 1600);
   if(!healOnly && WORLD){ (WORLD.marks=WORLD.marks||[]).push({ x:P.x, y:P.y, yard, h:P.h||0, n:(Math.random()*1000)|0 }); if(WORLD.marks.length>160) WORLD.marks.shift(); }   // a bomb hole in the snow
-  if(destroyed){ P.destroyed=true; P.crashT=1e9; game.heli={ t:0 }; setTimeout(()=>{ if(game.heli) popup('SKI PATROL IS ON THE WAY', 0, '#ffe066'); }, 900); }
+  if(destroyed){ P.sledBack=null; P.destroyed=true; P.crashT=1e9; game.heli={ t:0 }; setTimeout(()=>{ if(game.heli) popup('SKI PATROL IS ON THE WAY', 0, '#ffe066'); }, 900); }
   P.tracks.push(null); P.lastTrack=null;
 }
 function endAir(){        // score the trick that just finished
   const halves=Math.round(Math.abs(P.spin)/Math.PI), flips=Math.round(Math.abs(P.flip)/(2*Math.PI));
   const parts=[]; let pts=0;
   if(P.bestGrab){ parts.push(P.bestGrab); pts+=100+Math.round(P.grabT*250); }
+  if(P.crossT>0.15){ parts.push(CHARS[game.char].type==='ski'?'IRON CROSS':'BONED'); pts+=150+Math.round(P.crossT*250); }
+  const spinAt=parts.length;
   if(halves && flips){                                               // spinning AND flipping = a cork
     parts.push(['','','DOUBLE ','TRIPLE ','QUAD '][Math.min(flips,4)]+'CORK '+(halves*180)); pts+=halves*150+flips*flips*500+250; }
   else {
     if(halves){ parts.push(String(halves*180)); pts+=halves*150; }
     if(flips){ parts.push(['','','DOUBLE ','TRIPLE ','QUAD '][Math.min(flips,4)]+(P.flip>0?'BACKFLIP':'FRONTFLIP')); pts+=flips*flips*500; } }
+  if(P.butter){ if(halves) parts[spinAt]+=' BUTTER'; else parts.splice(spinAt,0,'BUTTER'); pts+=250+halves*100; }   // e.g. 720 BUTTER
   if(P.drop>0){ parts.push('CLIFF '+Math.round(P.drop*CFG.M)+'M'); pts+=Math.round(P.drop*4); }
   pts += Math.round(P.airT*50);
   if(!parts.length && P.airT>1.2) parts.push('BIG AIR');
@@ -1469,6 +1475,7 @@ function land(){
   const sm=Math.abs(wrapPi(P.spin)), fm=Math.abs(wrapPi(P.flip));
   const bad = fm>CFG.LAND_FLIP ? 'Landed on your head'
             : (sm>CFG.LAND_SPIN && sm<Math.PI-CFG.LAND_SPIN) ? 'Landed sideways' : null;
+  if(!bad && P.cross && P.airT>=0.7){ crash('Landed with your skis crossed'); return; }
   if(bad){ crash(bad); return; }
   rideFromAir();
   if(P.vz<-300) P.v*=0.85;           // hard landing
@@ -1513,7 +1520,8 @@ function update(dt){
   if(P.state==='crash' && P.destroyed){ P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.004,dt); P.svx*=f; P.svy*=f; updHeli(dt); return; }   // you lie still for the heli
   if(P.state==='crash'){
     P.crashT-=dt; P.x+=P.svx*dt; P.y+=P.svy*dt; const f=Math.pow(0.05,dt); P.svx*=f; P.svy*=f;
-    if(P.crashT<=0){ P.state='ride'; P.h=0; P.v=0; P.inv=1.5; P.gear=[]; P.yard=false; P.avyRide=false; }
+    if(P.crashT<=0){ P.state='ride'; P.h=0; P.v=0; P.inv=1.5; P.gear=[]; P.yard=false; P.avyRide=false;
+      if(P.sledBack && !P.destroyed && P.hp>0){ const sl=P.sledBack; P.sledBack=null; Object.assign(sl,{ x:P.x, y:P.y }); boardSled(sl); popup('BACK ON THE SLED', 0, '#ffe066'); P.inv=1.5; } }
     followCam(dt); return;
   }
   if(P.state==='lift'){ updLift(dt); followCam(dt); return; }
@@ -1561,7 +1569,7 @@ function update(dt){
     P.skid += ((stopKey && P.v>15 ? 1 : 0) - P.skid)*Math.min(1,dt*12);
     if(steer) P.skidSide=steer;
     const dxh=Math.sin(P.h), dyh=Math.cos(P.h);
-    if(stopKey && P.v>25){
+    if(stopKey && P.v>25){ P.skidAt=game.t;
       const n=Math.min(6, 1+(P.v/40|0));
       for(let i=0;i<n;i++) game.parts.push({ x:P.x+dxh*3+(Math.random()-0.5)*7, y:P.y+dyh*3, z:1+Math.random()*2,
         vx:dxh*P.v*(0.5+Math.random()*0.5)+(Math.random()-0.5)*60, vy:dyh*P.v*(0.5+Math.random()*0.5)+(Math.random()-0.5)*30,
@@ -1624,13 +1632,15 @@ function update(dt){
       const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+steer*CFG.TURN*dt;
       P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp;
     } else {
-      if(P.sled){ const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)-steer*0.5*dt; P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp; P.h=wrapPi(P.h-steer*0.9*dt); }   // sled: lean to nudge it in the air
+      if(P.sled){ const sp=Math.hypot(P.vx,P.vy), ang=Math.atan2(P.vx,P.vy)+(P.sMode||1)*steer*0.5*dt; P.vx=Math.sin(ang)*sp; P.vy=Math.cos(ang)*sp; P.h=wrapPi(P.h+(P.sMode||1)*steer*0.9*dt); }   // sled: lean to nudge it in the air
       else P.spin += steer*CFG.SPIN*dt;                         // A/D spin
       if(!keys.down) P.holdDown=false; if(!keys.up) P.holdUp=false;
       const late=P.airT>0.25;                                   // still holding it a moment after takeoff = you mean it
-      const fin=(keys.down && (!P.holdDown||(late && !P.sled))?1:0)-(keys.up && (!P.holdUp||(late && !P.sled))?1:0);   // on the sled, holding the throttle off a jump never flips you
+      const fin=(keys.down && (!P.holdDown||(late && !P.sled && !P.butter))?1:0)-(keys.up && (!P.holdUp||(late && !P.sled))?1:0);   // on the sled, holding the throttle off a jump never flips you
       P.flip += fin*CFG.FLIP*dt;                                // S backflip, W frontflip (fresh presses only)
       if(pressed.jump && P.canPop && !P.popped && P.airT<0.3){ P.vz+=CFG.POP; P.popped=true; popup('POP!', 0, '#bfe3ff'); sfx('pop'); }
+      if(pressed.jump && !P.sled && !P.minor) P.crossArm=true;              // press and hold JUMP in the air: cross your tips
+      P.cross=!!(P.crossArm && keys.jump && !P.minor); if(P.cross) P.crossT+=dt;
       const GN = CHARS[game.char].type==='ski' ? ['MUTE','SAFETY','JAPAN'] : ['INDY','METHOD','MELON'];
       const g = keys.g1?GN[0]:keys.g2?GN[1]:keys.g3?GN[2]:null;
       P.grab = P.sled?null:g; if(P.grab){ P.bestGrab=g; P.grabT+=dt; }
@@ -1786,7 +1796,7 @@ function interact(px,py){
     if(py<ly && P.y>=ly && (P.state==='ride' || P.state==='air')){
       // over the lip: the snow drops away by h. Move to the base of the face
       // and lift by h so the skier stays put on screen, then floats down.
-      if(P.state==='ride'){ launch(25,false); P.canPop=true; }
+      if(P.state==='ride'){ launch(25,false); P.canPop=true; butterCheck(); }
       P.y+=h; P.z+=h; P.drop+=h; P.minor=false;
       if((c.pillow||c.fence) && c.line){ const pl=P.pl;
         if(pl && pl.line===c.line && game.time-pl.t<4 && !pl.hit.includes(c)){ pl.n++; pl.t=game.time; pl.hit.push(c); }
@@ -1809,14 +1819,14 @@ function interact(px,py){
     if(k.mound){ const fx=Math.sin(k.dir||0), fy=Math.cos(k.dir||0);
       if(!k.shaped){ if(P.state==='ride' && P.lastPile!==k && Math.hypot(P.x-k.x,P.y-k.cy)<k.w*0.45){ P.lastPile=k; if(P.v>60) launch(25+P.v*0.08,true); else P.v*=0.6; } continue; }   // rough pile: a lumpy bump
       const lx=k.x+fx*k.len/2, ly=k.cy+fy*k.len/2, s0=(px-lx)*fx+(py-ly)*fy, s1=(P.x-lx)*fx+(P.y-ly)*fy, lat=Math.abs((P.x-lx)*fy-(P.y-ly)*fx);
-      if(s0<0 && s1>=0 && lat<k.w/2){ launch(Math.min(k.mega?CFG.MEGA_KICK_MAX:CFG.KICK_MAX, P.v*CFG.KICK*k.pow+30), false); P.canPop=true; break; }
+      if(s0<0 && s1>=0 && lat<k.w/2){ launch(Math.min(k.mega?CFG.MEGA_KICK_MAX:CFG.KICK_MAX, P.v*CFG.KICK*k.pow+30), false); P.canPop=true; butterCheck(); break; }
       continue; }
     if(py<k.y && P.y>=k.y && Math.abs(P.x-k.x)<k.w/2){
       const popped = P.state==='air';                            // hopped right at the lip = pop
       if(popped){ rideFromAir(); }
       launch(Math.min(k.comp?CFG.COMP_KICK_MAX:k.mega?CFG.MEGA_KICK_MAX:CFG.KICK_MAX, P.v*CFG.KICK*k.pow+30)+(popped?CFG.POP:0), false);
       if(popped){ P.popped=true; popup('POP!', 0, '#bfe3ff'); sfx('pop'); } else P.canPop=true;
-      break; }
+      butterCheck(); break; }
   }
   if(!P.sled && (P.state==='ride' || (P.state==='air' && P.z<8 && P.vz<0))) for(const b of BOXES){   // boxes and rails
     if(Math.abs(P.x-b.x)<4 && P.y>b.y && P.y<b.y+b.len){
@@ -2111,7 +2121,7 @@ function catPoint(c,s){                          // point at distance s along th
   return [p[i][0]+(p[i+1][0]-p[i][0])*t, p[i][1]+(p[i+1][1]-p[i][1])*t];
 }
 function boardSled(sl){
-  Object.assign(P,{ sled:sl, x:sl.x, y:sl.y, h:sl.h, v:0, lat:0, sSteer:0, z:0, wing:false, skins:false, skinAnim:0, tuck:false, skid:0, loadT:0, inZone:null, nearSled:null });
+  Object.assign(P,{ sled:sl, x:sl.x, y:sl.y, h:sl.h, v:0, lat:0, sSteer:0, sMode:0, z:0, wing:false, skins:false, skinAnim:0, tuck:false, skid:0, loadT:0, inZone:null, nearSled:null });
   popup('SKI PATROL SLED!', 0, '#ffe066', true); sfx('chime'); P.tracks.push(null); P.lastTrack=null; sl.tracks.push(null);
 }
 function sledBlocked(x,y){                        // lodges and huts stop the sled
@@ -2121,10 +2131,11 @@ function sledBlocked(x,y){                        // lodges and huts stop the sl
 }
 function rideSled(dt,steer){                      // snowmobile: throttle, brake/reverse, smooth steering with a little drift
   const thr=keys.up?1:0, brk=!!keys.down, s=slopeAt(P.x,P.y);
-  P.sSteer=(P.sSteer||0)+(steer-(P.sSteer||0))*Math.min(1,dt*9);          // steering eases in and out
+  P.sSteer=(P.sSteer||0)+(steer-(P.sSteer||0))*Math.min(1,dt*20);         // steering answers quickly, without a jerk
   const sp=Math.abs(P.v), Hx0=Math.sin(P.h), Hy0=Math.cos(P.h), vx=Hx0*P.v+Math.cos(P.h)*(P.lat||0), vy=Hy0*P.v-Math.sin(P.h)*(P.lat||0);
-  const rate=CFG.SLED_TURN*(0.35+0.65*Math.min(1,sp/70))*(1-0.3*Math.min(1,sp/CFG.SLED_MAX));   // tighter at mid speed, calmer flat out
-  P.h=wrapPi(P.h-P.sSteer*rate*dt*(P.v<-3?-1:1));                         // same steering as the cats: sides turn the sled's nose
+  const rate=CFG.SLED_TURN*(0.5+0.5*Math.min(1,sp/45))*(1-0.22*Math.min(1,sp/CFG.SLED_MAX));    // full bite from walking pace, a touch calmer flat out
+  if(!steer || !P.sMode) P.sMode=Math.cos(P.h)>0.25?1:Math.cos(P.h)<-0.25?-1:(P.sMode||1);   // which way is 'right' is set when you press, then held for the whole turn
+  P.h=wrapPi(P.h+P.sMode*P.sSteer*rate*dt*(P.v<-3?-1:1));                  // RIGHT turns toward screen-right, downhill or up
   const Hx=Math.sin(P.h), Hy=Math.cos(P.h), Rx=Math.cos(P.h), Ry=-Math.sin(P.h);
   P.v=vx*Hx+vy*Hy; P.lat=(vx*Rx+vy*Ry)*Math.exp(-CFG.SLED_GRIP*dt);       // the skis bite and the track slides a little
   let a=CFG.G*s*Hy*0.55 - 0.0008*P.v*Math.abs(P.v) - Math.sign(P.v)*25;   // hills, air drag, snow
@@ -2135,7 +2146,6 @@ function rideSled(dt,steer){                      // snowmobile: throttle, brake
   const nx=P.x+(Hx*P.v+Rx*P.lat)*dt, ny=P.y+(Hy*P.v+Ry*P.lat)*dt;
   if(sledBlocked(nx,ny)){ if(Math.abs(P.v)>70){ sfx('tap'); popup('BONK', 0, '#bfe3ff'); } P.v*=-0.15; P.lat=0; }
   else { P.x=nx; P.y=ny; }
-  if(P.v>20) dodgeTrees(dt);
   P.skid=0; P.bonkT=Math.max(0,(P.bonkT||0)-dt);
   if(Math.abs(P.lat)>18 || (Math.abs(P.sSteer)>0.5 && P.v>140)){ const n=1+Math.min(3,Math.abs(P.lat)/30|0), sd=Math.sign(P.lat||P.sSteer);   // spray off the skis in the turn
     for(let i=0;i<n;i++) game.parts.push({ x:P.x-Rx*sd*4, y:P.y-Ry*sd*4, z:1, vx:-Rx*sd*(40+Math.random()*60)+Hx*P.v*0.3, vy:-Ry*sd*(40+Math.random()*60)+Hy*P.v*0.3,
@@ -2208,7 +2218,7 @@ const SLED_SPR={};
 function sledSprite(dir,ci){                      // vintage patrol snowmobile: round yellow hood, maroon bench seat, red-tipped skis
   const key=dir+'_'+ci; if(SLED_SPR[key]) return SLED_SPR[key];
   const cv=document.createElement('canvas'); cv.width=48; cv.height=44; const g=cv.getContext('2d');
-  const h=dir/16*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
+  const h=dir/32*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
   const YEL=['#fff27a','#f5d020','#c9a40e'], MAR=['#a8394f','#82243a','#5e1828'], RED=['#ff6a5a','#e0302a','#a81e1a'], TR=['#4a4f58','#2b2f36','#1d2026'],
         WHT=['#ffffff','#eef2f6','#c9d2dc'], WIN=['#eaf7ff','#c4e6f7','#9fcbe3'], CHR=['#f4f6f8','#c9cfd6','#8d96a1'], DK=['#555b64','#3a3f47','#2b2f36'];
   const C=ci>=0?CHARS[ci]:null, J=C?[C.jacket,C.jacket,C.jacket]:null, PN=C?[C.pants,C.pants,C.pants]:null, HL=C?[C.helmet,C.helmet,C.helmet]:null, GG=C?[C.goggles,C.goggles,C.goggles]:null;
@@ -2254,7 +2264,7 @@ function drawParkedSled(sl,cx,cy){
     ctx.fillRect(X-2,Y-26+b,5,1); ctx.fillRect(X-1,Y-25+b,3,1); ctx.fillRect(X,Y-24+b,1,1); }
 }
 function drawSled(sx,sy,h,rider,z,pitch){         // the patrol sled, from any of 16 headings
-  const dir=((Math.round(h/(Math.PI*2)*16)%16)+16)%16, moving=rider && Math.abs(P.v)>5 && P.state==='ride';
+  const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, moving=rider && Math.abs(P.v)>5 && P.state==='ride';
   const bob=moving?Math.round(Math.sin(game.t*22)*0.5):0;
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,Math.max(5,11-z*0.04),Math.max(2,3.5-z*0.015),0,0,7); ctx.fill();
   const img=sledSprite(dir, rider?game.char:-1);
@@ -3298,7 +3308,9 @@ function drawRider(C,sx,by,ang,up,o){
   const dx=Math.sin(ang), dy=Math.cos(ang)*0.6, pxp=Math.cos(ang), pyp=-Math.sin(ang)*0.6;
   const feet=by-(1-up)*5, skis=C.type==='ski' || o.skins || o.skinAnim>0;   // a splitboard becomes skis to climb
   const plank=(off,len,col)=>{ ctx.fillStyle=col; for(let t=-len;t<=len;t++) ctx.fillRect(Math.round(sx+dx*t+pxp*off), Math.round(feet+dy*t+pyp*off), 1, 1); };
-  if(skis){ plank(-1.5,4,C.gear); plank(1.5,4,C.gear);
+  if(skis && o.cross){ ctx.fillStyle=C.gear; for(const off of [-1.5,1.5]) for(let t=-5;t<=5;t++){ const lo=off*(1-0.5*t);   // iron cross: tails apart, tips crossed
+      ctx.fillRect(Math.round(sx+dx*t+pxp*lo), Math.round(feet+dy*t+pyp*lo), 1, 1); } }
+  else if(skis){ plank(-1.5,4,C.gear); plank(1.5,4,C.gear);
     if(o.skins){ plank(-1.5,3,'#e8553b'); plank(1.5,3,'#e8553b'); } }
   const ba=ang+(o.skidDir||1)*Math.PI/2*(o.skid||0), bx=Math.sin(ba), byy=Math.cos(ba)*0.8;   // board angle: along your direction, across it when stopping
   if(!skis){                                                         // one wide board
@@ -3354,7 +3366,7 @@ function drawSkier(cx,cy){
   const ang = P.state==='air' ? Math.atan2(P.vx,P.vy)+P.spin : P.h+skidOff;
   if(P.wing && (P.state==='ride' || P.state==='air')) drawWing(sx, by);
   drawRider(C, sx, by, ang, air?Math.cos(P.flip):1,
-    { low:P.tuck||!!P.grab, poles:P.state==='ride', grab:!!P.grab, skins:P.skins, skinAnim:P.skinAnim, skid:P.skid,
+    { low:P.tuck||!!P.grab||!!P.cross, poles:P.state==='ride', grab:!!P.grab, cross:P.state==='air' && !!P.cross, skins:P.skins, skinAnim:P.skinAnim, skid:P.skid,
       skidDir: P.h<-0.08 ? -1 : P.h>0.08 ? 1 : (P.skidSide||1) });
 }
 
@@ -3412,7 +3424,7 @@ function drawHUD(){
     ctx.fillStyle='#3a2a34'; ctx.fillRect(11,y+1,40,3);
     ctx.fillStyle=hp>50?'#4ad07a':hp>25?'#ffd23f':'#ff4a5a'; ctx.fillRect(11,y+1,Math.round(40*hp/100),3); }
   if(P.tuck) txt('TUCK', 84, VH-12, '#ffe066');
-  if(P.state==='air' && !P.minor && P.grab) txt(P.grab+'!', 130, VH-12, '#ffe066');
+  if(P.state==='air' && !P.minor && (P.grab || P.cross)) txt([P.grab, P.cross?(CHARS[game.char].type==='ski'?'IRON CROSS':'BONED'):''].filter(Boolean).join(' + ')+'!', 130, VH-12, '#ffe066');
   if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
   else if(P.state==='ride' && WORLD.air && !P.inZone && Math.hypot(P.x-WORLD.air.x,P.y-WORLD.air.y)<150)
     txt(WORLD.jp?'STOP IN THE BLUE BOX TO FLY HOME':'STOP IN THE BLUE BOX TO FLY TO JAPAN', VW/2, TOUCH?46:VH-26, '#ffe066', 8, 'center');
@@ -3514,7 +3526,7 @@ function render(){
       'HOLD STOP WHEN STOPPED = SKINS', 'TURN PHONE SIDEWAYS: BEST VIEW', 'WATCH OUT FOR JERRY', '>TAP TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
   } else if(game.mode==='title'){
     panel(['A / D ..... STEER   (AIR: SPIN)', 'W / UP .... TUCK    (AIR: FRONTFLIP)', 'S / DOWN .. STOP    (AIR: BACKFLIP)',
-      'SPACE ..... HOP  (AT A LIP = POP!)', 'J / K / L . GRABS   SHIFT ... TUCK TOO',
+      'SPACE ..... HOP  (AT A LIP = POP!)', 'J / K / L . GRABS   SHIFT ... TUCK TOO', 'HOLD SPACE IN AIR . CROSS SKIS', 'SKID JUST BEFORE A LIP . BUTTER',
       'M MAP  T MID-MOUNTAIN  R RESTART  P PAUSE', 'LIFTS: STOP IN THE BLUE ZONE TO LOAD',
       'G = PEAK 2 PEAK GONDOLA TO BLACKCOMB', 'HOLD S WHEN STOPPED = SKINS (CLIMB UP)', 'N SOUND ON/OFF    WATCH OUT FOR JERRY', '>PRESS ENTER TO PICK YOUR RIDER'], "POWDER DAYS SKI GAME (BETA)", 12);
   } else { drawHUD();
