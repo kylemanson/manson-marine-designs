@@ -2221,8 +2221,8 @@ function updCat(dt){                              // the cat drives itself up it
     Object.assign(P,{ state:'ride', x:P.x+ox, y:P.y+oy, z:0, v:0, h:0, inv:1, cat:null, catCool:2 }); popup('HOPPED OUT', 0, '#bfe3ff'); }
 }
 const SLED_SPR={};
-function sledSprite(dir,ci){                      // vintage patrol snowmobile: round yellow hood, maroon bench seat, red-tipped skis
-  const key=dir+'_'+ci; if(SLED_SPR[key]) return SLED_SPR[key];
+function sledSprite(dir,ci,jp){                   // vintage patrol snowmobile: round yellow hood, maroon bench seat, red-tipped skis (Japan: black 80s race sled)
+  const key=dir+'_'+ci+(jp?'_j':''); if(SLED_SPR[key]) return SLED_SPR[key];
   const cv=document.createElement('canvas'); cv.width=48; cv.height=44; const g=cv.getContext('2d');
   const h=dir/32*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
   const YEL=['#fff27a','#f5d020','#c9a40e'], MAR=['#a8394f','#82243a','#5e1828'], RED=['#ff6a5a','#e0302a','#a81e1a'], TR=['#4a4f58','#2b2f36','#1d2026'],
@@ -2230,23 +2230,46 @@ function sledSprite(dir,ci){                      // vintage patrol snowmobile: 
   const C=ci>=0?CHARS[ci]:null, J=C?[C.jacket,C.jacket,C.jacket]:null, PN=C?[C.pants,C.pants,C.pants]:null, HL=C?[C.helmet,C.helmet,C.helmet]:null, GG=C?[C.goggles,C.goggles,C.goggles]:null;
   const parts=[];                                  // [inside(l,f,z), colour(l,f,z,top)]
   const part=(fn,col)=>parts.push([fn,col]);
-  const hoodTop=f=>8-Math.pow(Math.max(0,f-1)/8.5,2)*6, hoodW=f=>4-Math.pow(Math.max(0,f-1)/8.5,2)*1.6;
-  part((l,f,z)=>f>=-8 && f<=1 && Math.abs(l)<=2.5 && z>=0 && z<=2, (l,f,z,t)=>t && Math.round(f*2)%2===0?DK:TR);            // track
-  part((l,f,z)=>f>=-9 && f<=2 && Math.abs(l)<=3.5 && z>=2 && z<=4, ()=>YEL);                                                  // tunnel
-  part((l,f,z)=>f>=1 && f<=9.5 && z>=1.5 && z<=hoodTop(f) && Math.abs(l)<=hoodW(f), (l,f,z,t)=>{                               // rounded hood
-    if(t && f>=3.5 && f<=5.5 && Math.abs(l)<=1) return (Math.abs(l)<=0.5 && f>=4 && f<=5) || (Math.abs(f-4.5)<=0.5 && Math.abs(l)<=1 && Math.abs(l)>=0.5) ? RED : WHT;   // patrol cross on the hood
-    if(!t && Math.abs(l)>=hoodW(f)-0.6 && f>=3 && f<=5.5 && z>=3.5 && z<=5.5) return (Math.abs(f-4.25)<=0.5 || Math.abs(z-4.5)<=0.5) ? RED : WHT;   // and on each side
-    return YEL; });
-  part((l,f,z)=>f>=1 && f<=1.5 && Math.abs(l)<=2.5 && z>8 && z<=11.5, ()=>WIN);                                              // windshield
-  part((l,f,z)=>f>=5 && f<=6 && Math.abs(l)<=0.5 && z>hoodTop(5.5)-0.5 && z<=hoodTop(5.5)+1, ()=>CHR);                       // headlight pod
-  part((l,f,z)=>f>=0 && f<=0.5 && Math.abs(l)<=3.5 && z>=8.5 && z<=9, ()=>DK);                                                // handlebar
-  part((l,f,z)=>f>=-8 && f<=-0.5 && Math.abs(l)<=2.5 && z>4 && z<=5.5, ()=>MAR);                                              // bench seat
-  part((l,f,z)=>f>=-9 && f<=-8.5 && Math.abs(l)<=2.5 && z>5.5 && z<=9, ()=>MAR);                                              // backrest
-  part((l,f,z)=>f>=-9.5 && f<=-9 && Math.abs(l)>=2.5 && Math.abs(l)<=3 && z>=2 && z<=6, ()=>YEL);                             // grab rails
-  for(const sd of [-1,1]){
-    part((l,f,z)=>f>=2 && f<=12.5 && Math.abs(l-sd*4.5)<=0.5 && z>=0 && z<=0.5, ()=>YEL);                                     // skis
-    part((l,f,z)=>f>12.5 && f<=14 && Math.abs(l-sd*4.5)<=0.5 && z>=0 && z<=(f-12.5)*1.4+0.5, ()=>RED);                        // red upturned tips
-    part((l,f,z)=>f>=5 && f<=5.5 && Math.abs(l-sd*4)<=0.5 && z>0.5 && z<=2, ()=>DK); }                                        // spindles
+  if(jp){                                          // early-80s Japanese race sled: low black wedge hood, smoked screen, silver flanks with pinstripes
+    const BLK=['#575d67','#2a2d34','#1a1c21'], SIL=['#e3e7ec','#b9c0c9','#8b939e'], SMK=['#8d96a3','#6a727e','#525963'], VNT=['#2f333a','#1b1d21','#111214'];
+    const top=f=>7.2-(f-1)*0.52;                                   // flat wedge, falling to the nose
+    part((l,f,z)=>f>=-8 && f<=1 && Math.abs(l)<=2.5 && z>=0 && z<=2, (l,f,z,t)=>t && Math.round(f*2)%2===0?DK:TR);              // track
+    part((l,f,z)=>f>=-10 && f<=-9.5 && Math.abs(l)<=2.5 && z>=0.5 && z<=3, ()=>BLK);                                             // snow flap
+    part((l,f,z)=>f>=-9.5 && f<=1.5 && Math.abs(l)<=3.5 && z>=2 && z<=4, (l,f,z,t)=>{                                           // silver tunnel flanks
+      if(!t && Math.abs(l)>=3 && f>=-6 && f<=1.5){ const r=Math.round((z-2)*2); if(r===3) return RED; if(r===2) return WHT; }   // red-and-white pinstripes
+      return t?BLK:SIL; });
+    part((l,f,z)=>f>=1 && f<=9 && z>=1.5 && z<=top(f) && Math.abs(l)<=(z>top(f)-1?3.5:4), (l,f,z,t)=>{                           // angular hood with a bevelled top edge
+      if(t && f>=2.5 && f<=5 && Math.abs(l)<=1.5) return VNT;                                                                    // vent panel
+      if(!t && Math.abs(l)>=3.5 && Math.abs(z-3.5)<=0.25) return WHT;                                                            // a pinstripe down each side
+      if(f>=8.5 && z<=2.5) return VNT;                                                                                           // dark nose intake
+      return BLK; });
+    part((l,f,z)=>f>=0.5 && f<=1 && Math.abs(l)<=3 && z>top(1) && z<=11.5 && !(Math.abs(l)>2.5 && z>10.5), ()=>SMK);             // tall smoked windshield
+    part((l,f,z)=>f>=-0.5 && f<=0 && Math.abs(l)<=3.5 && z>=8.5 && z<=9, (l,f,z)=>Math.abs(l)>=3?VNT:DK);                         // bars with black grips
+    part((l,f,z)=>f>=-0.5 && f<=0 && l>=-3 && l<=-2.5 && z>9 && z<=9.5, ()=>RED);                                                 // red kill switch
+    part((l,f,z)=>f>=-8.5 && f<=-0.5 && Math.abs(l)<=2.5 && z>4 && z<=(f<-7?6.5:5.5), ()=>BLK);                                  // black seat with a rear hump
+    for(const sd of [-1,1]){
+      part((l,f,z)=>f>=2 && f<=12.5 && Math.abs(l-sd*4.5)<=0.5 && z>=0 && z<=0.5, (l,f,z,t)=>t && f>=6 && f<=8 && Math.round(f*2)%2===0?SIL:BLK);   // black skis, silver ribs
+      part((l,f,z)=>((f>12.5 && f<=14 && z<=(f-12.5)*1.4+0.5) || (f>=12.5 && f<=13 && z>2 && z<=3)) && Math.abs(l-sd*4.5)<=0.5 && z>=0, ()=>BLK);   // loop handles
+      part((l,f,z)=>f>=5 && f<=5.5 && Math.abs(l-sd*4)<=0.5 && z>0.5 && z<=2, ()=>SIL); }                                        // chrome spindles
+  } else {
+    const hoodTop=f=>8-Math.pow(Math.max(0,f-1)/8.5,2)*6, hoodW=f=>4-Math.pow(Math.max(0,f-1)/8.5,2)*1.6;
+    part((l,f,z)=>f>=-8 && f<=1 && Math.abs(l)<=2.5 && z>=0 && z<=2, (l,f,z,t)=>t && Math.round(f*2)%2===0?DK:TR);            // track
+    part((l,f,z)=>f>=-9 && f<=2 && Math.abs(l)<=3.5 && z>=2 && z<=4, ()=>YEL);                                                  // tunnel
+    part((l,f,z)=>f>=1 && f<=9.5 && z>=1.5 && z<=hoodTop(f) && Math.abs(l)<=hoodW(f), (l,f,z,t)=>{                               // rounded hood
+      if(t && f>=3.5 && f<=5.5 && Math.abs(l)<=1) return (Math.abs(l)<=0.5 && f>=4 && f<=5) || (Math.abs(f-4.5)<=0.5 && Math.abs(l)<=1 && Math.abs(l)>=0.5) ? RED : WHT;   // patrol cross on the hood
+      if(!t && Math.abs(l)>=hoodW(f)-0.6 && f>=3 && f<=5.5 && z>=3.5 && z<=5.5) return (Math.abs(f-4.25)<=0.5 || Math.abs(z-4.5)<=0.5) ? RED : WHT;   // and on each side
+      return YEL; });
+    part((l,f,z)=>f>=1 && f<=1.5 && Math.abs(l)<=2.5 && z>8 && z<=11.5, ()=>WIN);                                              // windshield
+    part((l,f,z)=>f>=5 && f<=6 && Math.abs(l)<=0.5 && z>hoodTop(5.5)-0.5 && z<=hoodTop(5.5)+1, ()=>CHR);                       // headlight pod
+    part((l,f,z)=>f>=0 && f<=0.5 && Math.abs(l)<=3.5 && z>=8.5 && z<=9, ()=>DK);                                                // handlebar
+    part((l,f,z)=>f>=-8 && f<=-0.5 && Math.abs(l)<=2.5 && z>4 && z<=5.5, ()=>MAR);                                              // bench seat
+    part((l,f,z)=>f>=-9 && f<=-8.5 && Math.abs(l)<=2.5 && z>5.5 && z<=9, ()=>MAR);                                              // backrest
+    part((l,f,z)=>f>=-9.5 && f<=-9 && Math.abs(l)>=2.5 && Math.abs(l)<=3 && z>=2 && z<=6, ()=>YEL);                             // grab rails
+    for(const sd of [-1,1]){
+      part((l,f,z)=>f>=2 && f<=12.5 && Math.abs(l-sd*4.5)<=0.5 && z>=0 && z<=0.5, ()=>YEL);                                     // skis
+      part((l,f,z)=>f>12.5 && f<=14 && Math.abs(l-sd*4.5)<=0.5 && z>=0 && z<=(f-12.5)*1.4+0.5, ()=>RED);                        // red upturned tips
+      part((l,f,z)=>f>=5 && f<=5.5 && Math.abs(l-sd*4)<=0.5 && z>0.5 && z<=2, ()=>DK); }                                        // spindles
+  }
   if(C){                                                                                                                      // the rider, sitting up on the bench
     part((l,f,z)=>f>=-4 && f<=-0.5 && Math.abs(l)>=0.5 && Math.abs(l)<=2 && z>5.5 && z<=6.5, ()=>PN);                         // legs
     part((l,f,z)=>f>=-6 && f<=-4 && Math.abs(l)<=2 && z>5.5 && z<=10, ()=>J);                                                  // body
@@ -2273,7 +2296,7 @@ function drawSled(sx,sy,h,rider,z,pitch){         // the patrol sled, from any o
   const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, moving=rider && Math.abs(P.v)>5 && P.state==='ride';
   const bob=moving?Math.round(Math.sin(game.t*22)*0.5):0;
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,Math.max(5,11-z*0.04),Math.max(2,3.5-z*0.015),0,0,7); ctx.fill();
-  const img=sledSprite(dir, rider?game.char:-1);
+  const img=sledSprite(dir, rider?game.char:-1, !!WORLD.jp);
   if(pitch){ ctx.save(); ctx.translate(sx, sy-z-6); ctx.rotate(pitch); ctx.drawImage(img,-24,-24); ctx.restore(); }
   else ctx.drawImage(img, sx-24, Math.round(sy-z)-30+bob);
 }
