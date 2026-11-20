@@ -2489,6 +2489,40 @@ const BIRCH_ROWS=['..c..b..c..','.b.c.bc.b..','c.bsb.bsc.b','.bcbbsbcb.c','b.sbc
   '..b.bwgb...','...b.wg.b..','.....wk....','.....wg....','.....kg....','.....wg....','.....wk....','.....wg....','.....wg....'];
 const BIRCH_SM_ROWS=['.c.b.c.','b.sbs.b','.bcbcb.','c.bwgbc','.b.wg.b','..bkg..','...wg..','...wk..','...wg..','...kg..','...wg..'];
 const BIRCH_BIG=sprite(BIRCH_ROWS,BPAL), BIRCH_SM=sprite(BIRCH_SM_ROWS,BPAL), BIRCH_BIG_BARE=sprite(BIRCH_ROWS,BPAL_BARE), BIRCH_SM_BARE=sprite(BIRCH_SM_ROWS,BPAL_BARE);
+// Niseko's snow ghosts (juhyo): rime-crusted trees at the treeline, lumpy white monsters with blue-grey undersides
+function ghostSprite(w,h,seed,shed){
+  let st=seed*9301+49297; const r=()=>((st=(st*9301+49297)%233280)/233280);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d'), M=new Uint8Array(w*h);
+  const blob=(cx,cy,rx,ry)=>{ for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const dx=(x+0.5-cx)/rx, dy=(y+0.5-cy)/ry; if(dx*dx+dy*dy<=1) M[y*w+x]=1; } };
+  const k=shed?0.8:1, lean=(r()-0.5)*w*0.18, cx=w/2+lean*0.3, body=h-3;
+  blob(cx, body*0.62, w*0.36*k, body*0.36*k);                                   // the main rimed mass
+  blob(cx+lean*0.5, body*0.32, w*0.3*k, body*0.24*k);                           // shoulders
+  const n=4+(r()*3|0);
+  for(let i=0;i<n;i++){ const a=-Math.PI*(0.1+0.8*r()), d=0.55+r()*0.35;          // lumps crowding the top and sides
+    blob(cx+lean*0.6+Math.cos(a)*w*0.36*d, body*0.42+Math.sin(a)*body*0.4*d, (1.3+r()*2)*k, (1.2+r()*1.6)*k); }
+  for(let i=0;i<2;i++){ const sd=i?1:-1, yy=body*(0.35+r()*0.35);                // a stubby rimed branch sticking out each side
+    if(r()<0.75) blob(cx+sd*w*(0.36+r()*0.08), yy, 1.6+r()*1.4, 1+r()*0.6); }
+  for(let y=h-3;y<h;y++){ M[y*w+(w>>1)]=2; if(y===h-3) M[y*w+(w>>1)-1]=2; }       // a bit of grey trunk at the snow line
+  const at=(x,y)=>x<0||y<0||x>=w||y>=h?0:M[y*w+x];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const m=M[y*w+x]; if(!m) continue; let col;
+    if(m===2) col=(y===h-2)?'#6f6875':'#b8b2b4';
+    else { const up=at(x,y-1)===1, dn=at(x,y+1)===1, lf=at(x-1,y)===1, rt=at(x+1,y)===1, hsh=((x*73+y*151+seed*31)%17);
+      if(!dn) col='#9fb0c8';                                        // underside of each lump
+      else if(!up || (!lf && y<body*0.7)) col='#ffffff';                    // sunlit top and left edges
+      else if(!rt || !at(x+1,y+1)) col='#c3d0e2';                         // shaded right side
+      else col=hsh<3?'#dbe4f0':hsh<5?'#ffffff':'#eef3fa';                  // mottled rime
+      if((!up || !lf || !rt) && hsh===(shed?1:0) && y<body-1) col='#6d6676';   // twig tips poking out of the rime
+      if(shed && (!up) && hsh<3) col='#7c7380'; }
+    g.fillStyle=col; g.fillRect(x,y,1,1); }
+  return c;
+}
+const GHOSTS=[0,1,2,3].map(i=>({ big:ghostSprite(13,18,i+1,false), sm:ghostSprite(9,12,i+11,false), bigShed:ghostSprite(13,18,i+1,true), smShed:ghostSprite(9,12,i+11,true) }));
+function ghostOf(o){                                // Niseko treeline: the trees are snow ghosts; they thin out into plain birch below
+  if(!WORLD.jp) return null;
+  if(o.gh===undefined){ const hs=((Math.sin(o.x*12.9898+o.y*78.233)*43758.5453)%1+1)%1, f=WORLD.forest;
+    o.gh = (o.y<f-100 || (o.y<f+300 && hs<1-(o.y-(f-100))/400)) ? GHOSTS[(hs*997|0)%4] : null; }
+  return o.gh;
+}
 const ROCK=sprite(['..rrr...','.rlllrr.','rllrrrrd','rrrrrrdd','.dddddd.'], { r:'#7a828f', l:'#a9b1bc', d:'#545b66' });
 
 const FONT='"Press Start 2P", "DotGothic16", monospace';      // Japanese signs fall back to a pixel Japanese font
@@ -2844,8 +2878,8 @@ function drawPillow(c,cx,cy){
 }
 function drawObj(o,cx,cy){
   const x=Math.round(o.x-cx), y=Math.round(o.y-cy);
-  if(o.t==='tree' && (o.fallen || o.push>0)){ const birch=!!WORLD.birch;          // being pushed: leans over further and further; then crashes down with a little bounce
-    const s=birch ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?TREE_SM_BARE:TREE_BIG_BARE);
+  if(o.t==='tree' && (o.fallen || o.push>0)){ const birch=!!WORLD.birch, gh=ghostOf(o);   // being pushed: leans over further and further; then crashes down with a little bounce
+    const s=gh ? (o.s?gh.smShed:gh.bigShed) : birch ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?TREE_SM_BARE:TREE_BIG_BARE);
     let ang;
     if(o.fallen){ const u=Math.min(1,(game.t-o.fellAt)/0.55), lean0=0.45; ang=o.fallDir*(lean0+(Math.PI/2-lean0)*u*u);
       if(u>=1){ const b=game.t-o.fellAt-0.55; ang-=o.fallDir*Math.max(0,0.12*Math.sin(b*14)*Math.exp(-b*7)); } }
@@ -2853,8 +2887,8 @@ function drawObj(o,cx,cy){
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(s, -(s.width>>1), -s.height+1); ctx.restore();
     if(o.fallen){ ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(x-2,y-1,5,2); }
     if(!o.fallen && !(P.state==='cat' && P.revT>0)){ o.push=Math.max(0,o.push-0.01); o.lean=Math.min(1,o.push/1.2); } return; }
-  if(o.t==='tree'){ const birch=!!WORLD.birch;                                  // Niseko: all birch
-    const s = birch ? (o.tapped ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?BIRCH_SM:BIRCH_BIG))
+  if(o.t==='tree'){ const birch=!!WORLD.birch, gh=ghostOf(o);                    // Niseko: birch, and snow ghosts up at the treeline
+    const s = gh ? (o.tapped ? (o.s?gh.smShed:gh.bigShed) : (o.s?gh.sm:gh.big)) : birch ? (o.tapped ? (o.s?BIRCH_SM_BARE:BIRCH_BIG_BARE) : (o.s?BIRCH_SM:BIRCH_BIG))
                     : o.tapped ? (o.s?TREE_SM_BARE:TREE_BIG_BARE) : (o.s?TREE_SM:TREE_BIG);
     ctx.fillStyle='rgba(90,110,145,0.3)'; ctx.fillRect(x-1,y,7,2);
     ctx.drawImage(s, x-(s.width>>1), y-s.height+1); }
@@ -3227,18 +3261,24 @@ function drawParty(o,x,y){
     const bob=Math.round(Math.sin(game.t*3+o.x)*1.5);
     txt(o.pack==='bc'?'BC':'FLY', x, y-24+bob, o.pack==='bc'?'#ff9a6a':'#ffe066', 6, 'center');
     ctx.fillStyle=o.pack==='bc'?'#ff9a6a':'#ffe066'; ctx.fillRect(x-1,y-17+bob,3,2);
-  } else if(o.kind==='portal'){                                       // tunnel portal: concrete face, dark arch, the name on a plaque at the crown
-    const R=WORLD.road, Y=y-11;
-    ctx.fillStyle='rgba(60,70,90,0.35)'; ctx.fillRect(x-46,y,92,3);
-    ctx.fillStyle='#b9bcc2'; ctx.fillRect(x-40,Y-26,80,36);                                         // portal face
-    ctx.fillStyle='#a2a6ae'; ctx.fillRect(x-46,Y-14,6,24); ctx.fillRect(x+40,Y-14,6,24);            // stepped wing walls
-    ctx.fillStyle='#8d9199'; ctx.fillRect(x-40,Y-26,80,2); ctx.fillRect(x-40,Y+8,80,2);
-    ctx.fillStyle='#16171c'; ctx.beginPath(); ctx.moveTo(x-13,Y+10); ctx.lineTo(x-13,Y-4); ctx.arc(x,Y-4,13,Math.PI,0); ctx.lineTo(x+13,Y+10); ctx.fill();   // the arch
-    ctx.fillStyle='#ffcf6a'; for(let i=-9;i<=9;i+=6) ctx.fillRect(x+i,Y-12,2,1);                    // tunnel lights inside
-    ctx.fillStyle='#4d5059'; ctx.fillRect(x-13,Y+4,26,6); ctx.fillStyle='#f2c33a'; ctx.fillRect(x-1,Y+6,3,1);
-    ctx.fillStyle='#f6f8fb'; ctx.fillRect(x-47,Y-29,94,4); for(let i=-46;i<46;i+=5) ctx.fillRect(x+i,Y-25,2,1+((i+30)%3));   // snow on top
-    ctx.fillStyle='#1e2a3a'; ctx.fillRect(x-38,Y-24,76,13); ctx.fillStyle='#ffffff'; ctx.fillRect(x-38,Y-24,76,1);   // name plaque at the crown
-    txt(o.name, x, Y-22, '#ffffff', 9, 'center', false);
+  } else if(o.kind==='portal'){                                       // tunnel portal: a compact headwall dug into the mountainside, the road running straight in
+    const Y=y-11, sd=o.side, fx=x+sd*10;                              // set back over the tunnel side
+    ctx.fillStyle='#d3dde9'; ctx.beginPath(); ctx.ellipse(fx+sd*12,Y-18,30,15,0,0,7); ctx.fill();   // the mountainside heaped over it
+    ctx.fillStyle='#f4f7fb'; ctx.beginPath(); ctx.ellipse(fx+sd*12,Y-21,28,12,0,0,7); ctx.fill();
+    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(fx+sd*6,Y-26,16,5,0,0,7); ctx.fill();
+    ctx.fillStyle='#b9bcc2'; ctx.fillRect(fx-19,Y-26,38,36);                                        // concrete headwall
+    ctx.fillStyle='#a5a9b1'; ctx.fillRect(fx-19,Y-26,38,2); ctx.fillRect(fx+(sd>0?17:-19),Y-24,2,34);
+    ctx.fillStyle='#16171c'; ctx.beginPath(); ctx.moveTo(fx-12,Y+10); ctx.lineTo(fx-12,Y-2); ctx.arc(fx,Y-2,12,Math.PI,0); ctx.lineTo(fx+12,Y+10); ctx.fill();   // the arch
+    ctx.fillStyle='#ffcf6a'; for(let i=-7;i<=7;i+=7) ctx.fillRect(fx+i,Y-9,2,1);                    // tunnel lights inside
+    ctx.fillStyle='#4d5059'; ctx.fillRect(fx-12,Y+4,24,6); ctx.fillStyle='#f2c33a'; ctx.fillRect(fx-1,Y+6,3,1);
+    ctx.fillStyle='#8d9199'; ctx.beginPath(); ctx.arc(fx,Y-2,13,Math.PI,0); ctx.lineTo(fx+12,Y-2); ctx.arc(fx,Y-2,12,0,Math.PI,true); ctx.fill();   // arch ring
+    ctx.fillStyle='#f6f8fb'; ctx.beginPath(); ctx.ellipse(fx,Y-27,21,3,0,0,7); ctx.fill();          // snow cap, dripping over the edge
+    for(let i=-18;i<18;i+=4) ctx.fillRect(fx+i,Y-26,2,1+((i+40)%3));
+    ctx.beginPath(); ctx.moveTo(fx-sd*19,Y-26); ctx.lineTo(fx-sd*27,Y-12); ctx.lineTo(fx-sd*19,Y-12); ctx.fill();   // drift banked against the open side
+    ctx.fillStyle='#1e2a3a'; ctx.fillRect(fx-14,Y-23,28,8); ctx.fillStyle='#ffffff'; ctx.fillRect(fx-14,Y-23,28,1);   // the headstone plaque
+    const nm=o.name.replace('トンネル',''), fs=nm.length<=3?8:nm.length===4?7:6;
+    ctx.font=fs+'px '+FONT; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#ffffff'; ctx.fillText(nm, fx, Y-18.5, 27);
   } else if(o.kind==='torii'){                                        // vermilion torii gate: ski through it for luck
     ctx.fillStyle='rgba(90,110,150,0.3)'; ctx.fillRect(x-16,y,33,2);
     ctx.fillStyle='#2a1a14'; ctx.fillRect(x-12,y-2,4,3); ctx.fillRect(x+9,y-2,4,3);                 // black feet
