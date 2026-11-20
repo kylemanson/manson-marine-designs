@@ -134,6 +134,7 @@ const CFG = {
   SKINTRACK_SPEED: 620, // backcountry skin track: expedited climb
   CAT_MAX: 200,       // snowcat top speed (you drive it: W go, S reverse, A/D steer)
   CAT_REV: 90, CAT_ACC: 220, CAT_TURN: 1.9,
+  TRAIN_SP: 640, TRAIN_LEN: 210,                     // Hayabusa: fast, four cars long
   SLED_MAX: 340, SLED_ACC: 300, SLED_REV: 60, SLED_BRAKE: 360, SLED_TURN: 2.3, SLED_GRIP: 13,   // ski patrol snowmobile: quicker, grippier, and it flies
   TBAR_SPEED: 230,    // pond skim T-bar
   TBAR_ROPE: 24,      // how far you can swing out on the T-bar rope
@@ -387,6 +388,8 @@ const DEFS = {
     road:{ pts:[[20,7080],[180,7190],[330,7110],[470,7240],[620,7160],[780,7300],[950,7200],[1120,7330],[1290,7220],[1460,7350],[1640,7250],[1810,7370],[1985,7290]],
            tunnels:['ニセコトンネル','ひらふトンネル','羊蹄トンネル','花園トンネル','ビレッジトンネル','アンヌプリトンネル','昆布トンネル','倶知安トンネル','狩太トンネル'],
            gates:true, scatter:34 },                                                                  // winding mountain road: tunnels under the runs, snow gates to jump it
+    rail:{ pts:[[0,8222],[600,8246],[1200,8228],[2000,8252]],                                                   // Hokkaido Shinkansen: Hayabusa through the lower mountain
+           tunnels:['後志トンネル','内浦トンネル','二ツ森トンネル','村山トンネル','渡島トンネル','札樽トンネル'] },
     skijumps:[ { run:'hkn', take:4560, k:90 }, { run:'hkl', take:4580, k:120 } ],
     parties:[ { x:1525, y:3040, name:'PIPE PARTY', pipe:true } ],
     lifts:[
@@ -665,14 +668,14 @@ function shapeCliff(c){           // irregular profile: a big drop, smaller step
 function cliffH(c,x){
   const half=(c.x2-c.x1)/2, u=(x-(c.x1+half))/half; if(Math.abs(u)>=1) return 0;
   if(c.pillow) return c.h*Math.max(0.3,Math.sqrt(1-u*u));
-  if(c.fence) return c.h;                                 // snow gate: a straight steel fence
+  if(c.fence || c.portal) return c.h;                    // snow gate / tunnel headwall: straight
   const j=0.92+0.16*((hash(Math.floor(x/4),c.y|0)&255)/255);
   const env=Math.pow(1-u*u, c.ridge?0.15:0.35);
   const h=c.h*interp(c.prof,(x-c.x1)/(c.x2-c.x1))*env*j;
   return h<6 ? 0 : h;                                     // tiny = just snow (a steep rollover), no drop
 }
 function lipY(c,x){
-  if(c.pillow) return c.y;
+  if(c.pillow || c.portal) return c.y;
   const u=(x-c.x1)/(c.x2-c.x1), base=c.ridge ? c.ya+(c.yb-c.ya)*clamp(u,0,1) : c.y;
   return base+interp(c.lip,u);
 }
@@ -792,7 +795,6 @@ function buildMap(def){
       if(tun[x-1]===0) portals.push({ x:x-2, y:ry[x-2], side:1, name });
       if(tun[e]===0) portals.push({ x:e+1, y:ry[e+1], side:-1, name }); x=e; }
     WORLD.road={ ry, tun, x0, x1, portals };
-    for(const q of portals) addObj({ t:'party', kind:'portal', x:q.x, y:q.y+11, side:q.side, name:q.name });
     for(let x=x0;x<=x1;x+=22) if(tun[x]===0) clear.push({ x, y:ry[x]-14, rx:24, ry:40 });              // plowed corridor, no trees
     if(R.gates) for(let x=x0+30,n=0;x<x1-30;x+=58){                                                   // snow gates above the road: jump the road off them
       const ok=[-22,0,22].every(k=>tun[x+k]===0) && edgeAt(x,ry[x]-36)>6; if(!ok) continue;
@@ -1070,6 +1072,17 @@ function buildMap(def){
     for(let i=CLIFFS.length-1;i>=0;i--){ const c=CLIFFS[i]; if(c.x2>x0 && c.x1<x1 && c.y+c.h>y0 && c.y<y1) CLIFFS.splice(i,1); }
     const B=Object.assign({ c:'#6a5a4a' }, e); BUILDINGS.push(B); addObj(Object.assign({ t:'bldg' }, B));
     if(e.name) LABELS.push([e.name, e.x, e.y-e.h-30]); }
+  if(WORLD.road) finishWay(WORLD.road, d.road.tunnels);
+  WORLD.rail=null; WORLD.train=null;
+  if(d.rail){ const W=WORLD.w|0, ry=new Float32Array(W+1), tun=new Uint8Array(W+1), p=d.rail.pts;   // the Shinkansen line, laid after everything else
+    for(let x=0,i=0;x<=W;x++){ while(i<p.length-2 && x>p[i+1][0]) i++; const a=p[i], b=p[i+1]; ry[x]=a[1]+(b[1]-a[1])*clamp((x-a[0])/(b[0]-a[0]),0,1); }
+    for(let pass=0;pass<3;pass++){ const c=ry.slice(); for(let x=0;x<=W;x++){ let sm=0,n=0; for(let k=-60;k<=60;k+=4){ const j=clamp(x+k,0,W); sm+=c[j]; n++; } ry[x]=sm/n; } }
+    let x0=W, x1=0; for(let x=0;x<=W;x++) if(onMountain(x,ry[x]) && Math.abs(x-PEAK.x)<halfW(ry[x])-6){ x0=Math.min(x0,x); x1=Math.max(x1,x); }
+    for(let x=0;x<=W;x++) tun[x]= x<x0||x>x1 ? 2 : edgeAt(x,ry[x])<6 ? 1 : 0;
+    const R={ ry, tun, x0, x1, rail:true }; finishWay(R, d.rail.tunnels); WORLD.rail=R;
+    for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];        // clear the open track
+      if(!(o.t==='tree'||o.t==='rock'||o.t==='tower'||o.t==='mogul')) continue; const xi=clamp(o.x|0,0,W);
+      if(!R.tun[xi] && Math.abs(o.y-ry[xi])<26) bk.splice(i,1); } }
   buildShade(); buildCrest(); buildMinimap();
   for(const pk of PARKS) if(pk.cat && pk.cat.path){ const pts=pk.cat.path;                   // final sweep: no tree or rock sitting on a snowcat track
     for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i];
@@ -1165,6 +1178,7 @@ function buildMinimap(){
   g.fillStyle='#e3ebf4'; g.fillRect(0,0,w,h);
   g.fillStyle=WORLD.birch?'#b8a4b4':'#8fb197'; g.fillRect(0,WORLD.treeline*s,w,(WORLD.forest-WORLD.treeline)*s);
   g.fillStyle=WORLD.birch?'#7d6377':'#2d5a37'; g.fillRect(0,WORLD.forest*s,w,h);
+  if(WORLD.rail){ g.fillStyle='#9a8fa8'; for(let x=WORLD.rail.x0;x<=WORLD.rail.x1;x+=3) if(!WORLD.rail.tun[x]) g.fillRect(x*s,WORLD.rail.ry[x]*s,Math.max(1,3*s),1); }
   if(WORLD.road){ g.fillStyle='#4d5059'; for(let x=WORLD.road.x0;x<=WORLD.road.x1;x+=3) if(!WORLD.road.tun[x]) g.fillRect(x*s,WORLD.road.ry[x]*s,Math.max(1,3*s),1); }
   if(WORLD.volcano){ g.fillStyle='#3a3036'; g.beginPath(); g.ellipse(PEAK.x*s,CRATER_Y*s,50*s,12*s,0,0,7); g.fill(); }
   g.fillStyle=WORLD.birch?'#a891a2':'#86ab8b'; for(const z of ZONES) if(z.type==='glade'){ g.beginPath(); g.ellipse(z.x*s,z.y*s,z.rx*s,z.ry*s,0,0,7); g.fill(); }
@@ -1288,6 +1302,7 @@ const SFX = {
   yard:()=>{ burst(0.5,900,0.2); tone(140,0.3,'sine',0.1,0,45); for(let i=0;i<5;i++) tone(1200+Math.random()*800,0.04,'square',0.015,0.08+i*0.07); },
   tap:()=>{ burst(0.45,2800,0.07,'highpass'); tone(1568,0.1,'triangle',0.025,0.05); },
   splash:()=>burst(0.35,2200,0.1,'bandpass'),
+  whoosh:()=>{ burst(1.2,700,0.05,'bandpass'); burst(0.9,1600,0.03,'bandpass'); },   // the Shinkansen rushing past, softly
   chime:()=>{ tone(659,0.15,'sine',0.035); tone(988,0.25,'sine',0.03,0.12); },
   pop:()=>tone(520,0.08,'square',0.025,0,900),
   jerry:()=>[392,330,262].forEach((f,i)=>tone(f,0.12,'square',0.025,i*0.1))
@@ -1428,7 +1443,7 @@ function crash(msg, forceYard){
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
   const impact = speed + (air && !P.minor ? Math.max(0,-P.vz)*0.6 : 0), avy=msg.includes('AVALANCHE');
   const healOnly=msg.includes('onsen'), out=P.hp<=0 && !healOnly;
-  const dmg = msg.includes('kei truck') ? 60 : avy ? (P.packs.bc ? 15 : 60) : Math.round(18+impact*0.08);
+  const dmg = msg.includes('Shinkansen') ? 75 : msg.includes('kei truck') ? 60 : avy ? (P.packs.bc ? 15 : 60) : Math.round(18+impact*0.08);
   if(healOnly) P.hp=100; else P.hp=Math.max(0,P.hp-dmg);
   const destroyed = !healOnly && (out || P.hp<=0);                       // health bar empty: the ski patrol heli is on its way
   P.wing=false; P.glide=false; P.loopT=0;
@@ -1494,6 +1509,7 @@ function update(dt){
     else if(p.smoke){ p.vz*=Math.pow(0.6,dt); p.vx*=Math.pow(0.5,dt); p.vy*=Math.pow(0.5,dt); p.s=Math.min(5,p.s+dt*3); } else p.vz-=300*dt; }
   game.parts=game.parts.filter(p=>p.life>0);
   if(WORLD.road && game.mode==='play') updRoad(dt);
+  if(WORLD.rail && game.mode==='play') updRail(dt);
   if(WORLD.volcano && game.mode!=='flight' && cam.y<700){ game.smokeAcc=(game.smokeAcc||0)+dt*16;   // a lazy plume of volcanic steam drifting off the crater
     while(game.smokeAcc>1){ game.smokeAcc--; const g=150+Math.random()*45|0;
       game.parts.push({ x:PEAK.x+(Math.random()-0.5)*50, y:CRATER_Y+2+(Math.random()-0.5)*10, z:0, vx:6+Math.random()*8, vy:-1, vz:16+Math.random()*12,
@@ -1803,7 +1819,7 @@ function interact(px,py){
         else if(!pl || pl.line!==c.line || game.time-pl.t>=4) P.pl={ line:c.line, n:1, t:game.time, hit:[c], done:false };
         if(P.pl.n>=3 && !P.pl.done){ P.pl.done=true; popup(c.fence?'SNOW GATE BOUNCE LINE!':'BEAST PILLOW LINE!', 750, '#7ee0ff', true); game.score+=750; sfx('beast'); } }
       break;
-    } else if(P.state==='ride' && P.y>ly && P.y<ly+h){
+    } else if(P.state==='ride' && P.y>ly && P.y<ly+h && !c.portal){   // (a portal top only counts from above: the road runs into the arch)
       const inX = px>c.x1 && px<c.x2, prevBot = inX ? lipY(c,px)+cliffH(c,px) : -1e9, depth=(P.y-ly)/h;
       const climbing=P.sled && Math.cos(P.h)*P.v<0;                // sled driving uphill into it
       const intoFace = (!c.pillow || climbing) && ((inX && py>=prevBot-2) || (!inX && depth>0.35));
@@ -2013,6 +2029,38 @@ function drawHeli(cx,cy){
   txt('SKI PATROL', X, Y-22, '#ffffff', 6, 'center');
 }
 // the Niseko road: little kei trucks drive it, the asphalt slows you right down, and jumping it scores a ROAD GAP
+function finishWay(R, names){                      // tunnels start well clear of the runs; a compact portal dug into the trees with a pillow on its headwall
+  const W=WORLD.w|0, M=56, t=R.tun, t0=t.slice();
+  for(let x=R.x0;x<=R.x1;x++) if(t0[x]===1) for(let k=1;k<=M;k++){ if(x-k>=R.x0 && t0[x-k]===0) t[x-k]=1; if(x+k<=R.x1 && t0[x+k]===0) t[x+k]=1; }
+  for(let x=R.x0+1;x<R.x1;x++) if(t[x]===0){ let e=x; while(e<R.x1 && t[e]===0) e++; if(e-x<40 && t[x-1]===1 && t[e]===1) for(let k=x;k<e;k++) t[k]=1; x=e; }   // no stubby gaps
+  if(!R.rail) for(let i=CLIFFS.length-1;i>=0;i--){ const c=CLIFFS[i];                   // snow gates now over a buried stretch: gone
+    if(c.fence && String(c.line).startsWith('road') && (t[clamp(c.x1|0,0,W)] || t[clamp(c.x2|0,0,W)] || t[clamp((c.x1+c.x2)/2|0,0,W)])) CLIFFS.splice(i,1); }
+  R.portals=[]; let tn=0;
+  for(let x=R.x0+1;x<=R.x1;x++) if(t[x]===1 && t[x-1]!==1){ let e=x; while(e<R.x1 && t[e]===1) e++;
+    const name=names[tn++%names.length];
+    if(t[x-1]===0) R.portals.push({ x:x, side:1, name }); if(t[e]===0) R.portals.push({ x:e, side:-1, name }); x=e; }
+  R.portals.forEach((q,i)=>{ const y=R.ry[clamp(q.x,0,W)], fx=q.x+q.side*12;
+    for(const bk of buckets) if(bk) for(let j=bk.length-1;j>=0;j--){ const o=bk[j];         // dig the portal in: no trees on it
+      if((o.t==='tree'||o.t==='rock'||o.t==='tower') && Math.abs(o.x-(fx+q.side*6))<34 && o.y>y-52 && o.y<y+24) bk.splice(j,1); }
+    addObj({ t:'party', kind:'portal', x:q.x, y:y+11, side:q.side, name:q.name, rail:!!R.rail });
+    CLIFFS.push({ x1:fx-19, x2:fx+19, y:Math.round(y-27), h:30, portal:true, line:(R.rail?'rp':'tp')+i }); });   // the headwall top: drop off it like a pillow
+}
+function updRail(dt){                              // the Hayabusa: every so often it flashes through, in and out of its tunnels
+  const R=WORLD.rail, L=CFG.TRAIN_LEN;
+  const T=WORLD.train || (WORLD.train={ x:0, dir:1, wait:6+Math.random()*6, on:false });
+  if(!T.on){ T.wait-=dt; if(T.wait<=0){ T.on=true; T.dir=Math.random()<0.5?1:-1; T.x=T.dir>0?R.x0-30:R.x1+30; T.gap=false; T.heard=false; } return; }
+  T.x+=T.dir*CFG.TRAIN_SP*dt;
+  if((T.dir>0 && T.x-L>R.x1+30) || (T.dir<0 && T.x+L<R.x0-30)){ T.on=false; T.wait=14+Math.random()*16; return; }
+  const xi=clamp(P.x|0,0,WORLD.w), ry=R.ry[xi], u=(T.x-P.x)*T.dir, over=u>=0 && u<=L && !R.tun[xi];
+  if(!T.heard && Math.abs(P.y-ry)<240 && Math.abs(T.x-P.x)<520){ T.heard=true; sfx('whoosh'); }
+  if(over && Math.abs(P.y-ry)<9){
+    if(P.state==='ride' || (P.state==='air' && P.z<14)){ crash('Hit by the Shinkansen', true); return; }
+    if(P.state==='air' && !T.gap){ T.gap=true; popup('SHINKANSEN GAP!', 500, '#e3b8ff', true); game.score+=500; sfx('beast'); } }
+}
+function trainCol(u,L){                            // one 2px slice of the train, u = distance back from the nose
+  const NL=24, k=Math.min(u, L-u)/NL, nose=k<1, s=nose?0.3+0.7*Math.sqrt(Math.max(0,k)):1;
+  return { s, nose, win:nose && k>0.5 && k<0.8, joint:!nose && Math.round(u)%46<2, panto:Math.abs(u-L*0.42)<3 };
+}
 function updRoad(dt){
   const R=WORLD.road;
   if(!WORLD.cars){ WORLD.cars=[]; const cols=['#f4f6fa','#2f6fd6','#f4f6fa','#e0402a','#f4f6fa'];
@@ -2534,7 +2582,7 @@ const EN_WORDS=Object.entries({ 'ニセコアンヌプリ山頂':'NISEKO ANNUPUR
   'ファミリーコース':'FAMILY COURSE', '花園コース':'HANAZONO COURSE', 'ストロベリーフィールズ':'STRAWBERRY FIELDS', '水野の沢':'MIZUNO GULLY',
   '春の滝':'SPRING FALLS', 'ビレッジの森':'VILLAGE WOODS', 'アンヌプリの森':'ANNUPURI WOODS', 'ひらふの森':'HIRAFU WOODS', 'アンヌプリ山頂':'ANNUPURI SUMMIT',
   'ひらふ山頂駅':'HIRAFU TOP STATION', 'ニセコ温泉':'NISEKO ONSEN', 'ニセコビレッジ':'NISEKO VILLAGE', 'グラン・ヒラフ':'GRAND HIRAFU', 'ひらふパーク':'HIRAFU PARK',
-  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'カピバラ温泉':'CAPYBARA ONSEN', '猿の温泉':'SNOW MONKEY ONSEN', 'ニセコトンネル':'NISEKO TUNNEL', 'ひらふトンネル':'HIRAFU TUNNEL', '羊蹄トンネル':'YOTEI TUNNEL', '花園トンネル':'HANAZONO TUNNEL',
+  'アンヌプリゴンドラ':'ANNUPURI GONDOLA', 'ラーメン':'RAMEN', 'カピバラ温泉':'CAPYBARA ONSEN', '猿の温泉':'SNOW MONKEY ONSEN', 'ニセコトンネル':'NISEKO TUNNEL', '後志トンネル':'SHIRIBESHI TUNNEL', '内浦トンネル':'UCHIURA TUNNEL', '二ツ森トンネル':'FUTATSUMORI TUNNEL', '村山トンネル':'MURAYAMA TUNNEL', '渡島トンネル':'OSHIMA TUNNEL', '札樽トンネル':'SATSUTARU TUNNEL', 'ひらふトンネル':'HIRAFU TUNNEL', '羊蹄トンネル':'YOTEI TUNNEL', '花園トンネル':'HANAZONO TUNNEL',
   'ビレッジトンネル':'VILLAGE TUNNEL', 'アンヌプリトンネル':'ANNUPURI TUNNEL', '昆布トンネル':'KONBU TUNNEL', '倶知安トンネル':'KUTCHAN TUNNEL', '狩太トンネル':'KARIBUTO TUNNEL',
   'スノーキャット乗り場':'SNOWCAT STATION', 'ニセコ神社':'NISEKO SHRINE', 'スノーゲート':'SNOW GATES', '白馬ジャンプ台':'HAKUBA SKI JUMPS',
   'ジャンプ台':'SKI JUMPS', 'ジャンプ':'JUMP', 'ノーマルヒル':'NORMAL HILL', 'ラージヒル':'LARGE HILL', 'センターフォー':'CENTER FOUR', 'ビレッジゴンドラ':'VILLAGE GONDOLA', 'ビレッジエクスプレス':'VILLAGE EXPRESS',
@@ -2667,6 +2715,27 @@ function drawGroundFeatures(cx,cy){
       ctx.fillStyle='#b8bec8'; ctx.fillRect(X+(f>0?-8:1),Y-4,8,3);                                   // flatbed
       ctx.fillStyle='#ffffff'; ctx.fillRect(X+(f>0?1:-8),Y-9,7,1);                                   // snow on the roof
       ctx.fillStyle='#fff3a0'; ctx.fillRect(X+(f>0?8:-9),Y-3,1,1); } }
+  if(WORLD.rail){ const R=WORLD.rail, T=WORLD.train, L=CFG.TRAIN_LEN;        // Shinkansen: slab track between sound walls, and the Hayabusa
+    for(let sx=0; sx<VW; sx+=2){ const x=clamp((cx+sx)|0,0,WORLD.w); if(R.tun[x]) continue; const Y=Math.round(R.ry[x]-cy); if(Y<-30 || Y>VH+30) continue;
+      ctx.fillStyle='rgba(90,110,150,0.35)'; ctx.fillRect(sx,Y-14,2,3);
+      ctx.fillStyle='#ffffff'; ctx.fillRect(sx,Y-17+((x>>2)%2),2,4);                                // snowbank on the uphill side
+      ctx.fillStyle='#c9ccd2'; ctx.fillRect(sx,Y-12,2,3); ctx.fillStyle='#e9ecf0'; ctx.fillRect(sx,Y-13,2,1);   // sound wall, snow on top
+      ctx.fillStyle='#a7a9ae'; ctx.fillRect(sx,Y-9,2,16);                                          // concrete slab
+      ctx.fillStyle='#8c8f95'; if(x%6<2) ctx.fillRect(sx,Y-7,2,12);                                 // slab joints
+      ctx.fillStyle='#e3e7ec'; ctx.fillRect(sx,Y-5,2,1); ctx.fillRect(sx,Y+2,2,1);                  // the rails
+      ctx.fillStyle='#6b6e75'; ctx.fillRect(sx,Y-4,2,1); ctx.fillRect(sx,Y+3,2,1);
+      ctx.fillStyle='#c9ccd2'; ctx.fillRect(sx,Y+7,2,3); ctx.fillStyle='#e9ecf0'; ctx.fillRect(sx,Y+7,2,1);    // downhill sound wall
+      ctx.fillStyle='#f6f8fb'; ctx.fillRect(sx,Y+10,2,3+((x>>3)%2));
+      if(T && T.on){ const u=(T.x-x)*T.dir; if(u>=0 && u<=L){ const q=trainCol(u,L), top=Math.round(Y+4-15*q.s);   // H5 Hayabusa: green over white, lavender stripe
+        ctx.fillStyle='rgba(30,40,60,0.3)'; ctx.fillRect(sx,Y+4,2,3);
+        ctx.fillStyle='#f3f5f7'; ctx.fillRect(sx,top,2,Y+4-top);                                      // white body
+        ctx.fillStyle='#1d9a6c'; ctx.fillRect(sx,top,2,Math.max(1,Math.round(7*q.s)));                // tokiwa green top
+        ctx.fillStyle='#a46ad0'; ctx.fillRect(sx,top+Math.round(7*q.s),2,1);                          // lavender stripe
+        ctx.fillStyle='#9aa3ad'; ctx.fillRect(sx,Y+3,2,1);                                            // skirt
+        if(q.win){ ctx.fillStyle='#1b2433'; ctx.fillRect(sx,top+1,2,2); }                             // cab window on the long nose
+        else if(!q.nose && (x>>1)%2===0){ ctx.fillStyle='#1b2433'; ctx.fillRect(sx,top+5,1,1); }      // passenger windows
+        if(q.joint){ ctx.fillStyle='#4d5560'; ctx.fillRect(sx,top,1,Y+4-top); }
+        if(q.panto){ ctx.fillStyle='#3a3f47'; ctx.fillRect(sx,top-3,2,1); ctx.fillRect(sx+(sx%4?0:1),top-2,1,2); } } } } }
   if(WORLD.sj) for(const J of WORLD.sj){ const r=RUNS.find(q=>q.id===J.run); if(!r) continue; const S=r.S, top=S[0].y;   // Hakuba-style ski jumps
     if(!(top-60<cy+VH && S[S.length-1].y>cy)) continue;
     for(let i=0;i<S.length-1;i++){ const a=S[i]; if(a.y<cy-12 || a.y>cy+VH+4) continue; const X=Math.round(a.x-cx), Y=Math.round(a.y-cy), hw=Math.round(a.hw), dh=Math.max(2,Math.ceil(S[i+1].y-a.y)+1);
@@ -3264,15 +3333,16 @@ function drawParty(o,x,y){
     txt(o.pack==='bc'?'BC':'FLY', x, y-24+bob, o.pack==='bc'?'#ff9a6a':'#ffe066', 6, 'center');
     ctx.fillStyle=o.pack==='bc'?'#ff9a6a':'#ffe066'; ctx.fillRect(x-1,y-17+bob,3,2);
   } else if(o.kind==='portal'){                                       // tunnel portal: a compact headwall dug into the mountainside, the road running straight in
-    const Y=y-11, sd=o.side, fx=x+sd*10;                              // set back over the tunnel side
-    ctx.fillStyle='#d3dde9'; ctx.beginPath(); ctx.ellipse(fx+sd*12,Y-18,30,15,0,0,7); ctx.fill();   // the mountainside heaped over it
-    ctx.fillStyle='#f4f7fb'; ctx.beginPath(); ctx.ellipse(fx+sd*12,Y-21,28,12,0,0,7); ctx.fill();
-    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(fx+sd*6,Y-26,16,5,0,0,7); ctx.fill();
+    const Y=y-11, sd=o.side, fx=x+sd*12;                              // the whole portal sits on the tunnel side, clear of the run
+    ctx.fillStyle='#d3dde9'; ctx.beginPath(); ctx.ellipse(fx+sd*8,Y-18,24,15,0,0,7); ctx.fill();   // the mountainside heaped over it
+    ctx.fillStyle='#f4f7fb'; ctx.beginPath(); ctx.ellipse(fx+sd*8,Y-21,22,12,0,0,7); ctx.fill();
+    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(fx+sd*4,Y-26,14,5,0,0,7); ctx.fill();
     ctx.fillStyle='#b9bcc2'; ctx.fillRect(fx-19,Y-26,38,36);                                        // concrete headwall
     ctx.fillStyle='#a5a9b1'; ctx.fillRect(fx-19,Y-26,38,2); ctx.fillRect(fx+(sd>0?17:-19),Y-24,2,34);
     ctx.fillStyle='#16171c'; ctx.beginPath(); ctx.moveTo(fx-12,Y+10); ctx.lineTo(fx-12,Y-2); ctx.arc(fx,Y-2,12,Math.PI,0); ctx.lineTo(fx+12,Y+10); ctx.fill();   // the arch
     ctx.fillStyle='#ffcf6a'; for(let i=-7;i<=7;i+=7) ctx.fillRect(fx+i,Y-9,2,1);                    // tunnel lights inside
-    ctx.fillStyle='#4d5059'; ctx.fillRect(fx-12,Y+4,24,6); ctx.fillStyle='#f2c33a'; ctx.fillRect(fx-1,Y+6,3,1);
+    if(o.rail){ ctx.fillStyle='#9a9ca2'; ctx.fillRect(fx-12,Y+4,24,6); ctx.fillStyle='#d6dbe2'; ctx.fillRect(fx-12,Y+5,24,1); ctx.fillRect(fx-12,Y+8,24,1); }   // slab track running in
+    else { ctx.fillStyle='#4d5059'; ctx.fillRect(fx-12,Y+4,24,6); ctx.fillStyle='#f2c33a'; ctx.fillRect(fx-1,Y+6,3,1); }
     ctx.fillStyle='#8d9199'; ctx.beginPath(); ctx.arc(fx,Y-2,13,Math.PI,0); ctx.lineTo(fx+12,Y-2); ctx.arc(fx,Y-2,12,0,Math.PI,true); ctx.fill();   // arch ring
     ctx.fillStyle='#f6f8fb'; ctx.beginPath(); ctx.ellipse(fx,Y-27,21,3,0,0,7); ctx.fill();          // snow cap, dripping over the edge
     for(let i=-18;i<18;i+=4) ctx.fillRect(fx+i,Y-26,2,1+((i+40)%3));
@@ -3568,7 +3638,7 @@ function render(){
   const i0=Math.max(0,Math.floor((cy-20)/BUCKET)), i1=Math.min(NB-1,Math.floor((cy+VH+60)/BUCKET));
   const list=[];
   for(let i=i0;i<=i1;i++) for(const o of buckets[i]) if(o.x>cx-60 && o.x<cx+VW+60) list.push(o);
-  for(const c of CLIFFS){ const top=c.y-12, bot=c.y+(c.bh||c.h)+30;
+  for(const c of CLIFFS){ if(c.portal) continue; const top=c.y-12, bot=c.y+(c.bh||c.h)+30;
     if(top<cy+VH+20 && bot>cy-20 && c.x2>cx-10 && c.x1<cx+VW+10) list.push({ t:'cliff', y:c.y, c }); }
   if(P.state!=='lift') list.push({ t:'skier', y:P.y+0.1 });
   for(const pk of PARKS) if(pk.cat && P.state!=='cat' && pk.cat.y>cy-30 && pk.cat.y<cy+VH+30) list.push({ t:'cat', y:pk.cat.y, c:pk.cat });
