@@ -2131,7 +2131,7 @@ function sledBlocked(x,y){                        // lodges and huts stop the sl
 }
 function rideSled(dt,steer){                      // snowmobile: throttle, brake/reverse, smooth steering with a little drift
   const thr=keys.up?1:0, brk=!!keys.down, s=slopeAt(P.x,P.y);
-  P.sSteer=(P.sSteer||0)+(steer-(P.sSteer||0))*Math.min(1,dt*20);         // steering answers quickly, without a jerk
+  P.sSteer=(P.sSteer||0)+(steer-(P.sSteer||0))*Math.min(1,dt*(steer?20:45));         // steering answers quickly, without a jerk
   const sp=Math.abs(P.v), Hx0=Math.sin(P.h), Hy0=Math.cos(P.h), vx=Hx0*P.v+Math.cos(P.h)*(P.lat||0), vy=Hy0*P.v-Math.sin(P.h)*(P.lat||0);
   const rate=CFG.SLED_TURN*(0.5+0.5*Math.min(1,sp/45))*(1-0.22*Math.min(1,sp/CFG.SLED_MAX));    // full bite from walking pace, a touch calmer flat out
   if(!steer || !P.sMode) P.sMode=Math.cos(P.h)>0.25?1:Math.cos(P.h)<-0.25?-1:(P.sMode||1);   // which way is 'right' is set when you press, then held for the whole turn
@@ -2163,6 +2163,7 @@ function rideSled(dt,steer){                      // snowmobile: throttle, brake
     else { launch(CFG.OLLIE*0.8, false); P.hop=true; } }                        // moving: a little sled hop (time it at a lip)
 }
 function boardCat(c){
+  P.cSteer=0; P.cMode=0;
   if(c.free){ Object.assign(P,{ state:'cat', cat:c, catV:0, catH:c.h, catI:0, catManual:true, x:c.x, y:c.y, z:0, v:0, h:0, loadT:0, inZone:null });
     popup('YOU STOLE A PISTENBULLY!', 0, '#ffe066', true); sfx('chime'); P.tracks.push(null); P.lastTrack=null; return; }
   if(!c.cum){ c.cum=[0]; for(let i=1;i<c.path.length;i++) c.cum.push(c.cum[i-1]+Math.hypot(c.path[i][0]-c.path[i-1][0], c.path[i][1]-c.path[i-1][1])); }
@@ -2188,7 +2189,12 @@ function updCat(dt){                              // the cat drives itself up it
   if(P.pile<PILE_MAX) P.pileMsg=false;
   const want=thr>0?CFG.CAT_MAX*thr*Math.max(0.12,load)*(load<=0?0:1):thr<0?(P.catV>10?0:-CFG.CAT_REV):0;
   P.catV+=clamp(want-P.catV,-CFG.CAT_ACC*1.6*dt,CFG.CAT_ACC*dt);
-  P.catH-=steer*CFG.CAT_TURN*dt*(P.catV<-5?-1:1);                   // tracks let it turn on the spot
+  if(P.catManual){                                                  // you're driving: same feel as the patrol sled
+    P.cSteer=(P.cSteer||0)+(steer-(P.cSteer||0))*Math.min(1,dt*(steer?20:45));   // steering answers quickly, without a jerk
+    if(!steer || !P.cMode) P.cMode=Math.cos(P.catH)>0.25?1:Math.cos(P.catH)<-0.25?-1:(P.cMode||1);   // 'right' is set when you press, held for the turn
+    const rate=CFG.CAT_TURN*(1-0.2*Math.min(1,Math.abs(P.catV)/CFG.CAT_MAX));   // tracks still turn it on the spot; a touch calmer flat out
+    P.catH=wrapPi(P.catH+P.cMode*P.cSteer*rate*dt*(P.catV<-5?-1:1)); }  // RIGHT turns toward screen-right, downhill or up
+  else P.catH-=steer*CFG.CAT_TURN*dt*(P.catV<-5?-1:1);              // autopilot follows its road
   const nx=P.x+Math.sin(P.catH)*P.catV*dt, ny=P.y+Math.cos(P.catH)*P.catV*dt;
   const blk=catBlocked(nx,ny);
   if(blk && blk.t==='tree'){                                        // the blade's on the trunk: nearly stopped, the tree leans over... then TIMBER
@@ -2275,7 +2281,7 @@ const CAT_SPR={};
 function catSprite(dir,ci,retro,groom){           // built once per heading from little 3D boxes, then cached
   const key=dir+'_'+ci+(retro?'_r':'')+(groom?'_g':''); if(CAT_SPR[key]) return CAT_SPR[key];
   const cv=document.createElement('canvas'); cv.width=44; cv.height=40; const g=cv.getContext('2d');
-  const h=dir/16*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
+  const h=dir/32*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[];
   const RED=retro?['#ffb04a','#f0881c','#bf630e']:['#f2606a','#d8283a','#a51b2c'],   // retro Japanese cat: orange chassis, cream cabin, red stripe
         CRM=['#fff4da','#ecd8ac','#c4a97c'], STR=['#e8453a','#c42a22','#8f1c17'], YEL=['#fff6a0','#ffe066','#d9b43a'], TR=['#5a616c','#2b2f36','#1d2026'], TL=['#7d8591','#5a616c','#3d434c'], WIN=['#d9f1ff','#a9dcf7','#7fbfe3'],
         BL=['#f1f4f8','#d3d9e1','#a9b3bf'], RACK=['#a0724a','#7a4e32','#5a3820'], HEL=ci>=0?[CHARS[ci].helmet,CHARS[ci].helmet,CHARS[ci].helmet]:WIN;
@@ -2321,8 +2327,8 @@ function catSprite(dir,ci,retro,groom){           // built once per heading from
   for(const v of vox){ g.fillStyle=v[4]; g.fillRect(Math.round(22+v[0]), Math.round(30+v[1]), 1, 1); }
   return CAT_SPR[key]=cv;
 }
-function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, seen from any of 16 headings
-  const dir=((Math.round(h/(Math.PI*2)*16)%16)+16)%16, a=dir/16*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
+function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, seen from any of 32 headings
+  const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, a=dir/32*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
   ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp && !groom, !!groom), sx-22, sy-30+bob);
   const bx=Math.round(sx-2*Math.sin(a)), by=Math.round(sy-2*Math.cos(a)*0.6-15+bob);   // flashing beacon on the cabin roof
