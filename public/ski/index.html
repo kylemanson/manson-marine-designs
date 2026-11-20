@@ -90,6 +90,7 @@
   <button data-tap="bctele">BLACKCOMB MID-STATION</button>
   <button data-tap="p2p">PEAK 2 PEAK GONDOLA</button>
   <button data-tap="niseko">START AT NISEKO, JAPAN</button>
+  <button data-tap="party">PARTY LAP ON / OFF</button>
   <button data-tap="char">CHANGE RIDER</button>
   <button data-tap="mute">SOUND ON / OFF</button>
   <button data-tap="full" id="pmfull">FULL SCREEN</button>
@@ -1199,7 +1200,7 @@ function buildMinimap(){
 const KEYMAP = { KeyW:'up', ArrowUp:'up', KeyS:'down', ArrowDown:'down', KeyA:'left', ArrowLeft:'left',
   KeyD:'right', ArrowRight:'right', ShiftLeft:'tuck', ShiftRight:'tuck', Space:'jump',
   KeyJ:'g1', KeyK:'g2', KeyL:'g3', KeyR:'reset', KeyT:'tele', KeyM:'map', Enter:'enter',
-  Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute', KeyF:'niseko', KeyV:'wing' };
+  Escape:'pause', KeyP:'pause', KeyB:'bctele', Digit0:'secret', KeyG:'p2p', KeyC:'char', KeyN:'mute', KeyF:'niseko', KeyV:'wing', KeyY:'party' };
 const keys = {}, pressed = {};
 // phones and tablets: on-screen buttons feed the same keys/pressed tables as the keyboard
 const mq=q=>!!(window.matchMedia && matchMedia(q).matches);
@@ -1439,7 +1440,7 @@ function launch(vz, minor){
 }
 function crash(msg, forceYard){
   if(P.state==='crash') return;
-  P.inTun=null;
+  P.inTun=null; if(game.party) crewSay(CREW_OOF);
   const air=P.state==='air', speed=air?Math.hypot(P.vx,P.vy):P.v, head=air?Math.atan2(P.vx,P.vy):P.h;
   const yard = !!forceYard || speed>CFG.YARD_SALE || (air && !P.minor && P.vz<-260);
   const impact = speed + (air && !P.minor ? Math.max(0,-P.vz)*0.6 : 0), avy=msg.includes('AVALANCHE');
@@ -1480,7 +1481,7 @@ function endAir(){        // score the trick that just finished
   if(P.drop>0){ parts.push('CLIFF '+Math.round(P.drop*CFG.M)+'M'); pts+=Math.round(P.drop*4); }
   pts += Math.round(P.airT*50);
   if(!parts.length && P.airT>1.2) parts.push('BIG AIR');
-  if(parts.length){ popup(parts.join(' '), pts); game.score+=pts; }
+  if(parts.length){ popup(parts.join(' '), pts); game.score+=pts; if(pts>=350) crewSay(CREW_CHEER); }
   if(pts+(P.airBonus||0)>=CFG.BEAST || P.drop>=110 || P.airT>=1.8){ popup('BEAST CANDIDE!', 0, '#7ee0ff', true); game.score+=500; sfx('beast'); }
   resetAir();
 }
@@ -1511,6 +1512,7 @@ function update(dt){
   game.parts=game.parts.filter(p=>p.life>0);
   if(WORLD.road && game.mode==='play') updRoad(dt);
   if(WORLD.rail && game.mode==='play') updRail(dt);
+  if(game.party && game.mode==='play') updCrew(dt);
   if(WORLD.volcano && game.mode!=='flight' && cam.y<700){ game.smokeAcc=(game.smokeAcc||0)+dt*16;   // a lazy plume of volcanic steam drifting off the crater
     while(game.smokeAcc>1){ game.smokeAcc--; const g=150+Math.random()*45|0;
       game.parts.push({ x:PEAK.x+(Math.random()-0.5)*50, y:CRATER_Y+2+(Math.random()-0.5)*10, z:0, vx:6+Math.random()*8, vy:-1, vz:16+Math.random()*12,
@@ -2068,6 +2070,48 @@ function rideTunnel(dt){                           // under the run: out of sigh
   P.h=T.dir*Math.PI/2; P.v=T.v*(P.sled?1:0.9); P.z=0;
   if(P.sled) Object.assign(P.sled,{ x:P.x, y:P.y, h:P.h });
   if(!R.tun[xi] || xi<=R.x0 || xi>=R.x1){ P.inTun=null; P.inv=Math.max(P.inv||0,1.0); if(R.tun[xi]===2){ P.x-=T.dir*8; P.h=0; P.v=40; } }   // out the other end
+}
+// ---- party lap: five friends follow your line, loosely, and heckle you ----
+const CREW_CHEER=['SEND IT!','YEWWW!','SICK!','BEAUTY!','FULL SEND!','STEEZY!','NO WAY!','HUCK IT!'], CREW_OOF=['OOF!','YARD SALE!','YOU GOOD?','TOMAHAWK!','EAT IT!'];
+function partyLap(on){
+  game.party=on; game.crew=[]; game.trail=[]; game.crewHidden=true;
+  if(on){ const pool=CHARS.map((c,i)=>i).filter(i=>i!==game.char);
+    for(let k=0;k<5;k++) game.crew.push({ ci:pool[k%pool.length], k, lag:0.5+k*0.42, off:(k%2?1:-1)*(10+(k>>1)*8), ph:Math.random()*6.3, x:P.x, y:P.y, z:0, h:0, say:null, sayT:0 }); }
+  popup(on?'PARTY LAP! THE CREW IS IN':'PARTY LAP OVER', 0, '#ffe066', true); sfx('chime');
+}
+function crewSay(lines){ if(!game.party || !game.crew.length || game.crewHidden) return; const f=game.crew[Math.random()*game.crew.length|0]; f.say=lines[Math.random()*lines.length|0]; f.sayT=1.6; }
+function updCrew(dt){
+  const T=game.trail, ok=(P.state==='ride' || P.state==='air' || P.state==='crash') && !P.sled && !P.inTun && !P.skins;
+  if(!ok){ game.crewHidden=true; T.length=0; return; }                            // lifts, cats, sled, tunnels: they meet you after
+  const last=T[T.length-1];
+  if(game.crewHidden || (last && Math.hypot(last.x-P.x,last.y-P.y)>220)){        // regroup just uphill of you
+    game.crewHidden=false; T.length=0;
+    for(const f of game.crew){ f.x=P.x+f.off*1.4; f.y=P.y-24-f.k*16; f.z=0; f.h=0; } }
+  if(P.state!=='crash'){ const air=P.state==='air';
+    T.push({ t:game.t, x:P.x, y:P.y, z:air?Math.max(0,P.z):0, h:air?Math.atan2(P.vx,P.vy):P.h, air });
+    while(T.length && game.t-T[0].t>4.5) T.shift(); }
+  const sp=P.state==='air'?Math.hypot(P.vx,P.vy):Math.abs(P.v||0);
+  for(const f of game.crew){
+    if(f.sayT>0){ f.sayT-=dt; if(f.sayT<=0) f.say=null; }
+    let tx, ty, tz=0, th=0, air=false;
+    if(P.state==='crash'){ tx=P.x+f.off*1.6; ty=P.y-18-f.k*7; }                     // gather round and laugh
+    else { const want=game.t-f.lag; let s=T[0]; for(let i=T.length-1;i>=0;i--) if(T[i].t<=want){ s=T[i]; break; }
+      if(!s) continue; const wob=f.off+Math.sin(game.t*0.8+f.ph)*7;              // loose: each keeps their own side and weaves a bit
+      tx=s.x+Math.cos(s.h)*wob; ty=s.y-Math.sin(s.h)*wob*0.6; tz=s.z; th=s.h; air=s.air; }
+    const dx=tx-f.x, dy=ty-f.y, d=Math.hypot(dx,dy);
+    if(d>420){ f.x=tx; f.y=ty; continue; }                                         // way behind: catch up
+    const step=Math.min(d, (Math.max(70, sp*1.25)+d*2.2)*dt);
+    if(d>0.5){ f.x+=dx/d*step; f.y+=dy/d*step; }
+    f.z+=(tz-f.z)*Math.min(1,dt*14); f.air=air && f.z>2;
+    const mv=step/Math.max(dt,1e-3); f.moving=mv>12;
+    if(f.moving) f.h=f.air ? th : clamp(Math.atan2(dx,dy),-1.8,1.8);
+  }
+}
+function drawCrew(f,cx,cy){
+  const C=CHARS[f.ci], sx=Math.round(f.x-cx), sy=Math.round(f.y-cy), by=sy-Math.round(f.z), sh=Math.max(0.35,1-f.z/160);
+  ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.fillRect(Math.round(sx-4*sh), sy, Math.round(8*sh), 2);
+  drawRider(C, sx, by, f.h, 1, { low:f.air, poles:!f.air && f.moving, grab:f.air && f.k%2===0, skid:f.moving?0:0.6, skidDir:f.off>0?1:-1 });
+  if(f.say){ const a=Math.min(1,f.sayT*2); ctx.globalAlpha=a; txt(f.say, sx, by-28, '#ffe066', 8, 'center'); ctx.globalAlpha=1; }
 }
 function updRail(dt){                              // the Hayabusa: every so often it flashes through, in and out of its tunnels
   const R=WORLD.rail, L=CFG.TRAIN_LEN;
@@ -3671,9 +3715,10 @@ function render(){
   for(const pk of PARKS) if(pk.cat && P.state!=='cat' && pk.cat.y>cy-30 && pk.cat.y<cy+VH+30) list.push({ t:'cat', y:pk.cat.y, c:pk.cat });
   for(const fc of (WORLD.fcats||[])) if(P.cat!==fc && fc.y>cy-30 && fc.y<cy+VH+30) list.push({ t:'cat', y:fc.y, c:fc });
   for(const sl of (WORLD.sleds||[])) if(P.sled!==sl && sl.y>cy-30 && sl.y<cy+VH+30) list.push({ t:'sled', y:sl.y, s:sl });
+  if(game.party && !game.crewHidden) for(const f of game.crew) if(f.y>cy-40 && f.y<cy+VH+40) list.push({ t:'crew', y:f.y, f });
   if(game.jerry.active) list.push({ t:'jerry', y:game.jerry.y });
   list.sort((a,b)=>a.y-b.y);
-  for(const o of list) o.t==='sled' ? drawParkedSled(o.s,cx,cy) : o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false,o.c.free) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
+  for(const o of list) o.t==='crew' ? drawCrew(o.f,cx,cy) : o.t==='sled' ? drawParkedSled(o.s,cx,cy) : o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false,o.c.free) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
   drawGear(cx,cy);
   for(const p of game.parts){ ctx.fillStyle=p.col; const sz=Math.round(p.s||1); ctx.fillRect(Math.round(p.x-cx-(p.smoke?sz/2:0)), Math.round(p.y-cy-p.z-(p.smoke?sz/2:0)), sz, sz); }
   drawSteam(cx,cy);
@@ -3701,7 +3746,7 @@ function render(){
     if(game.mode==='play' && game.holdT>0){ ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fillRect(0,VH/2-22,VW,40);
       txt('FULL SCREEN ON', VW/2, VH/2-16, '#ffffff', 8, 'center'); txt('GET READY... '+Math.ceil(game.holdT), VW/2, VH/2-2, '#ffe066', 8, 'center'); }
     if(game.mode==='travel') panel(['', game.travelMsg||'', ''], 'LOADING');
-    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'V  PARAGLIDER (WITH THE PACK)', 'C  CHANGE RIDER'], 'PAUSED');
+    if(game.mode==='pause') panel(['', '>PRESS P TO KEEP SKIING', '', 'R  RESTART FROM THE PEAK', 'T  START AT ROUNDHOUSE (WHISTLER)', 'B  START AT BLACKCOMB MID-STATION', 'G  GO TO THE PEAK 2 PEAK', 'F  START AT NISEKO, JAPAN', 'V  PARAGLIDER (WITH THE PACK)', 'Y  PARTY LAP (5 FRIENDS)', 'C  CHANGE RIDER'], 'PAUSED');
     if(game.mode==='finish'){ const t=game.time;
       panel(['', 'TIME     '+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'),
         'SCORE    '+game.score, 'CRASHES  '+game.crashes, 'BEST     '+game.best, '', TOUCH?'>TAP: RIDE THE LIFT BACK UP':'>ENTER: RIDE THE LIFT BACK UP'], 'RUN COMPLETE'); } }
@@ -3775,6 +3820,7 @@ function frame(now){
     if(pressed.secret){ P.packs.bc=true; travel('backcountry', DEFS.backcountry.start, 'CHAM SUMMIT'); }   // secret test key: straight to the top of the backcountry
     if(pressed.bctele){ if(WORLD.id!=='blackcomb') switchMap('blackcomb'); newRun(TELE); }
     if(pressed.char && game.mode==='pause') game.mode='select';
+    if(pressed.party) partyLap(!game.party);
     if(pressed.niseko){ if(WORLD.id==='niseko') newRun(TELE);
       else { game.mode='travel'; game.travelMsg='HEADING TO NISEKO, JAPAN...';                       // build Niseko behind the loading screen
         setTimeout(()=>{ switchMap('niseko'); newRun(TELE); popup('ようこそ ニセコへ', 0, '#ffd6a0', true); }, 60); } }
