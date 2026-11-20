@@ -384,6 +384,7 @@ const DEFS = {
             { name:'レールパーク', run:'mega', mega:true, y1:3380, y2:4760,                            // huge rails and boxes, a jump line and a long run-out
               kickers:[[null,3430,80,1.6],[null,3800,96,1.6]], boxes:[[null,3560,150,-46],[null,3560,150,46],[null,3660,170,0]] } ],
     jumps:[],
+    kei:{ x:1290, y:8630, h:-Math.PI/2 },                                                              // a tracked kei truck by the Hirafu gondola base
     freeCats:[ { x:1199, y:3249, h:-Math.PI/2 }, { x:1231, y:3249, h:-Math.PI/2 },                       // groomers at the top of the Hirafu gondola
                { x:1250, y:8560, h:-Math.PI/2 }, { x:1282, y:8560, h:-Math.PI/2 } ],                       // and at the Grand Hirafu base
     road:{ pts:[[20,7080],[180,7190],[330,7110],[470,7240],[620,7160],[780,7300],[950,7200],[1120,7330],[1290,7220],[1460,7350],[1640,7250],[1810,7370],[1985,7290]],
@@ -1077,6 +1078,8 @@ function buildMap(def){
     if(e.name) LABELS.push([e.name, e.x, e.y-e.h-30]); }
   if(WORLD.road) finishWay(WORLD.road, d.road.tunnels);
   if(d.skicross) buildSkiCross(d);
+  if(d.kei){ WORLD.fcats.push(Object.assign({ free:true, kei:true, tracks:[] }, d.kei));                     // parked after generation: clear a spot
+    for(const bk of buckets) if(bk) for(let i=bk.length-1;i>=0;i--){ const o=bk[i]; if((o.t==='tree'||o.t==='rock') && Math.hypot(o.x-d.kei.x,o.y-d.kei.y)<30) bk.splice(i,1); } }
   WORLD.rail=null; WORLD.train=null;
   if(d.rail){ const W=WORLD.w|0, ry=new Float32Array(W+1), tun=new Uint8Array(W+1), p=d.rail.pts;   // the Shinkansen line, laid after everything else
     for(let x=0,i=0;x<=W;x++){ while(i<p.length-2 && x>p[i+1][0]) i++; const a=p[i], b=p[i+1]; ry[x]=a[1]+(b[1]-a[1])*clamp((x-a[0])/(b[0]-a[0]),0,1); }
@@ -1665,7 +1668,7 @@ function update(dt){
       else P.spin += steer*CFG.SPIN*dt;                         // A/D spin
       if(!keys.down) P.holdDown=false; if(!keys.up) P.holdUp=false;
       const late=P.airT>0.25;                                   // still holding it a moment after takeoff = you mean it
-      const fin=(keys.down && (!P.holdDown||(late && !P.sled && !P.butter && !P.sx))?1:0)-(keys.up && (!P.holdUp||(late && !P.sled && !P.sx))?1:0);   // racing ski cross: holding tuck through a jump never flips you   // on the sled, holding the throttle off a jump never flips you
+      const fin=(keys.down && (!P.holdDown||(late && !P.sled && !P.sx))?1:0)-(keys.up && (!P.holdUp||(late && !P.sled && !P.sx))?1:0);   // racing ski cross: holding tuck through a jump never flips you   // on the sled, holding the throttle off a jump never flips you
       P.flip += fin*CFG.FLIP*dt;                                // S backflip, W frontflip (fresh presses only)
       if(pressed.jump && P.canPop && !P.popped && P.airT<0.3){ P.vz+=CFG.POP; P.popped=true; popup('POP!', 0, '#bfe3ff'); sfx('pop'); }
       if(pressed.jump && !P.sled && !P.minor) P.crossArm=true;              // press and hold JUMP in the air: cross your tips
@@ -2474,18 +2477,20 @@ function updCat(dt){                              // the cat drives itself up it
     while(P.catI<pth.length-1 && Math.hypot(pth[P.catI][0]-P.x,pth[P.catI][1]-P.y)<24) P.catI++;
     const tg=pth[Math.min(pth.length-1,P.catI+1)], e=wrapPi(Math.atan2(tg[0]-P.x,tg[1]-P.y)-P.catH);
     steer=clamp(-e*2.5,-1,1); thr=1-Math.min(0.65,Math.abs(e)*0.9); }
-  if(pressed.g1){ P.plow=!P.plow; if(P.plow){ P.pile=P.pile||0; popup('PLOW DOWN', 0, '#bfe3ff'); } else { dumpPile(); popup('PLOW UP', 0, '#bfe3ff'); } sfx('tap'); }
+  if(pressed.g1 && c.kei){ popup('BEEP BEEP!', 0, '#ffe066'); tone(520,0.12,'square',0.03); tone(420,0.16,'square',0.03,0.14); }
+  else if(pressed.g1){ P.plow=!P.plow; if(P.plow){ P.pile=P.pile||0; popup('PLOW DOWN', 0, '#bfe3ff'); } else { dumpPile(); popup('PLOW UP', 0, '#bfe3ff'); } sfx('tap'); }
   if(P.plow && P.catV>6) P.pile=Math.min(PILE_MAX, (P.pile||0)+P.catV*dt/80);   // the longer you push, the bigger the pile
   if(P.plow && P.catV<-4 && P.pile>0.3) dumpPile();                     // back away and the pile stays put
   const load = P.plow ? Math.max(0, 1-(P.pile||0)/PILE_MAX) : 1;
   if(P.plow && P.pile>=PILE_MAX && thr>0 && !P.pileMsg){ P.pileMsg=true; popup('TOO MUCH SNOW TO PUSH!', 0, '#ff9a6a'); }
   if(P.pile<PILE_MAX) P.pileMsg=false;
-  const want=thr>0?CFG.CAT_MAX*thr*Math.max(0.12,load)*(load<=0?0:1):thr<0?(P.catV>10?0:-CFG.CAT_REV):0;
+  const VM=CFG.CAT_MAX*(c.kei?1.4:1);
+  const want=thr>0?VM*thr*Math.max(0.12,load)*(load<=0?0:1):thr<0?(P.catV>10?0:-CFG.CAT_REV):0;
   P.catV+=clamp(want-P.catV,-CFG.CAT_ACC*1.6*dt,CFG.CAT_ACC*dt);
   if(P.catManual){                                                  // you're driving: same feel as the patrol sled
     P.cSteer=(P.cSteer||0)+(steer-(P.cSteer||0))*Math.min(1,dt*(steer?20:45));   // steering answers quickly, without a jerk
-    if(!steer || !P.cMode) P.cMode=Math.cos(P.catH)>0.25?1:Math.cos(P.catH)<-0.25?-1:(P.cMode||1);   // 'right' is set when you press, held for the turn
-    const rate=CFG.CAT_TURN*(1-0.2*Math.min(1,Math.abs(P.catV)/CFG.CAT_MAX));   // tracks still turn it on the spot; a touch calmer flat out
+    if(!steer || !P.cMode) P.cMode=Math.cos(P.catH)>=0?1:-1;            // 'right' is set from where it points when you press, held for the turn
+    const rate=CFG.CAT_TURN*(c.kei?1.15:1)*(1-0.2*Math.min(1,Math.abs(P.catV)/VM));   // tracks still turn it on the spot; a touch calmer flat out
     P.catH=wrapPi(P.catH+P.cMode*P.cSteer*rate*dt*(P.catV<-5?-1:1)); }  // RIGHT turns toward screen-right, downhill or up
   else P.catH-=steer*CFG.CAT_TURN*dt*(P.catV<-5?-1:1);              // autopilot follows its road
   const nx=P.x+Math.sin(P.catH)*P.catV*dt, ny=P.y+Math.cos(P.catH)*P.catV*dt;
@@ -2498,7 +2503,7 @@ function updCat(dt){                              // the cat drives itself up it
     if(blk.push>=1.2){ blk.fallen=true; blk.fellAt=game.t; blk.fallDir=blk.leanDir; sfx('crash'); popup('TIMBER!', 50, '#ffe066'); puffAt(blk.x+blk.fallDir*10,blk.y,18); game.camShake=0.35; } }
   else if(blk){ if(Math.abs(P.catV)>70){ sfx('tap'); popup('BONK', 0, '#bfe3ff'); } P.catV=0; }
   else { P.x=nx; P.y=ny; }
-  P.z=0; P.v=Math.abs(P.catV)*0.3;                                 // shown on the speedo: a cat isn't fast
+  P.z=0; P.v=Math.abs(P.catV)*(c.kei?0.4:0.3);                      // shown on the speedo: a cat isn't fast (the kei truck is a bit quicker)
   const lt=c.tracks[c.tracks.length-1];
   if(!lt || Math.hypot(P.x-lt[0],P.y-lt[1])>(c.free?3:5)){ c.tracks.push([P.x,P.y,P.catH]); if(c.tracks.length>(c.free?4000:1400)) c.tracks.shift(); }
   { const Fx=Math.sin(P.catH), Fy=Math.cos(P.catH), Rx=-Fy, Ry=Fx, th=Math.abs(P.catV)/CFG.CAT_MAX;   // diesel exhaust puffing from the stack
@@ -2645,7 +2650,39 @@ function catSprite(dir,ci,retro,groom){           // built once per heading from
   for(const v of vox){ g.fillStyle=v[4]; g.fillRect(Math.round(22+v[0]), Math.round(30+v[1]), 1, 1); }
   return CAT_SPR[key]=cv;
 }
-function drawCat(sx,sy,h,rider,groom){            // cute cat-skiing snowcat, seen from any of 32 headings
+const KEI_SPR={};
+function keiSprite(dir,ci){                        // tracked Japanese kei truck: white cab-over, flat bed, four rubber track pods
+  const key=dir+'_'+ci; if(KEI_SPR[key]) return KEI_SPR[key];
+  const cv=document.createElement('canvas'); cv.width=48; cv.height=44; const g=cv.getContext('2d');
+  const h=dir/32*Math.PI*2, Fx=Math.sin(h), Fy=Math.cos(h), Rx=-Math.cos(h), Ry=Math.sin(h), vox=[], parts=[], part=(fn,col)=>parts.push([fn,col]);
+  const WHT=['#ffffff','#eef1f5','#c3cad4'], BED=['#e9edf2','#cfd6df','#a9b2be'], TR=['#4a4f58','#2b2f36','#1d2026'], DK=['#5d636c','#3d424a','#2b2f36'],
+        WIN=['#dff3ff','#a9d5ee','#7fb1cf'], LMP=['#fffbe0','#f4e7a0','#cdbd6e'], GRY=['#c6ccd4','#9aa3ae','#77808c'];
+  const C=ci>=0?CHARS[ci]:null, HL=C?[C.helmet,C.helmet,C.helmet]:null;
+  for(const sl of [-1,1]) for(const ff of [-6,5.5]) part((l,f,z)=>Math.abs(l-sl*5)<=1.2 && Math.abs(f-ff)<=3.2-z*0.35 && z>=0 && z<=3.2, (l,f,z,t)=>t?DK:TR);   // four triangular track pods
+  part((l,f,z)=>Math.abs(l)<=3.6 && f>=-8.5 && f<=8.5 && z>2.5 && z<=3.6, ()=>DK);                                          // chassis
+  part((l,f,z)=>Math.abs(l)<=4.4 && f>=3 && f<=8.5 && z>3.6 && z<=10.5 && !(f>7.6 && z>9.6), (l,f,z,t)=>{                    // white cab-over cab
+    if(!t && f>=8 && z>=7 && z<=9.5 && Math.abs(l)<=3.8) return WIN;                                                          // windshield
+    if(!t && Math.abs(l)>=4 && f>=4.5 && f<=7.5 && z>=7 && z<=9.5) return WIN;                                                 // side windows
+    if(!t && f>=8 && z>=4.4 && z<=5.4 && Math.abs(l)>=2.4 && Math.abs(l)<=3.6) return LMP;                                     // headlights
+    if(!t && f>=8 && z>=4 && z<=6 && Math.abs(l)<=1.6) return DK;                                                              // grille
+    return WHT; });
+  if(HL) part((l,f,z)=>l>=-2.8 && l<=-1.2 && f>=5 && f<=6.4 && z>8 && z<=9.4, ()=>HL);                                      // the driver's helmet, behind the glass
+  part((l,f,z)=>Math.abs(l)<=4.6 && f>=-8.5 && f<2.6 && z>3.6 && z<=4.4, ()=>BED);                                          // flat bed
+  part((l,f,z)=>(Math.abs(l)>=4.1 && Math.abs(l)<=4.6 || f<=-8 || (f>=2 && f<2.6)) && Math.abs(l)<=4.6 && f>=-8.5 && f<2.6 && z>4.4 && z<=6.2, ()=>WHT);   // drop sides and tailgate
+  part((l,f,z)=>Math.abs(l)<=4.2 && f>=2.6 && f<3 && z>6.2 && z<=10.8, (l,f,z)=>Math.abs(l)>3.6||z>10.2?GRY:[GRY[2],GRY[2],GRY[2]]);   // headache rack behind the cab
+  const inAny=(l,f,z)=>{ for(const q of parts) if(q[0](l,f,z)) return true; return false; };
+  for(const [fn,col] of parts) for(let l=-7;l<=7;l+=0.5) for(let f=-10;f<=10;f+=0.5) for(let z=0;z<=11;z+=0.5){
+    if(!fn(l,f,z)) continue; const top=!inAny(l,f,z+0.5); if(!(top || !inAny(l+0.5,f,z) || !inAny(l-0.5,f,z) || !inAny(l,f+0.5,z) || !inAny(l,f-0.5,z))) continue;
+    const pal=col(l,f,z,top); let sh=1; if(top) sh=0; else { let nx=0; if(!inAny(l+0.5,f,z)) nx+=Rx; if(!inAny(l-0.5,f,z)) nx-=Rx; if(!inAny(l,f+0.5,z)) nx+=Fx; if(!inAny(l,f-0.5,z)) nx-=Fx; if(nx>0.35) sh=2; }
+    const x=l*Rx+f*Fx, y=l*Ry+f*Fy; vox.push([x, y*0.6-z, y, z, pal[sh]]); }
+  vox.sort((a,b)=>a[2]-b[2] || a[3]-b[3]);
+  for(const v of vox){ g.fillStyle=v[4]; g.fillRect(Math.round(24+v[0]), Math.round(30+v[1]), 1, 1); }
+  return KEI_SPR[key]=cv;
+}
+function drawCat(sx,sy,h,rider,groom,kei){            // cute cat-skiing snowcat, seen from any of 32 headings
+  if(kei){ const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, bob=rider && Math.abs(P.catV)>5 ? Math.round(Math.sin(game.t*16)*0.5) : 0;
+    ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
+    ctx.drawImage(keiSprite(dir, rider?game.char:-1), sx-24, sy-30+bob); return; }
   const dir=((Math.round(h/(Math.PI*2)*32)%32)+32)%32, a=dir/32*Math.PI*2, bob=Math.round(Math.sin(game.t*14)*0.5);
   ctx.fillStyle='rgba(60,80,110,0.35)'; ctx.beginPath(); ctx.ellipse(sx,sy+1,13,4,0,0,7); ctx.fill();
   ctx.drawImage(catSprite(dir, rider?game.char:-1, !!WORLD.jp, !!groom), sx-22, sy-30+bob);
@@ -3077,6 +3114,7 @@ function drawGroundFeatures(cx,cy){
     ctx.fillStyle='rgba(140,160,190,0.5)'; ctx.fillRect(Math.round(X+ox*4.5+Math.sin(t[2])*8), Math.round(Y+oy*4.5+Math.cos(t[2])*5), 1, 1); ctx.fillRect(Math.round(X-ox*4.5+Math.sin(t[2])*8), Math.round(Y-oy*4.5+Math.cos(t[2])*5), 1, 1); } }
   for(const fc of (WORLD.fcats||[])) for(const t of fc.tracks){ if(t[1]<cy-12 || t[1]>cy+VH+12 || t[0]<cx-12 || t[0]>cx+VW+12) continue;   // groomed corduroy behind a PistenBully
     const px=Math.cos(t[2]), py=-Math.sin(t[2])*0.7;
+    if(fc.kei){ ctx.fillStyle='rgba(150,168,196,0.45)'; for(const k of [-6,-4,4,6]) ctx.fillRect(Math.round(t[0]-cx+px*k), Math.round(t[1]-cy+py*k), 1, 2); continue; }   // the kei truck's four track pods
     for(let k=-8;k<=8;k++){ ctx.fillStyle=(k+8)%3===0?'rgba(170,188,212,0.5)':'rgba(255,255,255,0.6)'; ctx.fillRect(Math.round(t[0]-cx+px*k), Math.round(t[1]-cy+py*k)-1, 2, 3); } }
   for(const pk of PARKS) if(pk.cat && pk.cat.tracks) for(const t of pk.cat.tracks){ if(t[1]<cy-5 || t[1]>cy+VH+5) continue;   // snowcat treads
     const ox=Math.cos(t[2]), oy=-Math.sin(t[2])*0.7;
@@ -3735,7 +3773,7 @@ function drawSkier(cx,cy){
   const C=CHARS[game.char];
   const sx=Math.round(P.x-cx), sy=Math.round(P.y-cy);
   if(P.sled && (P.state==='ride' || P.state==='air')){ drawSled(sx,sy,P.h,true,P.state==='air'?Math.max(0,P.z):0,P.state==='air'?P.flip:0); return; }
-  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true,P.cat && P.cat.free);
+  if(P.state==='cat'){ drawCat(sx,sy,P.catH,true,P.cat && P.cat.free,P.cat && P.cat.kei);
     if(P.plow){ const fx=Math.round(sx+Math.sin(P.catH)*15), fy=Math.round(sy+Math.cos(P.catH)*15*0.7), r=2+(P.pile||0)*2.6;   // the pile riding on the blade
       ctx.fillStyle='rgba(120,140,175,0.4)'; ctx.beginPath(); ctx.ellipse(fx,fy+1,r+1,r*0.5+1,0,0,7); ctx.fill();
       ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(fx,fy-r*0.35,r,r*0.75,0,0,7); ctx.fill();
@@ -3827,7 +3865,7 @@ function drawHUD(){
   if(P.state==='ride' && P.inZone && Math.floor(game.t*3)%2) txt('STOP TO LOAD', VW/2, VH-26, '#bfe3ff', 8, 'center');
   else if(P.state==='ride' && WORLD.air && !P.inZone && Math.hypot(P.x-WORLD.air.x,P.y-WORLD.air.y)<150)
     txt(WORLD.jp?'STOP IN THE BLUE BOX TO FLY HOME':'STOP IN THE BLUE BOX TO FLY TO JAPAN', VW/2, TOUCH?46:VH-26, '#ffe066', 8, 'center');
-  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  '+(TOUCH?'GRAB':'J')+' PLOW  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', VW/2, VH-26, '#bfe3ff', 8, 'center');
+  if(P.state==='cat') txt(P.catManual?'UP DRIVE  DOWN REVERSE  SIDES STEER  '+(TOUCH?'GRAB':'J')+(P.cat && P.cat.kei?' HORN':' PLOW')+'  SPACE OUT':'ARROWS: DRIVE YOURSELF   SPACE: HOP OUT', VW/2, VH-26, '#bfe3ff', 8, 'center');
   if(P.sled && P.state==='ride') txt('UP GO  DOWN BRAKE/REVERSE  SIDES STEER  '+(TOUCH?'JUMP':'SPACE')+(Math.abs(P.v)<35?' HOP OFF':' HOP'), VW/2, VH-26, '#bfe3ff', 8, 'center');
   else if(P.state==='ride' && !P.sled && P.nearSled) txt((TOUCH?'JUMP':'SPACE')+': RIDE THE PATROL SLED', VW/2, VH-26, '#ffe066', 8, 'center');
   if(P.state==='tbar') txt('A/D SWING ON THE ROPE   SPACE LET GO', VW/2, VH-26, '#bfe3ff', 8, 'center');
@@ -3905,7 +3943,7 @@ function render(){
   if(game.party && !game.crewHidden) for(const f of game.crew) if(f.y>cy-40 && f.y<cy+VH+40) list.push({ t:'crew', y:f.y, f });
   if(game.jerry.active) list.push({ t:'jerry', y:game.jerry.y });
   list.sort((a,b)=>a.y-b.y);
-  for(const o of list) o.t==='crew' ? drawCrew(o.f,cx,cy) : o.t==='sled' ? drawParkedSled(o.s,cx,cy) : o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false,o.c.free) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
+  for(const o of list) o.t==='crew' ? drawCrew(o.f,cx,cy) : o.t==='sled' ? drawParkedSled(o.s,cx,cy) : o.t==='cat' ? drawCat(Math.round(o.c.x-cx),Math.round(o.c.y-cy),o.c.free?o.c.h:-Math.PI/2,false,o.c.free,o.c.kei) : o.t==='skier' ? drawSkier(cx,cy) : o.t==='jerry' ? drawJerry(cx,cy) : o.t==='cliff' ? drawCliff(o.c,cx,cy) : drawObj(o,cx,cy);
   drawGear(cx,cy);
   for(const p of game.parts){ ctx.fillStyle=p.col; const sz=Math.round(p.s||1); ctx.fillRect(Math.round(p.x-cx-(p.smoke?sz/2:0)), Math.round(p.y-cy-p.z-(p.smoke?sz/2:0)), sz, sz); }
   drawSteam(cx,cy);
