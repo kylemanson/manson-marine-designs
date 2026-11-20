@@ -597,12 +597,40 @@ function prepChutes(){
       c.hws.push((c.extreme?0.8:1)*(12+17*vnoise(y/150,k*3.1+1)+6*(y/B.rockTo)) + open*(c.opens?55:14)
                  + (c.extreme?16*clamp(1-(y-c.y0-90)/300,0,1):0)); } });                                             // room to land below the entry drop
 }
-function skyY(x){ const B=WORLD.bc; if(!B || !B.peaks) return -1e9; let m=1e9;      // the jagged summit skyline
-  for(const p of B.peaks) m=Math.min(m, p[1]+Math.abs(x-p[0])*1.7); return m+9*vnoise(x/9,2.2); }
+function skyY(x){ const B=WORLD.bc; if(!B || !B.peaks) return -1e9;                // the summit ridge: one main peak, shoulders and saddles falling away, a little jagged
+  const dx=Math.abs(x-PEAK.x), t=Math.min(1,dx/140);
+  return 60 + (dx<60 ? dx*dx/193.5 : 0.62*dx-18.6) + t*(64*vnoise(x/170,5.3)-24) + t*16*vnoise(x/46,8.1) + 5*vnoise(x/9,2.2); }
 function rockEnd(x){ const B=WORLD.bc; return B.rockTo-70*vnoise(x/110,7.3)-420*clamp((600-x)/80,0,1); }   // ragged bottom of the rock band; the left side opens up early
 function chuteAt(x,y){ const B=WORLD.bc; if(!B || y<B.rockTop || y>B.rockTo+40) return null; const i=Math.round((y-B.rockTop)/4);
   for(const c of B.chutes) if(Math.abs(x-c.xs[i])<c.hws[i]) return c; return null; }
-function rockAt(x,y){ const B=WORLD.bc; if(!B) return false; const e=rockEnd(x);
+function buildRockGrid(){                         // Cham rock: big cliffs lining each couloir, ribs between them, crags under the ridge, outcrops on the open faces
+  const B=WORLD.bc, G=4, CW=Math.ceil(WORLD.w/G)+1, CH=Math.ceil((B.rockTo+140)/G)+1, M=new Uint8Array(CW*CH), T=new Uint8Array(CW*CH);
+  for(const q of (B.track||[])){ const ci=Math.round(q[0]/G), cj=Math.round(q[1]/G);              // keep the skin track clear
+    for(let dj=-7;dj<=7;dj++) for(let di=-7;di<=7;di++){ if(di*di+dj*dj>49) continue; const a=ci+di, b=cj+dj; if(a>=0 && a<CW && b>=0 && b<CH) T[b*CW+a]=1; } }
+  const open=(x,y,i,j)=>T[j*CW+i] || Math.hypot(x-START.x,y-START.y)<60 || (y>=B.rockTop && chuteAt(x,y));
+  for(let j=0;j<CH;j++){ const y=j*G, hw=halfW(y), row=clamp(Math.round((y-B.rockTop)/4),0,B.n-1);
+    for(let i=0;i<CW;i++){ const x=i*G; if(Math.abs(x-PEAK.x)>=hw || y<skyY(x)) continue;
+      const e=rockEnd(x); if(y>e+60) continue;
+      if(y>e-80 && vnoise(x/22,y/22)<(y-(e-80))/140) continue;                                       // breaking up into boulders at the base
+      if(open(x,y,i,j)) continue;
+      let d=1e9, k=0;
+      if(y>=B.rockTop) B.chutes.forEach((c,ci)=>{ const h2=c.hws[row]; if(!(h2>0)) return; let dd=Math.abs(x-c.xs[row])-h2;
+        if(c.glacier){ if(x>c.xs[row]) return; dd*=1.6; } if(dd<d){ d=dd; k=ci; } });
+      const ww=(30+52*vnoise(y/240+k*1.7,x/300+k))*(0.55+0.45*clamp((e-y)/500,0,1));             // wall width: big and ragged, thinner toward the base
+      let rock=d>=0 && d<ww;
+      const top=y-skyY(x);
+      if(!rock && top>10 && top<150 && Math.abs(x-PEAK.x)>60 && vnoise(x/40,y/30)+0.3*vnoise(x/13,y/11)>0.92-0.3*clamp(1-top/150,0,1)) rock=true;   // crags under the ridge
+      if(!rock && y>B.rockTop+120 && y<e-40 && d>ww+12 && vnoise(x/64,y/52)>0.76) rock=true;                         // outcrops on the open faces
+      if(rock) M[j*CW+i]=1; } }
+  const M2=M.slice();                                                                                    // soften the shapes: no single-pixel rocks or holes
+  for(let pass=0;pass<2;pass++){ const S=M2.slice(); for(let j=1;j<CH-1;j++) for(let i=1;i<CW-1;i++){ let n=0; for(let dj=-1;dj<=1;dj++) for(let di=-1;di<=1;di++) n+=S[(j+dj)*CW+i+di];
+    const k=j*CW+i; if(n>=6) M2[k]=1; else if(n<=3) M2[k]=0; } }
+  for(let j=0;j<CH;j++) for(let i=0;i<CW;i++){ const k=j*CW+i; if(M2[k] && open(i*G,j*G,i,j)) M2[k]=0; }
+  B.rg={ M:M2, CW, CH, G };
+}
+function rockAt(x,y){ const B=WORLD.bc; if(!B) return false;
+  if(B.rg){ const R=B.rg, i=Math.round(x/R.G), j=Math.round(y/R.G); return i>=0 && j>=0 && i<R.CW && j<R.CH && R.M[j*R.CW+i]===1; }
+  const e=rockEnd(x);
   if(y>e+60) return false;
   if(y>e-80 && vnoise(x/22,y/22)<(y-(e-80))/140) return false;            // the rock band breaks up into outcrops and boulders at its base
   return (y>B.rockTop+12*vnoise(x/50,3) || Math.abs(x-PEAK.x)>95) && !chuteAt(x,y); }
@@ -1099,6 +1127,7 @@ function buildMap(def){
 
 // ---- hillshading: a height map lit from the upper-left, baked once per map ----
 function buildShade(){
+  if(WORLD.bc && !WORLD.bc.rg) buildRockGrid();
   const s=4, W=Math.ceil(WORLD.w/s), Hh=Math.ceil(WORLD.h/s), H=new Float32Array(W*Hh), EC=WORLD.birch?new Float32Array(W*Hh).fill(99):null;
   for(let j=0;j<Hh;j++){ const y=j*s, hw=halfW(y);
     for(let i=0;i<W;i++){ const x=i*s, de=Math.min(hw-Math.abs(x-PEAK.x), WORLD.bc?y-skyY(x):1e9); if(de<-8) continue;
@@ -1133,7 +1162,8 @@ function buildShade(){
       else if(b<1){ const t=clamp((b-0.45)/0.55,0,1); col=[0,1,2].map(n=>SHAD[n]+(SNOW[n]-SHAD[n])*t); }
       else { const t=clamp((b-1)/0.35,0,1); col=[0,1,2].map(n=>SNOW[n]+(LIT[n]-SNOW[n])*t); }
       if(WORLD.bc && de>=6 && y>WORLD.bc.rockTop-10 && y<WORLD.bc.rockTo+40 && (chuteAt(x,y)||{}).glacier) col=[col[0]-12,col[1]-4,Math.min(255,col[2]+3)];   // glacier: a faint blue tinge
-      if(WORLD.bc && de>=6 && y>WORLD.bc.rockTop && y<WORLD.bc.rockTo && !rockAt(x,y)){ const q=nearChute(x,y); if(q && q[2]-Math.abs(x-q[1])<4) col=[176,188,208]; }   // shadow along the chute walls
+      if(WORLD.bc && de>=6 && y>WORLD.bc.rockTop && y<WORLD.bc.rockTo && !rockAt(x,y)){ const q=nearChute(x,y); if(q && q[2]-Math.abs(x-q[1])>=0 && q[2]-Math.abs(x-q[1])<4 && rockAt(x+Math.sign(x-q[1])*6,y)) col=[176,188,208]; }   // shadow along the chute walls (just inside, under the rock)
+      if(WORLD.bc && de>=6 && y<WORLD.bc.rockTo+80 && !rockAt(x,y) && (rockAt(x-4,y-6) || rockAt(x-8,y-12))) col=col.map(v=>v-22);   // rock casts its shadow down onto the snow
       if(EC && de>=6 && y>WORLD.treeline && y<WORLD.village+200){ const f=clamp((y-WORLD.treeline)/1200,0,1)*clamp((EC[k]-6)/24,0,1)*(zoneAt(x,y,'flat')?0.3:1)*(0.22+0.1*vnoise(x/90,y/90));
         col=[col[0]+(150-col[0])*f, col[1]+(128-col[1])*f, col[2]+(146-col[2])*f]; }   // birch forest: a purple-brown haze of bare twigs
       const dim = y>WORLD.forest && y<WORLD.village && de>=6 ? 6 : 0;
@@ -1147,15 +1177,17 @@ function buildShade(){
       for(let i=0;i<RW;i++){ const x=i*rs; if(hw-Math.abs(x-PEAK.x)<0 || y<skyY(x)) continue;
         const k0=(j*RW+i)*4, gl=y>B.rockTop-10 ? chuteAt(x,y) : null;
         if(gl && gl.glacier) continue;                                   // glacier: shaded snow underneath shows through
-        if(!rockAt(x,y)) continue;
-        if(y-skyY(x)<5){ R[k0]=240; R[k0+1]=244; R[k0+2]=250; R[k0+3]=255; continue; }                                         // snow on the ridge crests
-        const n=vnoise(x/40,y/50), n2=vnoise(x/110,y/150), t=vnoise(x/7,y/70)+0.15*vnoise(x/3,y/9), f=vnoise((x+3)/30,y/45)-vnoise((x-3)/30,y/45), q=nearChute(x,y), rim=q?Math.abs(x-q[1])-q[2]:99;
-        const low=clamp((y-(rockEnd(x)-260))/260,0,1), snow=0.2+0.45*n2+0.35*low;     // snowier in big patches and toward the base
-        const ledge=vnoise(x/26,y/7)>0.74-0.18*snow;                                     // thin snow ledges across the face
-        const col = rim<1.2+2.2*vnoise(y/14,x/40) ? [236,242,250]       // ragged snow lip along the chute walls
-          : (t>0.8-0.22*snow && n>0.3) || n>1.02-0.42*snow || ledge ? (f>0 ? [232,238,247] : [206,216,230])   // snow in the gullies, patches and ledges
-          : t<0.3 ? [46,50,60]                                           // deep cracks
-          : f>0.02 ? [124,131,145] : f<-0.02 ? [66,72,84] : [92,99,112];  // lit and shaded rock faces
+        const jx=x+5*(vnoise(x/6,y/6)-0.5), jy=y+5*(vnoise(x/6+5.1,y/6)-0.5);                 // ragged, natural edges
+        if(!rockAt(jx,jy)) continue;
+        if(y-skyY(x)<7){ R[k0]=240; R[k0+1]=244; R[k0+2]=250; R[k0+3]=255; continue; }                                         // corniced crest
+        if(!rockAt(jx,jy-5)){ R[k0]=238; R[k0+1]=243; R[k0+2]=250; R[k0+3]=255; continue; }                                      // snow sitting on top of each rock step
+        if(!rockAt(jx,jy+4)){ R[k0]=40; R[k0+1]=44; R[k0+2]=53; R[k0+3]=255; continue; }                                         // dark foot of the cliff
+        const hr=(xx,yy)=>vnoise(xx/22,yy/16)+0.45*vnoise(xx/8,yy/7)+0.15*vnoise(xx/3,yy/3);          // a little height field for the rock itself
+        const h0=hr(x,y), gx=hr(x+2,y)-hr(x-2,y), gy=hr(x,y+2)-hr(x,y-2), lit=-gx*0.8-gy*0.6, q=nearChute(x,y), rim=q?Math.abs(x-q[1])-q[2]:99;
+        const low=clamp((y-(rockEnd(x)-260))/260,0,1), snow=0.25*vnoise(x/110,y/150)+0.3*low;
+        const col = rim<1.2+2.2*vnoise(y/14,x/40) ? [236,242,250]                                   // ragged snow lip along the couloir walls
+          : (h0>1.3-0.25*snow && gy<0.03) ? (lit>0 ? [232,238,247] : [208,217,231])                 // snow caught on ledges and in hollows
+          : lit>0.07 ? [150,156,168] : lit>0.01 ? [116,122,134] : lit>-0.05 ? [86,92,104] : [58,63,74];   // lit faces, mid tones, shadowed faces
         const k=(j*RW+i)*4; R[k]=col[0]; R[k+1]=col[1]; R[k+2]=col[2]; R[k+3]=255; } }
     rg.putImageData(ri,0,0); SH.rock={ c:rc, s:rs, w:RW, h:RH }; }
 }
@@ -1193,7 +1225,10 @@ function buildMinimap(){
   g.fillStyle=WORLD.birch?'#a891a2':'#86ab8b'; for(const z of ZONES) if(z.type==='glade'){ g.beginPath(); g.ellipse(z.x*s,z.y*s,z.rx*s,z.ry*s,0,0,7); g.fill(); }
   g.save(); g.scale(s,s); g.fillStyle='#ffffff'; g.fill(GROOMED); g.restore();
   g.strokeStyle='#555'; g.lineWidth=1; for(const c2 of RIDGE_CLIFFS){ g.beginPath(); g.moveTo(c2.x1*s,c2.ya*s); g.lineTo(c2.x2*s,c2.yb*s); g.stroke(); }
-  if(WORLD.bc){ const B=WORLD.bc; g.fillStyle='#5b616b'; g.fillRect(0,B.rockTop*s,w,(B.rockTo-B.rockTop)*s);
+  if(WORLD.bc && WORLD.bc.rg){ const R=WORLD.bc.rg; g.fillStyle='#5b616b';                                  // the rock, as it really is
+    for(let j=0;j<R.CH;j+=3) for(let i=0;i<R.CW;i+=3) if(R.M[j*R.CW+i]) g.fillRect(i*R.G*s, j*R.G*s, Math.max(1,R.G*3*s), Math.max(1,R.G*3*s));
+    const B=WORLD.bc; g.strokeStyle='#4a7fd0'; g.beginPath(); B.track && B.track.forEach((q,i)=>i?g.lineTo(q[0]*s,q[1]*s):g.moveTo(q[0]*s,q[1]*s)); g.stroke(); }
+  else if(WORLD.bc){ const B=WORLD.bc; g.fillStyle='#5b616b'; g.fillRect(0,B.rockTop*s,w,(B.rockTo-B.rockTop)*s);
     for(const c2 of B.chutes){ g.fillStyle=c2.glacier?'#d3e9f8':'#ffffff'; for(let i=0;i<B.n;i+=3) if(c2.hws[i]>0) g.fillRect((c2.xs[i]-c2.hws[i])*s, (B.rockTop+i*4)*s, Math.max(1,2*c2.hws[i]*s), 1); }
     g.strokeStyle='#4a7fd0'; g.beginPath(); B.track && B.track.forEach((q,i)=>i?g.lineTo(q[0]*s,q[1]*s):g.moveTo(q[0]*s,q[1]*s)); g.stroke(); }
   g.fillStyle='#555'; for(const c2 of CLIFFS) if(!c2.ridge) g.fillRect(c2.x1*s,c2.y*s,Math.max(1,(c2.x2-c2.x1)*s),1);
@@ -2910,7 +2945,8 @@ function drawBackdrop(cx,cy){
     if(y<-20||y>VH) continue;
     ctx.fillStyle=SS?'rgba(255,200,190,0.85)':'rgba(255,255,255,0.85)'; ctx.fillRect(x,y,w,6); ctx.fillRect(x+6,y-4,w*0.5,4); ctx.fillRect(x+w*0.4,y-7,w*0.35,7);
     ctx.fillStyle=SS?'rgba(220,120,140,0.9)':'rgba(200,220,240,0.9)'; ctx.fillRect(x+2,y+6,w-4,2); }
-  for(const m of RANGE){ const tx=m[0]-cx, ty=m[1]-cy, bw=m[2], by=760-cy, ch=(by-ty)*0.28;
+  for(const m of RANGE){ if(WORLD.bc && Math.abs(m[0]-PEAK.x)<300) continue;              // nothing poking up right behind the Cham summit
+    const tx=m[0]-cx, ty=m[1]-cy, bw=m[2], by=760-cy, ch=(by-ty)*0.28;
     const tri=(pts,col)=>{ ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(pts[0],pts[1]); for(let i=2;i<pts.length;i+=2) ctx.lineTo(pts[i],pts[i+1]); ctx.fill(); };
     tri([tx,ty, tx-bw,by, tx,by], SS?'#9a7a9a':'#8ea9c9'); tri([tx,ty, tx,by, tx+bw,by], SS?'#76587a':'#7290b4');
     tri([tx,ty, tx-bw*0.28,ty+ch, tx,ty+ch*0.8], SS?'#ffd8c0':'#f3f7fc'); tri([tx,ty, tx,ty+ch*0.8, tx+bw*0.28,ty+ch], SS?'#c99aaa':'#cbd8ea'); }
