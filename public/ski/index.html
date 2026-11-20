@@ -2101,15 +2101,16 @@ function updCrew(dt){
       for(let i=T.length-1;i>=0;i--) if(T[i].d<=want){ s=T[i]; break; }
       if(!s) continue; tx=s.x; ty=s.y; }
     else { const want=game.t-f.lag; let s=T[0]; for(let i=T.length-1;i>=0;i--) if(T[i].t<=want){ s=T[i]; break; }
-      if(!s) continue; const wob=f.off+Math.sin(game.t*0.8+f.ph)*8;              // loose: each keeps their own side and weaves a bit
+      if(!s) continue; const wob=f.off+Math.sin(game.t*0.8+f.ph)*8*Math.min(1,sp/40);   // loose: each keeps their own side and weaves a bit (still when you stop)
       tx=s.x+Math.cos(s.h)*wob; ty=s.y-Math.sin(s.h)*wob*0.6; tz=s.z; th=s.h; air=s.air; wing=s.wing; }
     const dx=tx-f.x, dy=ty-f.y, d=Math.hypot(dx,dy);
     if(d>420){ f.x=tx; f.y=ty; continue; }                                         // way behind: catch up
-    const step=Math.min(d, (Math.max(skin?30:70, sp*1.25)+d*(skin?1.5:2.2))*dt);
+    const step=d<(f.moving?1:4) ? 0 : Math.min(d, (Math.max(skin?30:70, sp*1.25)+d*(skin?1.5:2.2))*dt);   // close enough: stand still
     if(d>0.5){ f.x+=dx/d*step; f.y+=dy/d*step; }
     f.z+=(tz-f.z)*Math.min(1,dt*14); f.air=air && f.z>2; f.skins=skin; f.wing=wing;
-    const mv=step/Math.max(dt,1e-3); f.moving=mv>(skin?4:12);
-    if(f.moving) f.h=f.air ? th : skin ? Math.atan2(dx,dy) : clamp(Math.atan2(dx,dy),-1.8,1.8);
+    const mv=step/Math.max(dt,1e-3); f.moving=mv>(f.moving ? (skin?2:8) : (skin?6:25));   // hysteresis: no flicker between skiing and standing
+    if(f.moving){ const want=f.air ? th : skin ? Math.atan2(dx,dy) : clamp(Math.atan2(dx,dy),-1.8,1.8);
+      f.h=f.air ? want : f.h+wrapPi(want-f.h)*Math.min(1,dt*10); }                // turn smoothly, never snap
   }
 }
 function drawCrewLift(cx,cy){                     // open chairlift: the crew two to a chair, on the chairs behind yours
