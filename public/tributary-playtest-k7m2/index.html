@@ -1281,30 +1281,40 @@ const looks={YOU:{sex:'m',style:'short',eye:'#6b4a2a'},Aiko:{sex:'f',style:'pony
   Gwen:{sex:'f',style:'bob',eye:'#3f8a52'},Mika:{sex:'f',style:'ponytail',eye:'#5a3a22'},Ren:{sex:'m',style:'spiky',eye:'#2f5f8f'},Sora:{sex:'f',style:'long',eye:'#9a6a32'}};
 const cupM=new T.MeshStandardMaterial({color:lin('#e6a94a'),roughness:.2,transparent:true,opacity:.88}),oilM=new T.MeshStandardMaterial({color:lin('#5f8f4e'),roughness:.1}),woodM=pbr('slats','#b07a45','#6b4524',1,1,.7);
 const lathe=(pts,seg=20)=>new T.LatheGeometry(pts.map(([r,y])=>new T.Vector2(r,y)),seg);
-function bodyGeo(sex,y0=0,y1=9,inf=1){const F=sex==='f',seg=36;
-  const prof=F?[[.76,.05,.04,.05],[.8,.165,.095,.115],[.86,.176,.1,.13],[.92,.166,.098,.12],[.98,.146,.092,.1],[1.04,.122,.086,.084],[1.1,.127,.09,.084],[1.16,.138,.098,.087],[1.22,.146,.103,.09],[1.28,.15,.098,.09],[1.33,.156,.092,.087],[1.37,.14,.078,.076],[1.4,.098,.06,.06],[1.43,.05,.04,.04],[1.45,.004,.004,.004]]
-              :[[.76,.06,.045,.05],[.8,.155,.095,.11],[.86,.164,.1,.12],[.92,.157,.1,.112],[.98,.145,.1,.096],[1.04,.14,.104,.09],[1.1,.148,.11,.094],[1.16,.163,.118,.1],[1.22,.176,.124,.104],[1.28,.186,.122,.104],[1.33,.19,.11,.1],[1.37,.17,.09,.085],[1.4,.12,.07,.07],[1.43,.06,.045,.045],[1.45,.004,.004,.004]];
-  const rows=[];for(let k=0;k<prof.length-1;k++)for(let t=0;t<3;t++){const a=prof[k],b=prof[k+1],u=t/3,sm=u*u*(3-2*u);rows.push(a.map((v,i)=>v+(b[i]-v)*sm))}rows.push(prof[prof.length-1]);
-  const R=rows.filter(r=>r[0]>=y0-1e-6&&r[0]<=y1+1e-6);const pos=[],idx=[];const bump=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
-  for(const [y,w,f,b] of R){for(let i=0;i<=seg;i++){const th=i/seg*Math.PI*2,sx=Math.sin(th),cz=Math.cos(th),dz=cz>0?f:b;let x=w*sx,z=dz*cz;
-      if(cz>0){const add=F?.042*(bump(x,y,.068,1.22,.05,.045)+bump(x,y,-.068,1.22,.05,.045)):.012*(bump(x,y,.075,1.26,.06,.04)+bump(x,y,-.075,1.26,.06,.04));z+=add*cz}
-      else{const add=(F?.03:.02)*(bump(x,y,.065,.87,.055,.06)+bump(x,y,-.065,.87,.055,.06));z-=add*-cz}
-      pos.push(x*inf,y,z*inf)}}
-  for(let r=0;r<R.length-1;r++)for(let i=0;i<seg;i++){const a=r*(seg+1)+i,b2=a+seg+1;idx.push(a,a+1,b2,a+1,b2+1,b2)}
+function bodyGeo(sex){const F=sex==='f',seg=48;
+  const prof=F?[[.76,.05,.04,.05],[.79,.15,.09,.105],[.83,.172,.098,.125],[.87,.177,.1,.132],[.92,.167,.097,.122],[.97,.149,.092,.103],[1.02,.127,.087,.087],[1.06,.121,.086,.083],[1.1,.126,.089,.084],[1.15,.136,.096,.087],[1.2,.143,.1,.09],[1.25,.146,.099,.091],[1.3,.15,.094,.09],[1.34,.154,.088,.086],[1.37,.142,.077,.076],[1.4,.1,.06,.062],[1.43,.052,.042,.042],[1.45,.004,.004,.004]]
+              :[[.76,.06,.045,.05],[.79,.145,.09,.1],[.83,.16,.097,.114],[.87,.164,.1,.12],[.92,.157,.1,.113],[.97,.147,.101,.099],[1.02,.142,.104,.093],[1.06,.141,.106,.092],[1.1,.148,.11,.095],[1.15,.161,.117,.1],[1.2,.174,.122,.104],[1.25,.183,.124,.106],[1.3,.19,.118,.105],[1.34,.192,.108,.1],[1.37,.172,.09,.086],[1.4,.122,.07,.071],[1.43,.06,.046,.046],[1.45,.004,.004,.004]];
+  const rows=[];for(let k=0;k<prof.length-1;k++)for(let t=0;t<4;t++){const a=prof[k],b=prof[k+1],u=t/4,sm=u*u*(3-2*u);rows.push(a.map((v,i)=>v+(b[i]-v)*sm))}rows.push(prof[prof.length-1]);
+  const pos=[],idx=[];const B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
+  for(const [y,w,f,b] of rows){for(let i=0;i<=seg;i++){const th=i/seg*Math.PI*2,sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
+      if(cz>0){let a=F?.04*(B(x,y,.066,1.215,.048,.045)+B(x,y,-.066,1.215,.048,.045)):.014*(B(x,y,.078,1.255,.058,.038)+B(x,y,-.078,1.255,.058,.038));
+        a+=.006*(B(x,y,.06,1.395,.06,.012)+B(x,y,-.06,1.395,.06,.012));if(!F)a+=.005*(B(x,y,.03,1.08,.022,.06)+B(x,y,-.03,1.08,.022,.06));z+=a*cz}
+      else{let a=(F?.032:.022)*(B(x,y,.064,.865,.055,.06)+B(x,y,-.064,.865,.055,.06))+.01*(B(x,y,.075,1.3,.045,.06)+B(x,y,-.075,1.3,.045,.06));z-=a*-cz}
+      pos.push(x,y,z)}}
+  for(let r=0;r<rows.length-1;r++)for(let i=0;i<seg;i++){const a=r*(seg+1)+i,b2=a+seg+1;idx.push(a,a+1,b2,a+1,b2+1,b2)}
   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();return g}
+// clothes are painted onto the body (vertex colours), so nothing can poke through
+const VCM=new T.MeshToonMaterial({vertexColors:true,gradientMap:gradSoft,toneMapped:false});
+function paint(geo,fn){const g=geo.clone(),p=g.attributes.position,c=new Float32Array(p.count*3),cc={};for(let i=0;i<p.count;i++){const hex=fn(p.getX(i),p.getY(i),p.getZ(i));const col=cc[hex]||(cc[hex]=lin(hex));c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b}g.setAttribute('color',new T.BufferAttribute(c,3));return g}
+// head with cheekbones, a narrower jaw and a rounded chin (the face decal is bent the same way)
+function headDeform(g){const p=g.attributes.position;for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const r=Math.hypot(x,y,z)||1;x/=r;y/=r;z/=r;
+    if(y<0){const k=Math.min(1,-y/.95);x*=1-.3*k*k;if(z>0){z*=1-.05*k;y*=1+.07*k}}
+    x*=1+.045*Math.exp(-(((y+.05)/.22)**2))*(z>0?1:0);if(z<0&&y>-.25)z*=1.05;if(y>.15)x*=1-.04*Math.exp(-(((y-.4)/.3)**2));
+    p.setXYZ(i,x*r,y*r,z*r)}g.computeVertexNormals();return g}
+const HEADG=headDeform(new T.SphereGeometry(1,36,26));
 const G={
   torsoM:lathe([[0,.82],[.15,.84],[.16,.92],[.145,1.0],[.14,1.08],[.16,1.18],[.18,1.27],[.175,1.34],[.13,1.4],[.06,1.43],[0,1.44]]),
   torsoF:lathe([[0,.8],[.165,.82],[.175,.9],[.15,.98],[.125,1.05],[.135,1.13],[.152,1.22],[.148,1.29],[.138,1.35],[.1,1.41],[.05,1.43],[0,1.44]]),
   trunks:lathe([[0,.76],[.165,.77],[.172,.86],[.162,.96],[0,.97]]),
   suitF:lathe([[0,.79],[.171,.81],[.181,.9],[.156,.98],[.131,1.05],[.141,1.13],[.158,1.22],[.155,1.3],[0,1.31]]),
-  thigh:lathe([[0,-.44],[.048,-.43],[.05,-.4],[.058,-.32],[.072,-.2],[.084,-.08],[.083,-.01],[0,0]],16),
-  shin:lathe([[0,-.44],[.032,-.43],[.033,-.38],[.04,-.3],[.054,-.17],[.05,-.07],[.045,-.01],[0,0]],16),
-  upper:lathe([[0,-.3],[.035,-.29],[.037,-.24],[.045,-.14],[.05,-.05],[.056,0],[0,.04]],14),
-  fore:lathe([[0,-.26],[.025,-.25],[.027,-.2],[.037,-.1],[.041,-.03],[0,0]],14),
+  thigh:lathe([[0,-.45],[.046,-.44],[.048,-.42],[.052,-.38],[.06,-.3],[.07,-.21],[.079,-.13],[.085,-.06],[.084,-.01],[0,.01]],20),
+  shin:lathe([[0,-.44],[.03,-.43],[.031,-.39],[.034,-.33],[.042,-.26],[.052,-.18],[.055,-.12],[.05,-.06],[.046,-.02],[0,0]],20),
+  upper:lathe([[0,-.3],[.034,-.29],[.036,-.25],[.041,-.19],[.046,-.12],[.05,-.06],[.056,-.01],[.05,.03],[0,.05]],18),
+  fore:lathe([[0,-.26],[.024,-.25],[.025,-.22],[.029,-.16],[.036,-.1],[.041,-.05],[.038,-.01],[0,0]],18),
   robe:lathe([[0,.4],[.27,.42],[.26,.7],[.245,.9],[.235,1.1],[.25,1.3],[.21,1.41],[0,1.43]],20),
-  face:new T.SphereGeometry(1.012,32,16,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4)
+  face:headDeform(new T.SphereGeometry(1.012,36,18,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4))
 };
-const faceCache={};const BODYM=bodyGeo('m'),BODYF=bodyGeo('f'),TRUNKS=bodyGeo('m',.76,.98,1.035),SUITF=bodyGeo('f',.8,1.31,1.02),SHIRTM=bodyGeo('m',.86,1.43,1.06),SHIRTF=bodyGeo('f',.86,1.43,1.07);
+const faceCache={};const BODYM=bodyGeo('m'),BODYF=bodyGeo('f');
 function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex;if(faceCache[key])return faceCache[key];const c=document.createElement('canvas');c.width=256;c.height=200;const g=c.getContext('2d'),fem=L.sex==='f';
   for(const s of[-1,1]){const x=128+s*56,y=106,rx=fem?21:20,ry=fem?17:13;
     g.save();g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fillStyle='#fffdf8';g.fill();g.clip();
@@ -1327,12 +1337,13 @@ function hairGeo(style,fem){const key=style+fem;if(HAIRG[key])return HAIRG[key];
   const put=(geo,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{Q.setFromEuler(E.set(rx,ry,rz));M.compose(new T.Vector3(x,y,z),Q,new T.Vector3(sx,sy,sz));parts.push(geo.applyMatrix4(M))};
   // scalp shell: a hemisphere tilted so the hairline sits on the forehead and the back drops to the nape
   put(new T.SphereGeometry(1,30,16,0,Math.PI*2,0,Math.PI*.5),0,.006,-.006,.125,.143,.131,-.38);
-  if(style==='short'){put(new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.32),0,.022,-.004,.13,.14,.135,-.3);put(new T.SphereGeometry(1,16,10),0,.112,.04,.085,.035,.07,-.2)}
+  if(style==='short'){put(new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.32),0,.022,-.004,.13,.14,.135,-.3);put(new T.SphereGeometry(1,16,10),.012,.112,.045,.085,.035,.07,-.25,0,-.1);for(const sd of[-1,1])put(new T.BoxGeometry(1,1,1),sd*.112,.0,.035,.012,.05,.022,0,0,sd*.05);put(new T.SphereGeometry(1,16,10,0,Math.PI*2,0,Math.PI*.5),0,-.03,-.075,.1,.06,.06,-1.9)}
   if(style==='spiky'){put(new T.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.36),0,.02,-.01,.133,.15,.138,-.3);for(const [x,z,r] of[[-.05,.04,.3],[.05,.03,-.3],[0,-.05,0],[-.06,-.04,.4],[.06,-.05,-.4]])put(new T.SphereGeometry(1,12,8),x,.12,z,.05,.03,.045,0,0,r)}
   const curtain=(h,rb,y,open=.95)=>put(new T.CylinderGeometry(.129,rb,h,32,4,true,open,Math.PI*2-open*2),0,y,-.008,1,1,1);
-  if(style==='bob'){curtain(.17,.142,-.055,1.0);put(new T.SphereGeometry(1,20,10,0,Math.PI*2,Math.PI*.5,Math.PI*.12),0,-.14,-.008,.142,.06,.142)}
-  if(style==='long'){curtain(.37,.15,-.15,.92);put(new T.CylinderGeometry(.1,.11,.3,20,2,false,Math.PI*.7,Math.PI*.6),0,-.2,-.035,1,1,.7)}
-  if(style==='ponytail'){put(new T.SphereGeometry(1,16,10),0,.0,-.135,.042,.042,.04);put(new T.SphereGeometry(1,18,14),0,-.12,-.165,.048,.16,.052,.32)}
+  const fringe=sd=>put(new T.SphereGeometry(1,18,10,0,Math.PI*2,0,Math.PI*.5),sd*.03,.075,.075,.09,.05,.06,1.15,0,sd*.35);
+  if(style==='bob'){curtain(.17,.142,-.055,1.0);fringe(1);put(new T.CylinderGeometry(.132,.146,.1,32,2,true,1.25,Math.PI*2-2.5),0,-.1,-.01,1,1,1);put(new T.SphereGeometry(1,20,10,0,Math.PI*2,Math.PI*.5,Math.PI*.12),0,-.14,-.008,.142,.06,.142)}
+  if(style==='long'){curtain(.37,.15,-.15,.92);fringe(-1);for(const x of[-.06,0,.06])put(new T.SphereGeometry(1,12,10),x,-.18,-.1,.045,.17,.03,.08);put(new T.CylinderGeometry(.1,.11,.3,20,2,false,Math.PI*.7,Math.PI*.6),0,-.2,-.035,1,1,.7)}
+  if(style==='ponytail'){put(new T.SphereGeometry(1,16,10),0,.0,-.135,.042,.042,.04);for(let k=0;k<6;k++){const t=k/5;put(new T.SphereGeometry(1,14,10),0,-.04-k*.055,-.15-k*.012,.042-.017*t,.04,.04-.015*t,.25)}put(new T.ConeGeometry(1,1,10),0,-.39,-.215,.018,.06,.016,Math.PI+.25)}
   let n=0;const P2=[],N2=[],U2=[];for(const gq of parts){const q=gq.index?gq.toNonIndexed():gq;P2.push(q.attributes.position.array);N2.push(q.attributes.normal.array);U2.push(q.attributes.uv.array);n+=q.attributes.position.count}
   const pa=new Float32Array(n*3),na=new Float32Array(n*3),ua=new Float32Array(n*2);let o=0,ou=0;for(let i=0;i<P2.length;i++){pa.set(P2[i],o);na.set(N2[i],o);ua.set(U2[i],ou);o+=P2[i].length;ou+=U2[i].length}
   const G2=new T.BufferGeometry();G2.setAttribute('position',new T.BufferAttribute(pa,3));G2.setAttribute('normal',new T.BufferAttribute(na,3));G2.setAttribute('uv',new T.BufferAttribute(ua,2));G2.computeBoundingSphere();return HAIRG[key]=G2}
@@ -1353,25 +1364,34 @@ function makeChar(suit,hair,sk,isStaff,name){
   const g=new T.Group(),body=new T.Group();g.add(body);
   const outs=[];const ol=(m,k=1.04)=>{const o=new T.Mesh(m.geometry,outlineM);o.scale.setScalar(k);m.add(o);outs.push(o);return m};
   const part=(par,geo,c,x,y,z,sx,sy,sz,out=true,mat)=>{const m=new T.Mesh(geo,mat||soft(c));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;par.add(m);if(out)ol(m);return m};
-  const top=isStaff?suit:sk,pants=isStaff?'#24303c':sk,lw=fem?.92:1;
-  {const tm=part(body,fem?BODYF:BODYM,top,0,0,0,1,1,1,false);const o=new T.Mesh(tm.geometry,outlineM);outs.push(o);o.scale.set(1.03,1.002,1.04);tm.add(o)}
-  const sw=[];if(!isStaff&&!fem)sw.push(part(body,TRUNKS,suit,0,0,0,1,1,1,false));
-  if(!isStaff&&fem){sw.push(part(body,SUITF,suit,0,0,0,1,1,1,false));for(const x of[-.072,.072])sw.push(part(body,BOX,suit,x,1.37,0,.022,.12,.17,false))}
-  if(isStaff){const b1=new T.Mesh(new T.PlaneGeometry(.11,.11),badgeM);b1.position.set(.08,1.27,.128);body.add(b1);const b2=new T.Mesh(new T.PlaneGeometry(.2,.2),badgeM);b2.position.set(0,1.18,-.128);b2.rotation.y=Math.PI;body.add(b2);part(body,BOX,'#ffffff',0,1.38,.085,.12,.04,.02,false)}
-  part(body,CYL,sk,0,1.46,0,.045,.1,.045);
-  const leg=sx=>{const hip=new T.Group();hip.position.set(sx,.86,0);body.add(hip);part(hip,G.thigh,pants,0,0,0,lw,1,lw);if(!isStaff&&!fem)sw.push(part(hip,CYL,suit,0,-.08,0,.09,.16,.09,false));
-    const knee=new T.Group();knee.position.set(0,-.42,0);hip.add(knee);part(knee,G.shin,pants,0,0,0,lw,1,lw);part(knee,SPH,isStaff?'#1b1b22':'#f3e1d3',0,-.405,.045,.045,.03,.105);return{hip,knee}};
+  const lw=fem?.92:1,[sc,pc]=L.street||['#3d5a80','#2b2b33'],SP='#24303c';
+  // painters: what colour each bit of skin is in swimwear vs street clothes (staff always in uniform)
+  const torsoSwim=(x,y)=>isStaff?(y>=.9?suit:SP):fem?((y>.8+.07*Math.min(1,Math.abs(x)/.15)&&y<1.31)||(y>=1.31&&y<1.452&&Math.abs(Math.abs(x)-.07)<.021)?suit:sk):(y<.975?suit:sk);
+  const torsoStreet=(x,y)=>isStaff?(y>=.9?suit:SP):(y>=.9?sc:pc);
+  const thighSwim=(x,y)=>isStaff?SP:(!fem&&y>-.11?suit:sk),thighStreet=()=>isStaff?SP:pc;
+  const shinSwim=()=>isStaff?SP:sk,shinStreet=()=>isStaff?SP:pc;
+  const upSwim=(x,y)=>isStaff&&y>-.15?suit:sk,upStreet=(x,y)=>(isStaff?y>-.15:y>-.13)?(isStaff?suit:sc):sk;
+  const dress=[];const dpart=(par,geo,fs,ft,x,y,z,sx,sy,sz)=>{const gs=paint(geo,fs),gt=isStaff?gs:paint(geo,ft);const m=part(par,gs,null,x,y,z,sx,sy,sz,true,VCM);dress.push({m,gs,gt});return m};
+  {const tm=dpart(body,fem?BODYF:BODYM,torsoSwim,torsoStreet,0,0,0,1,1,1);const ow=tm.children.find(c=>c.material===outlineM);ow.scale.set(1.035,1.003,1.045)}
+  if(isStaff){const b1=new T.Mesh(new T.PlaneGeometry(.11,.11),badgeM);b1.position.set(.08,1.27,.132);body.add(b1);const b2=new T.Mesh(new T.PlaneGeometry(.2,.2),badgeM);b2.position.set(0,1.18,-.13);b2.rotation.y=Math.PI;body.add(b2);part(body,BOX,'#ffffff',0,1.39,.085,.12,.035,.02,false)}
+  part(body,CYL,sk,0,1.465,0,.046,.1,.044);
+  const shoe=isStaff?'#1b1b22':'#f3e1d3',shoeSt='#2a2a2e';
+  const leg=sx=>{const hip=new T.Group();hip.position.set(sx,.86,0);body.add(hip);dpart(hip,G.thigh,thighSwim,thighStreet,0,0,0,lw,1,lw);
+    const knee=new T.Group();knee.position.set(0,-.42,0);hip.add(knee);dpart(knee,G.shin,shinSwim,shinStreet,0,0,0,lw,1,lw);
+    const kc=part(knee,SPH,isStaff?SP:sk,0,-.01,.03*lw,.032*lw,.035,.022,false);
+    const ft=new T.Group();ft.position.set(0,-.415,0);knee.add(ft);const f1=part(ft,SPH,shoe,0,.0,.05,.042,.028,.095),f2=part(ft,SPH,shoe,0,.005,-.005,.036,.03,.045,false);
+    return{hip,knee,kc,feet:[f1,f2]}};
   const LL=leg(-.088),LR=leg(.088);
-  const arm=sx=>{const sh=new T.Group();sh.position.set(sx,1.37,0);body.add(sh);sh.rotation.z=sx>0?.1:-.1;part(sh,G.upper,sk,0,0,0,lw,1,lw);
-    const sl=part(sh,TAPER,isStaff?suit:'#fbfbf8',0,-.1,0,.062,.22,.062,true);sl.visible=isStaff;sh.userData.sleeve=sl;
-    const el=new T.Group();el.position.set(0,-.29,0);sh.add(el);part(el,G.fore,sk,0,0,0,lw,1,lw);const hand=new T.Group();hand.position.set(0,-.28,0);el.add(hand);part(hand,SPH,sk,0,-.03,.005,.032,.052,.02);part(hand,SPH,sk,0,-.01,.025,.012,.03,.012,false);
+  const arm=sx=>{const sh=new T.Group();sh.position.set(sx,1.37,0);body.add(sh);sh.rotation.z=sx>0?.1:-.1;dpart(sh,G.upper,upSwim,upStreet,0,0,0,lw,1,lw);
+    const sl=part(sh,TAPER,isStaff?suit:'#fbfbf8',0,-.1,0,.064,.22,.064,true);sl.visible=false;sh.userData.sleeve=sl;
+    const el=new T.Group();el.position.set(0,-.29,0);sh.add(el);part(el,G.fore,sk,0,0,0,lw,1,lw);const hand=new T.Group();hand.position.set(0,-.27,0);el.add(hand);
+    part(hand,BOX,sk,0,-.035,0,.055*lw,.06,.022);for(let k=0;k<4;k++)part(hand,CYL,sk,(-.019+k*.0127)*lw,-.082,.002,.0058,.045-Math.abs(k-1.5)*.006,.0062,false);{const th=part(hand,CYL,sk,(sx>0?-1:1)*.03*lw,-.04,.012,.007,.034,.007,false);th.rotation.z=(sx>0?-1:1)*.6}
     return{sh,el,hand}};
-  const AL=arm(fem?-.2:-.225),AR=arm(fem?.2:.225);for(const x of[-1,1])part(body,SPH,top,x*(fem?.175:.2),1.355,0,.06,.05,.065,false);
-  const head=new T.Group();head.position.set(0,1.61,0);head.scale.setScalar(1.06);body.add(head);
-  part(head,SPH,sk,0,0,0,.115,.13,.12);part(head,SPH,sk,0,-.06,.02,.088,.075,.095,false);
+  const AL=arm(fem?-.2:-.225),AR=arm(fem?.2:.225);const caps=[];for(const x of[-1,1])caps.push(part(body,SPH,isStaff?suit:sk,x*(fem?.172:.198),1.355,0,.058,.05,.062,false));
+  const head=new T.Group();head.position.set(0,1.61,0);head.scale.setScalar(1.04);body.add(head);
+  part(head,HEADG,sk,0,0,0,.115,.13,.12);
   const fc=new T.Mesh(G.face,faceTex(L,hair));fc.scale.set(.115,.13,.12);fc.renderOrder=2;head.add(fc);
-  for(const s of[-1,1])part(head,SPH,sk,s*.112,-.01,0,.018,.032,.022,false);
-
+  for(const s of[-1,1]){const e=part(head,SPH,sk,s*.111,-.012,-.004,.016,.03,.022,false);part(head,SPH,col(sk,-.12),s*.118,-.012,-.002,.007,.016,.012,false)}
   const hairM=part(head,hairGeo(L.style,fem),hair,0,0,0,1,1,1,true,hairMat(hair));
   if(L.style==='ponytail')part(head,SPH,'#1E5A8A',0,.045,-.135,.026,.026,.026,false);
   // felt sauna hat (worn by some guests in the sauna)
@@ -1383,9 +1403,8 @@ function makeChar(suit,hair,sk,isStaff,name){
   const ladle=new T.Group();AR.hand.add(ladle);{const h=new T.Mesh(CYL,woodM);h.scale.set(.012,.45,.012);h.position.set(0,-.05,.2);h.rotation.x=Math.PI/2;ladle.add(h);const b=new T.Mesh(SPH,woodM);b.scale.set(.05,.03,.05);b.position.set(0,-.07,.43);ladle.add(b)}ladle.visible=false;
   const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15;g.add(tag);
   const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,tag,hat,hairM,ph:Math.random()*6};
-  o.street=[];if(!isStaff){const [sc,pc]=L.street||['#3d5a80','#2b2b33'];o.street.push(part(body,fem?SHIRTF:SHIRTM,sc,0,0,0,1,1,1,false));
-    for(const Ar of [AL,AR])o.street.push(part(Ar.sh,TAPER,sc,0,-.11,0,.068,.24,.068,false),part(Ar.sh,SPH,sc,0,-.01,0,.072,.07,.075,false));o.street.push(part(body,CYL,pc,0,.9,0,fem?.165:.18,.16,.12,false));o.swim=sw;
-    for(const Lg of [LL,LR]){o.street.push(part(Lg.hip,G.thigh,pc,0,0,0,1.13*lw,1.01,1.13*lw,false));o.street.push(part(Lg.knee,G.shin,pc,0,0,0,1.16*lw,.97,1.16*lw,false));o.street.push(part(Lg.knee,SPH,'#2a2a2e',0,-.4,.045,.052,.04,.12,false))}}
+  o.setStreet=on=>{if(isStaff)return;for(const d of dress){const gg=on?d.gt:d.gs;d.m.geometry=gg;for(const ch of d.m.children)if(ch.material===outlineM)ch.geometry=gg}
+    for(const c of caps)c.material=soft(on?sc:sk);for(const Lg of[LL,LR]){Lg.kc.material=soft(on?pc:sk);for(const f of Lg.feet)f.material=soft(on?shoeSt:shoe)}};o.street=true;
   o.band=part(AL.hand,CYL,'#3B8FD0',0,.03,0,.04,.03,.04,false);o.band.visible=false;
   if(!isStaff){o.drops=[];for(const [pa,x,y,z] of [[head,.055,.07,.105],[head,-.065,.05,.105],[head,.1,-.02,.07],[head,-.1,-.03,.06],[head,.03,-.07,.1],[body,.07,1.27,.15],[body,-.06,1.14,.15],[body,.03,1.0,.15]]){const d=new T.Mesh(SPH,SWEATM);d.scale.set(.017,.027,.017);d.position.set(x,y,z);d.visible=false;pa.add(d);o.drops.push({d,y0:y,ph:Math.random()})}}
   if(isStaff){o.carryT=new T.Group();for(let i=0;i<4;i++){const t=new T.Mesh(BOX,towelM);t.scale.set(.34,.05,.26);t.position.set(0,1.02+i*.052,.3);o.carryT.add(t)}o.carryT.visible=false;body.add(o.carryT);
@@ -1497,7 +1516,7 @@ function pose(c,m,dt){
   m.AL.sh.rotation.x=C.sL;m.AR.sh.rotation.x=C.sR;m.AL.el.rotation.x=C.eL;m.AR.el.rotation.x=C.eR;m.AL.sh.rotation.z=-.1-C.armZ;m.AR.sh.rotation.z=.1+C.armZ;
   m.body.rotation.x=C.tilt;m.body.rotation.z=C.sway;m.head.rotation.set(C.headX,C.headY,C.headZ);
   m.g.rotation.set(C.fall,yaw,0);m.g.position.set(x,C.y,z);
-  const street=(isP?P.dressed:c.dressed)==='street';if(m.streetOn!==street&&m.street){m.streetOn=street;for(const o of m.street)o.visible=street;for(const o of m.swim||[])o.visible=!street}
+  const street=(isP?P.dressed:c.dressed)==='street';if(m.streetOn!==street&&m.setStreet){m.streetOn=street;m.setStreet(street)}
   if(m.hat){const on=!isP&&c.hat&&(inSauna(c)||c.seat&&c.seat.zone==='sauna');if(m.hat.visible!==on){m.hat.visible=on;if(m.hairM&&(m.L.style==='short'||m.L.style==='spiky'))m.hairM.visible=!on}}
   if(isP){m.band.visible=!!P.band;m.g.visible=!P.hide;if(street){m.robe.visible=false;m.towel.visible=false}}else if(m.cup&&!m.ex)m.cup.visible=!!c.cup;
 }
