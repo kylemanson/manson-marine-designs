@@ -57,6 +57,9 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 .abar{height:10px;border-radius:5px;background:#E6F0F7;overflow:hidden}.abar i{display:block;height:100%;width:0;background:#3B8FD0;transition:width .3s}#aistat{font-size:13px;color:#2d4253;min-height:18px;margin:8px 0 0;overflow-wrap:anywhere}
 #chbrain{font-size:11px;color:#5a6f7f;font-weight:700}
 .fx.say{font:800 14px Nunito,sans-serif;color:#0F2A40;-webkit-text-stroke:0;background:#fff;padding:5px 10px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:220px;white-space:normal;text-align:center}
+#fps{position:fixed;left:8px;bottom:6px;z-index:6;font:700 11px Nunito,sans-serif;color:#fff;background:rgba(15,42,64,.7);padding:2px 6px;border-radius:6px;display:none;pointer-events:none}
+.aset{border-bottom:1px solid #E6F0F7;padding:10px 4px;display:grid;gap:6px;font-size:13px;color:#2d4253}.aset b{color:#0F2A40;font-size:15px}.aset label{display:flex;gap:8px;align-items:flex-start;min-height:32px}.aset input{width:18px;height:18px;flex:none;margin-top:1px}
+#gfxapply{min-height:40px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:800 13px Nunito,sans-serif}
 #cv{position:fixed;inset:0;display:block;width:100%;height:100%}
 #prompt{position:fixed;transform:translate(-50%,-100%);background:rgba(15,42,64,.88);color:#fff;font-weight:800;font-size:13px;padding:4px 12px;border-radius:12px;pointer-events:none;white-space:nowrap;display:none}
 .pb{display:block;width:70px;height:8px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;margin:3px 0}.pb i{display:block;height:100%;background:#8CC8EE}
@@ -118,11 +121,15 @@ body.touch #pad,body.touch #act{display:block}
   <form id="chform"><label for="chin" class="sr">Say something</label><input id="chin" maxlength="160" autocomplete="off" placeholder="Say something…"><button type="submit">Send</button></form></div>
 <button id="view" type="button">Camera</button>
 <button id="aibtn" type="button">AI: Basic</button>
+<div id="fps"></div>
 <div id="ai" role="dialog" aria-label="NPC brain settings"><div class="chh"><b>NPC brains</b><span></span><button type="button" id="aiclose" aria-label="Close">✕</button></div>
  <label class="aopt"><input type="radio" name="brain" value="basic"><span><b>Basic</b> Built-in lines and rules. Instant, works on every device.</span></label>
  <label class="aopt"><input type="radio" name="brain" value="smart"><span><b>Smart</b> A small AI that runs on this device. Free and private. Needs a recent browser with WebGPU.</span></label>
- <div class="aload"><button type="button" id="aiload">Download AI brain (~700 MB, one time)</button><div class="abar"><i id="aibar"></i></div><button type="button" id="aitest">Test it: ask Marco to say hi</button></div>
+ <div class="aload"><button type="button" id="aiload">Download AI brain</button><div class="abar"><i id="aibar"></i></div><button type="button" id="aitest">Test it: ask Marco to say hi</button></div>
  <label class="aopt" id="online-opt"><input type="radio" name="brain" value="online"><span><b>Online</b> Claude, the best replies. Works inside Claude now; for your website, coming later.</span></label>
+ <div class="aset"><b>AI brain size</b><label><input type="radio" name="size" value="lite"> Lite: smaller download, faster, best for phones</label><label><input type="radio" name="size" value="std"> Standard (~700 MB): smarter, needs a stronger device</label></div>
+ <div class="aset"><b>How much the AI thinks</b><label><input type="radio" name="effort" value="light"> Light: AI only writes chat replies; NPC reactions use quick built-in rules (smoothest)</label><label><input type="radio" name="effort" value="normal"> Normal: AI also decides NPC reactions, a few at a time</label></div>
+ <div class="aset"><b>Graphics</b><label><input type="radio" name="gfx" value="auto"> Auto (picks for this device)</label><label><input type="radio" name="gfx" value="fast"> Fast: no shadows, fewer lights, 30 fps cap</label><label><input type="radio" name="gfx" value="pretty"> Pretty: shadows, all lights, 60 fps</label><label><input type="checkbox" id="fpschk"> Show frame rate</label><button type="button" id="gfxapply">Restart to apply graphics change</button></div>
  <p id="aistat" aria-live="polite"></p></div>
 <div id="pad"><div id="knob"></div></div>
 <button id="act" type="button">USE</button>
@@ -490,11 +497,11 @@ function fightAI(s,dt){
   if(s.atk)return;s.acd-=dt;const d=dist(s,P);
   if(inSauna(P)){s.lostT+=dt;s.rp=(s.rp||0)-dt;if(s.rp<=0){s.rp=.5;s.path=findPath(s,{x:690,y:640})}follow(s,s.speed*1.3,dt);if(s.lostT>6){endFight();toast(`${s.n} gave up waiting outside the sauna.`,'good')}return}
   s.lostT=0;
-  if(d>30){s.rp=(s.rp||0)-dt;if(s.rp<=0||!s.path){s.rp=.3;s.path=findPath(s,P)}follow(s,s.speed*1.5,dt)}
+  if(d>30){s.rp=(s.rp||0)-dt;if(s.rp<=0||!s.path){s.rp=.55;s.path=findPath(s,P)}follow(s,s.speed*1.5,dt)}
   else if(s.acd<=0&&!(P.cs&&P.cs.k==='down')){attack(s,Math.random()<.68?'sPunch':'sGrab');s.acd=.8+Math.random()*.8-Math.min(.4,P.fights*.08)}
 }
 function guestAI(g,dt){if(g.atk)return;const d=dist(g,P);
-  if(d>32){g.rp=(g.rp||0)-dt;if(g.rp<=0||!g.path){g.rp=.4;g.path=findPath(g,P)}follow(g,75,dt);g.gT=(g.gT||0)+dt;if(g.gT>8){g.grudge=0;g.gT=0;g.path=null}}
+  if(d>32){g.rp=(g.rp||0)-dt;if(g.rp<=0||!g.path){g.rp=.7;g.path=findPath(g,P)}follow(g,75,dt);g.gT=(g.gT||0)+dt;if(g.gT>8){g.grudge=0;g.gT=0;g.path=null}}
   else{attack(g,'gShove');g.grudge=0;g.gT=0;g.mad=40;g.path=null;toast(`${g.n} storms over and shoves you back!`,'bad')}}
 const FLIRT=['Oh! Sorry... nice robe, by the way.','We have to stop meeting like this.','Careful, the floor\'s slippery. Unless you meant to bump into me?','Hi there. Come here often?','If you wanted to talk, you could have just said hi.'];
 function bump(o){
@@ -583,10 +590,12 @@ document.getElementById('chclose').addEventListener('click',closeChat);
 for(const b of document.querySelectorAll('#chat .chip'))b.addEventListener('click',()=>sendChat(b.textContent));
 
 // ---------- NPC brains: Basic (rules), Smart (small AI on this device via WebLLM), Online (Claude, only inside claude.ai for now) ----------
-const BRAIN={mode:'basic',engine:null,loading:false,pending:0,model:'Llama-3.2-1B-Instruct-q4f16_1-MLC',lock:Promise.resolve()};
+const MODELS={lite:{id:'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'},std:{id:'Llama-3.2-1B-Instruct-q4f16_1-MLC'}};
+const BRAIN={mode:'basic',engine:null,loading:false,pending:0,size:'std',effort:'normal',lastMind:0,lock:Promise.resolve()};
+setTimeout(()=>{if(PERF.fast){BRAIN.size='lite';BRAIN.effort='light'}try{BRAIN.size=localStorage.getItem('tributary.size')||BRAIN.size;BRAIN.effort=localStorage.getItem('tributary.effort')||BRAIN.effort}catch(e){}},0);
 try{const m=localStorage.getItem('tributary.brain');if(m)BRAIN.want=m}catch(e){}
 const brainLabel=()=>BRAIN.mode==='smart'&&BRAIN.engine?'Smart AI (on this device)':BRAIN.mode==='online'&&ai?'Claude (online)':'Basic';
-function llm(messages,max=80){const run=()=>BRAIN.engine.chat.completions.create({messages,temperature:.8,max_tokens:max,response_format:{type:'json_object'}}).then(r=>JSON.parse(r.choices[0].message.content));
+function llm(messages,max=80){const run=()=>BRAIN.engine.chat.completions.create({messages,temperature:.8,max_tokens:Math.min(max,PERF.fast?60:90),response_format:{type:'json_object'}}).then(r=>JSON.parse(r.choices[0].message.content));
   BRAIN.pending++;const p=BRAIN.lock.then(run);BRAIN.lock=p.catch(()=>{}).then(()=>{BRAIN.pending--});return p}
 function witness(desc,victim){for(const c of [...guests,...staff]){if(c===victim)continue;if(dist(c,P)<330&&los(c,P)){remember(c,'saw the player '+desc);c.vibe=(c.vibe||0)-1}}}
 const say=(c,t)=>{if(t)fx(c,String(t).slice(0,60),'say')};
@@ -638,7 +647,8 @@ function mindTick(dt){
     c.mindT=(c.mindT??2+Math.random()*6)-dt;if(c.mindT>0)continue;c.mindT=6+Math.random()*6;
     if(c.react||c.cs||c.atk||c.grudge||c.fight||c.chase||c.task||c.stun>0||(chatC===c))continue;
     const s=situation(c);if(!s.sees&&!s.near)continue;
-    if(BRAIN.mode==='smart'&&BRAIN.engine&&BRAIN.pending<1){smartMind(c,s).then(r=>{if(!c.react&&!c.cs&&!c.fight)applyReact(c,r,situation(c))}).catch(()=>applyReact(c,ruleMind(c,s),s))}
+    const aiOk=BRAIN.mode==='smart'&&BRAIN.engine&&BRAIN.pending<1&&BRAIN.effort==='normal'&&s.d<400&&state.t-BRAIN.lastMind>(PERF.fast?4:2)&&!state.fightS;
+    if(aiOk){BRAIN.lastMind=state.t;smartMind(c,s).then(r=>{if(!c.react&&!c.cs&&!c.fight)applyReact(c,r,situation(c))}).catch(()=>applyReact(c,ruleMind(c,s),s))}
     else applyReact(c,ruleMind(c,s),s)}
 }
 // ---------- AI settings panel ----------
@@ -647,14 +657,14 @@ function aiUI(){for(const r of document.querySelectorAll('#ai input[name=brain]'
   document.getElementById('online-opt').classList.toggle('off',!ai);document.querySelector('#ai input[value=online]').disabled=!ai;
   document.getElementById('aibtn').textContent='AI: '+(BRAIN.mode==='smart'?(BRAIN.engine?'Smart':'Smart…'):BRAIN.mode==='online'?'Online':'Basic');
   document.getElementById('aitest').disabled=!BRAIN.engine;document.getElementById('aiload').disabled=BRAIN.loading||!!BRAIN.engine;
-  document.getElementById('aiload').textContent=BRAIN.engine?'AI brain ready':BRAIN.loading?'Downloading…':'Download AI brain (~700 MB, one time)'}
+  document.getElementById('aiload').textContent=BRAIN.engine?'AI brain ready':BRAIN.loading?'Downloading…':'Download AI brain: '+(BRAIN.size==='lite'?'Lite':'Standard (~700 MB)')+', one time'}
 function setMode(m){BRAIN.mode=m;try{localStorage.setItem('tributary.brain',m)}catch(e){}if(m==='smart'&&!BRAIN.engine&&!BRAIN.loading)aiStat.textContent='Tap "Download AI brain" to load it. Until it is ready, NPCs use Basic.';aiUI()}
 async function loadBrain(){
   if(BRAIN.engine||BRAIN.loading)return;
   if(!navigator.gpu){aiStat.textContent='This browser can\'t run the AI brain (no WebGPU). Try a recent Chrome or Edge, or Safari 26+. NPCs will use Basic.';return}
   BRAIN.loading=true;aiUI();aiStat.textContent='Starting download…';const t0=performance.now();
   try{const webllm=await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm');
-    BRAIN.engine=await webllm.CreateMLCEngine(BRAIN.model,{initProgressCallback:r=>{aiBar.style.width=Math.round((r.progress||0)*100)+'%';aiStat.textContent=r.text||'Loading…'}});
+    BRAIN.engine=await webllm.CreateMLCEngine(MODELS[BRAIN.size].id,{initProgressCallback:r=>{aiBar.style.width=Math.round((r.progress||0)*100)+'%';aiStat.textContent=r.text||'Loading…'}});
     aiBar.style.width='100%';aiStat.textContent=`AI brain ready in ${Math.round((performance.now()-t0)/1000)} s. It's saved on this device, so next time it loads much faster.`;BRAIN.mode='smart';try{localStorage.setItem('tributary.brain','smart')}catch(e){}toast('AI brain loaded. NPCs now think for themselves.','good')}
   catch(e){aiStat.textContent='Couldn\'t load the AI brain here. Inside Claude\'s preview, big downloads are blocked, so use the website version. ('+String(e&&e.message||e).slice(0,80)+')'}
   BRAIN.loading=false;aiUI()}
@@ -667,6 +677,16 @@ for(const r of document.querySelectorAll('#ai input[name=brain]'))r.addEventList
 document.getElementById('aiload').addEventListener('click',loadBrain);document.getElementById('aitest').addEventListener('click',testBrain);
 if(BRAIN.want==='smart'){BRAIN.mode='smart';setTimeout(loadBrain,800)}else if(BRAIN.want==='online')BRAIN.mode='online';
 setTimeout(aiUI,0);setTimeout(aiUI,11000);
+function setUI(){for(const r of document.querySelectorAll('#ai input[name=size]')){r.checked=r.value===BRAIN.size;r.disabled=!!BRAIN.engine||BRAIN.loading}
+  for(const r of document.querySelectorAll('#ai input[name=effort]'))r.checked=r.value===BRAIN.effort;
+  for(const r of document.querySelectorAll('#ai input[name=gfx]'))r.checked=r.value===PERF.pick;document.getElementById('fpschk').checked=PERF.showFps}
+const store=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+for(const r of document.querySelectorAll('#ai input[name=size]'))r.addEventListener('change',()=>{BRAIN.size=r.value;store('tributary.size',r.value);aiUI()});
+for(const r of document.querySelectorAll('#ai input[name=effort]'))r.addEventListener('change',()=>{BRAIN.effort=r.value;store('tributary.effort',r.value)});
+for(const r of document.querySelectorAll('#ai input[name=gfx]'))r.addEventListener('change',()=>{PERF.pick=r.value;store('tributary.gfx',r.value);aiStat.textContent='Graphics change saved. Tap "Restart to apply" (your current run will end).'});
+document.getElementById('fpschk').addEventListener('change',e=>{PERF.showFps=e.target.checked;store('tributary.fps',PERF.showFps?'1':'0')});
+document.getElementById('gfxapply').addEventListener('click',()=>location.reload());
+document.getElementById('aibtn').addEventListener('click',setUI);setTimeout(setUI,10);
 
 // ---------- end ----------
 const endEl=document.getElementById('end');
@@ -715,7 +735,7 @@ function update(dt){
     if(s.fight){fightAI(s,dt);continue}
     if(s.react&&!s.chase&&!s.task){if(s.react.k==='goto'||s.react.k==='follow')s.react=null;else{reactTick(s,dt);continue}}
     if(s.chase){
-      const hiding=inSauna(P);s.rp-=dt;if(s.rp<=0){s.rp=.4;s.path=findPath(s,hiding?{x:690,y:640}:P)}
+      const hiding=inSauna(P);s.rp-=dt;if(s.rp<=0){s.rp=.7;s.path=findPath(s,hiding?{x:690,y:640}:P)}
       follow(s,s.speed*1.55,dt);
       if(!hiding&&!P.anim&&dist(s,P)<26){confront(s);break}
       if(hiding||!(dist(s,P)<450&&los(s,P))){state.lost+=dt*(hiding?1.6:1);if(state.lost>6){s.chase=0;s.path=null;P.sus=70;toast(hiding?`${s.n} gave up waiting outside the sauna.`:`You lost ${s.n}. Act natural...`,'good')}}else state.lost=0;
@@ -758,19 +778,24 @@ function hud(){
   document.getElementById('strk').textContent=`Strikes ${P.strikes}/3`;
   const ct=P.core>39?'hot':P.core<36.2?'hot':'';
   document.getElementById('vit').innerHTML=`<span>Health <b>${Math.round(P.health)}</b></span><span class="${ct}">Body <b>${P.core.toFixed(1)}°C</b></span><span class="${P.hyd<20?'hot':''}">Water <b>${Math.round(P.hyd)}%</b></span>${timer}<span class="tip">${tip}</span>`;
-  const o0=getOptions()[0];actB.textContent=o0?(o0.b||'USE'):'USE';
+  const o0=(PERF.ops||[])[0];actB.textContent=o0?(o0.b||'USE'):'USE';
   drB.style.display=P.hold&&P.hold.k==='kombucha'?'block':'none';
 }
 
 // ================= 3D =================
 if(!window.THREE||!(()=>{try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'))}catch(e){return false}})()){document.querySelector('#start .btns').innerHTML='<p><b>This browser can\'t show 3D graphics.</b> Try Chrome or Safari with hardware acceleration on.</p>';throw new Error('no webgl')}
 const T=THREE;
-const R=new T.WebGLRenderer({canvas:cv,antialias:true});
-R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.05;R.physicallyCorrectLights=false;
+// ---- performance profile: Fast (phones) or Pretty (computers); Auto picks by device ----
+const PERF=(()=>{let pick='auto';try{pick=localStorage.getItem('tributary.gfx')||'auto'}catch(e){}
+  const weak=matchMedia('(pointer:coarse)').matches||(navigator.deviceMemory||8)<=4||(navigator.hardwareConcurrency||8)<=4;
+  const fast=pick==='fast'||(pick==='auto'&&weak);return{pick,fast,scale:fast?.85:1,maxDpr:fast?1.5:2,fps:fast?30:60,frame:0,showFps:false}})();
+try{PERF.showFps=localStorage.getItem('tributary.fps')==='1'}catch(e){}
+const R=new T.WebGLRenderer({canvas:cv,antialias:!PERF.fast,powerPreference:'high-performance'});
+R.shadowMap.enabled=!PERF.fast;R.shadowMap.type=T.PCFSoftShadowMap;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.05;R.physicallyCorrectLights=false;
 const scene=new T.Scene();const lin=c=>new T.Color(c).convertSRGBToLinear();
 scene.background=lin('#bfe3f2');scene.fog=new T.Fog(lin('#cfe6ef'),30,75);
 const cam=new T.PerspectiveCamera(50,1,0.05,200);
-function resize(){vw=innerWidth;vh=innerHeight;R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));R.setSize(vw,vh,false);cam.aspect=vw/vh;cam.updateProjectionMatrix()}
+function resize(){vw=innerWidth;vh=innerHeight;R.setPixelRatio(Math.min(window.devicePixelRatio||1,PERF.maxDpr)*PERF.scale);R.setSize(vw,vh,false);cam.aspect=vw/vh;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 // image-based lighting from a soft studio gradient (gives steel, water and glass real reflections)
 {const es=new T.Scene();const sg=new T.SphereGeometry(50,32,16);const cols=[];const p=sg.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i)/50;const c=y>0?lin('#cfe8ff').lerp(lin('#ffffff'),1-y):lin('#e9dcc8').lerp(lin('#6b5a48'),-y);cols.push(c.r,c.g,c.b)}
@@ -778,7 +803,7 @@ addEventListener('resize',resize);resize();
  for(const [x,z] of [[20,0],[-20,8],[0,-20]]){const pl=new T.Mesh(new T.PlaneGeometry(12,6),new T.MeshBasicMaterial({color:'#ffffff'}));pl.position.set(x,14,z);pl.lookAt(0,0,0);es.add(pl)}
  const pm=new T.PMREMGenerator(R);scene.environment=pm.fromScene(es,.04).texture}
 scene.add(new T.HemisphereLight(lin('#fff8ee'),lin('#8c7a66'),0.45));
-const sun=new T.DirectionalLight(lin('#fff0d8'),1.1);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
+const sun=new T.DirectionalLight(lin('#fff0d8'),1.1);sun.castShadow=true;sun.shadow.mapSize.set(PERF.fast?1024:2048,PERF.fast?1024:2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
 Object.assign(sun.shadow.camera,{left:-14,right:14,top:14,bottom:-14,near:1,far:60});scene.add(sun,sun.target);
 const mkGrad=a=>{const t=new T.DataTexture(new Uint8Array(a.flatMap(v=>[v,v,v])),a.length,1,T.RGBFormat);t.minFilter=t.magFilter=T.NearestFilter;t.needsUpdate=true;return t};
 const gradSoft=mkGrad([150,200,232,250]);
@@ -869,7 +894,7 @@ for(const [x,y] of STOVES){const g=new T.Group();g.position.set(x*S,0,y*S);scene
   for(let k=0;k<70;k++){const a=k*2.4,r=.08+(k%4)*.06,yy=.15+(k/70)*1.15;const hot=k%3===0||yy>1.05;
     const m=hot?new T.MeshStandardMaterial({color:lin('#5a4f46'),emissive:lin('#ff6a1a'),emissiveIntensity:1,roughness:.9}):std(['#6f6a63','#57534e','#8a857c'][k%3],.95);if(hot)glowMats.push(m);
     const s=new T.Mesh(SPH,m);s.scale.set(.085,.065,.075);s.position.set(Math.cos(a)*r,yy,Math.sin(a)*r);s.rotation.set(rnd()*3,rnd()*3,0);s.castShadow=true;g.add(s)}
-  const pl=new T.PointLight(lin('#ff7a2a'),.9,3.2,2);pl.position.set(0,.8,0);g.add(pl);g.userData.pl=pl}
+  const pl=new T.PointLight(lin('#ff7a2a'),.9,3.2,2);pl.position.set(0,.8,0);if(!PERF.fast)g.add(pl);g.userData.pl=pl}
 {const rail=pbr('slats','#c48a52','#7a4e28',1,1,.7);box(785,628,120,4,.08,rail,1.0);box(785,628,120,4,.08,rail,.55);for(const x of[785,843,901])box(x,627,6,6,1.04,rail)}
 const bucket=new T.Group();bucket.position.set(930*S,0,672*S);scene.add(bucket);
 cylM(bucket,0,.16,0,.15,.3,pbr('slats','#b07a45','#6b4524',2,1,.7));cylM(bucket,0,.26,0,.16,.02,steel);cylM(bucket,0,.29,0,.13,.01,water);
@@ -912,7 +937,7 @@ box(230,862,150,40,.42,pbr('concrete','#c9c4bb','#c9c4bb',2,1,.85));box(244,870,
 box(250,870,110,3,.25,glass,.42,false);box(250,891,110,3,.25,glass,.42,false);
 const flameM=new T.MeshBasicMaterial({color:lin('#ff8a2a'),toneMapped:false}),flameM2=new T.MeshBasicMaterial({color:lin('#ffd36b'),toneMapped:false}),flames=[];
 for(let i=0;i<7;i++)for(const [m,sc] of [[flameM,1],[flameM2,.55]]){const f=new T.Mesh(CONE,m);f.scale.set(.1*sc,.35*sc,.1*sc);f.position.set((258+i*16)*S,.55,882*S);scene.add(f);flames.push(f)}
-const fl=new T.PointLight(lin('#ff9a4a'),1,6,1.5);fl.position.set(305*S,1,882*S);scene.add(fl);
+const fl=new T.PointLight(lin('#ff9a4a'),1,6,1.5);fl.position.set(305*S,1,882*S);if(!PERF.fast)scene.add(fl);
 for(const [x,y] of [[601,831],[881,851]]){const g=new T.Group();scene.add(g);cylM(g,x*S,1.1,y*S,.035,2.2,blackSteel);const top=new T.Mesh(CONE,blackSteel);top.scale.set(.42,.2,.42);top.position.set(x*S,2.28,y*S);g.add(top);cylM(g,x*S,.04,y*S,.24,.08,blackSteel)}
 box(945,862,44,44,.72,pbr('planks','#a57a4e','#5e4128',1,1,.7));
 // ---- exit, labels, markers ----
@@ -960,10 +985,10 @@ function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex;if(faceCache[key])
 function makeChar(suit,hair,sk,isStaff,name){
   const L=looks[name]||{sex:'f',style:'bob',eye:'#4a3020'},fem=L.sex==='f';
   const g=new T.Group(),body=new T.Group();g.add(body);
-  const ol=(m,k=1.05)=>{const o=new T.Mesh(m.geometry,outlineM);o.scale.setScalar(k);m.add(o);return m};
+  const outs=[];const ol=(m,k=1.05)=>{const o=new T.Mesh(m.geometry,outlineM);o.scale.setScalar(k);m.add(o);outs.push(o);return m};
   const part=(par,geo,c,x,y,z,sx,sy,sz,out=true,mat)=>{const m=new T.Mesh(geo,mat||soft(c));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;par.add(m);if(out)ol(m);return m};
   const top=isStaff?suit:sk,pants=isStaff?'#24303c':sk,lw=fem?.92:1;
-  {const tm=part(body,fem?G.torsoF:G.torsoM,top,0,0,0,1,1,.7,false);const o=new T.Mesh(tm.geometry,outlineM);o.scale.set(1.025,.995,1.035);tm.add(o)}
+  {const tm=part(body,fem?G.torsoF:G.torsoM,top,0,0,0,1,1,.7,false);const o=new T.Mesh(tm.geometry,outlineM);outs.push(o);o.scale.set(1.025,.995,1.035);tm.add(o)}
   if(!isStaff&&!fem)part(body,G.trunks,suit,0,0,0,1,1,.72,false);
   if(!isStaff&&fem){part(body,G.suitF,suit,0,0,0,1,1,.71,false);for(const x of[-.075,.075])part(body,BOX,suit,x,1.36,0,.025,.14,.17,false);for(const x of[-.065,.065])part(body,SPH,suit,x,1.24,.07,.068,.06,.05,false)}
   if(isStaff){const b1=new T.Mesh(new T.PlaneGeometry(.11,.11),badgeM);b1.position.set(.08,1.27,.128);body.add(b1);const b2=new T.Mesh(new T.PlaneGeometry(.2,.2),badgeM);b2.position.set(0,1.18,-.128);b2.rotation.y=Math.PI;body.add(b2);part(body,BOX,'#ffffff',0,1.38,.085,.12,.04,.02,false)}
@@ -994,7 +1019,7 @@ function makeChar(suit,hair,sk,isStaff,name){
   const oil=new T.Mesh(CYL,oilM);oil.scale.set(.022,.11,.022);oil.position.set(0,-.05,.04);AR.hand.add(oil);oil.visible=false;
   const ladle=new T.Group();AR.hand.add(ladle);{const h=new T.Mesh(CYL,woodM);h.scale.set(.012,.45,.012);h.position.set(0,-.05,.2);h.rotation.x=Math.PI/2;ladle.add(h);const b=new T.Mesh(SPH,woodM);b.scale.set(.05,.03,.05);b.position.set(0,-.07,.43);ladle.add(b)}ladle.visible=false;
   const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15;g.add(tag);
-  const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,ph:Math.random()*6};
+  const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,ph:Math.random()*6};
   if(isStaff){o.carryT=new T.Group();for(let i=0;i<4;i++){const t=new T.Mesh(BOX,towelM);t.scale.set(.34,.05,.26);t.position.set(0,1.02+i*.052,.3);o.carryT.add(t)}o.carryT.visible=false;body.add(o.carryT);
     o.carryK=new T.Mesh(CYL,new T.MeshStandardMaterial({color:lin('#c9ced2'),metalness:.9,roughness:.3}));o.carryK.scale.set(.15,.4,.15);o.carryK.position.set(0,1.08,.3);o.carryK.visible=false;body.add(o.carryK);
     o.ex=label('!',1.4,'#ffffff','rgba(224,83,58,.95)');o.ex.position.y=2.6;g.add(o.ex);o.st=label('✶ dazed ✶',.7,'#0F2A40','rgba(240,168,48,.95)');o.st.position.y=2.6;g.add(o.st);
@@ -1095,19 +1120,24 @@ function render(dt,now){
   }else{cp.set(12+Math.sin(t*.15)*28,20,10+Math.cos(t*.15)*28);ct.set(12,0,10)}
   sun.position.set(ct.x-10,22,ct.z+6);sun.target.position.copy(ct);
   cam.position.copy(cp);if(shake>0){cam.position.x+=(Math.random()-.5)*shake;cam.position.y+=(Math.random()-.5)*shake;shake=Math.max(0,shake-dt*1.4)}cam.lookAt(ct);
-  if(P&&P.m){tmp.set(P.x*S,1.2,P.y*S);ray.set(cam.position,tmp2.copy(tmp).sub(cam.position).normalize());ray.far=cam.position.distanceTo(tmp);const hits=new Set(ray.intersectObjects(wallMeshes,false).map(h=>h.object));
-    for(const w of wallMeshes){const o=hits.has(w)?.18:1;w.material.opacity+=(o-w.material.opacity)*Math.min(1,dt*8);w.material.depthWrite=w.material.opacity>.9}}
+  if(P&&P.m&&PERF.frame%3===0){tmp.set(P.x*S,1.2,P.y*S);ray.set(cam.position,tmp2.copy(tmp).sub(cam.position).normalize());ray.far=cam.position.distanceTo(tmp);const hits=new Set(ray.intersectObjects(wallMeshes,false).map(h=>h.object));
+    for(const w of wallMeshes){const o=hits.has(w)?.18:1;w.material.opacity+=(o-w.material.opacity)*Math.min(1,dt*24);w.material.depthWrite=w.material.opacity>.9}}
   R.render(scene,cam);
   const v=P?tmp.set(P.x*S,2.3,P.y*S).project(cam):null,sx=v?(v.x+1)/2*vw:0,sy=v?(1-v.y)/2*vh:0;
   if(P&&state.on&&P.use){pr.style.display='block';pr.style.left=sx+'px';pr.style.top=sy+'px';pr.innerHTML='<span class="pb"><i style="width:'+Math.round(P.use.t/P.use.a.d*100)+'%"></i></span>'}else pr.style.display='none';
   for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t+=dt;if(f.t>=f.d){f.el.remove();fxs.splice(i,1);continue}if(f.c){f.x=f.c.x;f.y=f.c.y}const v2=tmp2.set(f.x*S,f.h+f.t*f.rise,f.y*S).project(cam);f.el.style.transform=`translate(-50%,-50%) translate(${(v2.x+1)/2*vw+f.dx*f.t}px,${(1-v2.y)/2*vh}px) scale(${1+.3*Math.sin(Math.min(1,f.t*6)*Math.PI)})`;f.el.style.opacity=1-Math.max(0,f.t/f.d-.6)/.4}
   if(state&&state.fightS){document.getElementById('fyou').textContent=Math.round(P.dmg||0)+'%';document.getElementById('fthem').textContent=Math.round(state.fightS.dmg||0)+'%'}
-  const ops=P&&state.on&&!state.paused?getOptions():[];const key=ops.map(o=>o.l).join('|');
+  if(PERF.frame%4===0||!PERF.ops)PERF.ops=P&&state.on&&!state.paused?getOptions():[];const ops=PERF.ops;const key=ops.map(o=>o.l).join('|');
   if(key!==menuKey){menuKey=key;menu.innerHTML='';ops.slice(0,4).forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.className='mopt'+(o.risky?' risky':'');const n=document.createElement('span');n.className='mk';n.textContent=i+1;b.append(n,document.createTextNode(o.l));b.addEventListener('click',ev=>{ev.stopPropagation();const cur=getOptions()[i];if(cur&&cur.l===o.l)cur.f()});menu.appendChild(b)})}
   if(ops.length){menu.style.display='flex';menu.style.left=Math.max(110,Math.min(vw-110,sx))+'px';menu.style.top=Math.max(150,sy)+'px'}else menu.style.display='none';
 }
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);render(dt,now);requestAnimationFrame(loop)}
+const fpsEl=document.getElementById('fps');let acc=0,fpsT=0,fpsN=0,lodT=0;
+function perfTick(dt){fpsT+=dt;fpsN++;lodT+=dt;
+  if(fpsT>=1.5){const f=fpsN/fpsT;fpsT=0;fpsN=0;if(PERF.showFps){fpsEl.style.display='block';fpsEl.textContent=Math.round(f)+' fps · '+Math.round(PERF.scale*100)+'% res'}else fpsEl.style.display='none';
+    const target=PERF.fps*.85;if(f<target-4&&PERF.scale>.55){PERF.scale=Math.max(.55,PERF.scale-.1);resize()}else if(f>PERF.fps-2&&PERF.scale<(PERF.fast?.85:1)){PERF.scale=Math.min(PERF.fast?.85:1,PERF.scale+.05);resize()}}
+  if(lodT>.5&&P&&P.m){lodT=0;const near=PERF.fast?7:16;for(const c of [P,...staff,...guests]){if(!c.m)continue;const show=c===P||cam.position.distanceTo(c.m.g.position)<near;if(c.m.outsOn!==show){c.m.outsOn=show;for(const o of c.m.outs)o.visible=show}}}}
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.1,(now-last)/1000);if(dt<1/PERF.fps-.004)return;const step=Math.min(.05,dt);last=now;PERF.frame++;update(step);render(step,now);perfTick(dt)}
 requestAnimationFrame(loop);
 }
 </script>
