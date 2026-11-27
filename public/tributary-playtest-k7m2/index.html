@@ -41,7 +41,7 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 #fb{position:fixed;right:12px;bottom:calc(max(34px,env(safe-area-inset-bottom)) + 168px);display:none;grid-template-columns:repeat(2,64px);gap:8px}
 #fb button{height:52px;border:0;border-radius:16px;background:rgba(200,85,61,.92);color:#fff;font:900 13px Nunito,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.3)}#fb button[data-m=dodge]{background:rgba(230,169,74,.95);color:#0F2A40}#fb button[data-m=shove]{background:rgba(120,40,30,.92)}
 #run{position:fixed;left:30px;bottom:calc(max(22px,env(safe-area-inset-bottom)) + 150px);width:76px;height:52px;border:0;border-radius:26px;background:rgba(255,255,255,.85);color:#0F2A40;font:900 14px Nunito,sans-serif;display:none}
-#run.held{background:#8CC8EE}body.touch #fb{display:grid}body.touch #run{display:block}
+#run{display:none!important}body.touch.fighting #fb{display:grid}
 #chat{position:fixed;z-index:9;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(480px,95vw);background:#fff;border-radius:20px;padding:12px 14px;display:none;box-shadow:0 14px 40px rgba(0,0,0,.45)}
 #chat.on{display:block}.chh{display:flex;align-items:center;gap:10px}.chh b{font:700 19px 'Josefin Sans',sans-serif;color:#0F2A40}#chmood{font-size:13px;font-weight:700;color:#c8557a;flex:1}
 #chclose{width:44px;height:44px;border:0;border-radius:12px;background:#E6F0F7;font-size:18px;color:#0F2A40}
@@ -60,6 +60,10 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 #fps{position:fixed;left:8px;bottom:6px;z-index:6;font:700 11px Nunito,sans-serif;color:#fff;background:rgba(15,42,64,.7);padding:2px 6px;border-radius:6px;display:none;pointer-events:none}
 .aset{border-bottom:1px solid #E6F0F7;padding:10px 4px;display:grid;gap:6px;font-size:13px;color:#2d4253}.aset b{color:#0F2A40;font-size:15px}.aset label{display:flex;gap:8px;align-items:flex-start;min-height:32px}.aset input{width:18px;height:18px;flex:none;margin-top:1px}
 #gfxapply{min-height:40px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:800 13px Nunito,sans-serif}
+#pad.on{opacity:1;display:block!important}#pad.run{border-color:#8CC8EE!important;box-shadow:0 0 0 4px rgba(140,200,238,.35)}#pad.run #knob{background:#8CC8EE}
+#incoming{position:fixed;z-index:7;left:50%;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 8px);transform:translate(-50%,20px);width:min(420px,92vw);background:#fff;border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+#incoming.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}#incoming p{margin:0 0 8px;font-size:15px;color:#2d4253}#incoming b{color:#0F2A40}
+#inbtns{display:flex;gap:8px}#inbtns button{flex:1;min-height:44px;border:0;border-radius:12px;background:#1E5A8A;color:#fff;font:800 14px Nunito,sans-serif}#inbtns button+button{background:#E6F0F7;color:#0F2A40}#inbtns button.risky{background:#c8553d;color:#fff}
 #cv{position:fixed;inset:0;display:block;width:100%;height:100%}
 #prompt{position:fixed;transform:translate(-50%,-100%);background:rgba(15,42,64,.88);color:#fff;font-weight:800;font-size:13px;padding:4px 12px;border-radius:12px;pointer-events:none;white-space:nowrap;display:none}
 .pb{display:block;width:70px;height:8px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden;margin:3px 0}.pb i{display:block;height:100%;background:#8CC8EE}
@@ -75,11 +79,11 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 #toasts{position:fixed;left:50%;top:104px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(92vw,460px)}
 .toast{background:rgba(255,255,255,.95);border-radius:12px;padding:7px 14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);text-align:center}
 .toast.bad{background:#ffe3dc}.toast.good{background:#dff7e6}
-#pad{position:fixed;left:18px;bottom:max(22px,env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);display:none}
+#pad{position:fixed;z-index:3;pointer-events:none;opacity:0;transition:opacity .15s;left:18px;bottom:auto;top:auto;width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);display:none}
 #knob{position:absolute;left:41px;top:41px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.75)}
 #act{position:fixed;right:20px;bottom:max(34px,env(safe-area-inset-bottom));width:96px;height:96px;border-radius:50%;border:0;background:#1E5A8A;color:#fff;font:800 16px Nunito,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35);display:none}
 #act:active{background:#123E61}
-body.touch #pad,body.touch #act{display:block}
+#act{display:none!important}
 .ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,42,64,.72);padding:16px}
 .ov.on{display:flex}
 .card{background:#fff;border-radius:22px;padding:24px;width:min(460px,100%);max-height:92vh;overflow:auto;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.4)}
@@ -113,6 +117,7 @@ body.touch #pad,body.touch #act{display:block}
 <div id="menu"></div>
 <div id="fhud"><div class="fz"><span>YOU</span><b id="fyou">0%</b></div><div class="fvs">VS</div><div class="fz"><span id="fname">STAFF</span><b id="fthem">0%</b></div><button type="button" id="quiet">Go quietly</button></div>
 <div id="fx"></div>
+<div id="incoming" role="status" aria-live="polite"><p><b id="inname"></b> <span id="intext"></span></p><div id="inbtns"></div></div>
 <div id="fb"><button type="button" data-m="punch">PUNCH</button><button type="button" data-m="kick">KICK</button><button type="button" data-m="shove">SHOVE</button><button type="button" data-m="dodge">DODGE</button></div>
 <button type="button" id="run">RUN</button>
 <div id="chat" role="dialog" aria-label="Conversation"><div class="chh"><b id="chname"></b><span id="chmood"></span><small id="chbrain"></small><button type="button" id="chclose" aria-label="Close conversation">✕</button></div>
@@ -149,7 +154,9 @@ body.touch #pad,body.touch #act{display:block}
     <span><b>Move</b> WASD / arrows / left stick</span>
     <span><b>Actions</b> tap the pop-up menu, or 1–4 (E = first)</span>
     <span><b>Fight</b> J punch · K kick · L shove · Space dodge</span>
-    <span><b>Run</b> hold Shift (or RUN)</span>
+    <span><b>Run</b> hold Shift, or push the stick to its edge</span>
+    <span><b>Jump</b> Space, or tap the scene</span>
+    <span><b>People</b> tap a name tag to interact</span>
     <span><b>Sit on a lounger</b> to cool suspicion</span>
     <span><b>Drink</b> Q or DRINK button</span>
     <span><b>Leave</b> via the entrance any time</span>
@@ -188,7 +195,7 @@ let vw=innerWidth,vh=innerHeight;
 if(matchMedia('(pointer:coarse)').matches)document.body.classList.add('touch');
 const SAUNA={x0:740,y0:435,x1:1075,y1:695};
 const inSauna=c=>c.x>SAUNA.x0&&c.x<SAUNA.x1&&c.y>SAUNA.y0&&c.y<SAUNA.y1;
-const TF=40; // game seconds per real second (6 PM to 10 PM in 6 real minutes)
+const TF=20; // game seconds per real second (6 PM to 10 PM in 12 real minutes)
 const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 // walls: [x,y,w,h,kind]
 const walls=[
@@ -304,24 +311,25 @@ function newGame(entry){
   for(const [gi,si] of [[0,4],[4,12]]){const g=guests[gi],s=seats[si];g.x=s.x;g.y=s.y;g.seat=s;s.by=g;g.sitT=12+Math.random()*10}
   Object.values(RES).forEach(r=>{r.stock=r.max;r.claimed=null});
   Object.assign(SAU,{t:85,aroma:0,anger:0,doorT:0,pourCd:0});
-  state={on:true,t:0,len:360,paused:false,lost:0,rs:0};document.body.classList.remove('fighting');fxs.splice(0).forEach(f=>f.el.remove());
+  state={on:true,t:0,len:720,paused:false,lost:0,rs:0};document.body.classList.remove('fighting');fxs.splice(0).forEach(f=>f.el.remove());
   spawn3D();refreshRes();
   toast(entry===50?'Regular entry: −50 pts. Earn it back!':'Class pass: −25 pts. Earn it back!');
 }
 
 // ---------- input ----------
 const keys={};
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=1;if(chatC){if(k==='escape')closeChat();return}if(e.target&&e.target.tagName==='INPUT')return;if(k==='j')pAttack('punch');if(k==='k')pAttack('kick');if(k==='l')pAttack('shove');if(k===' '){e.preventDefault();pAttack('dodge')}if(['e','enter'].includes(k)){e.preventDefault();action()}if('1234'.includes(k)&&k)pick(+k-1);if(k==='q')drink()});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=1;if(chatC){if(k==='escape')closeChat();return}if(e.target&&e.target.tagName==='INPUT')return;if(k==='j')pAttack('punch');if(k==='k')pAttack('kick');if(k==='l')pAttack('shove');if(k===' '){e.preventDefault();if(state&&state.fightS)pAttack('dodge');else jump()}if(['e','enter'].includes(k)){e.preventDefault();action()}if('1234'.includes(k)&&k)pick(+k-1);if(k==='q')drink()});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0});
-const pad=document.getElementById('pad'),knob=document.getElementById('knob');let joy={x:0,y:0,id:null};
-function padMove(t){const r=pad.getBoundingClientRect();let dx=t.clientX-(r.left+66),dy=t.clientY-(r.top+66);const m=Math.hypot(dx,dy);if(m>50){dx*=50/m;dy*=50/m}joy.x=dx/50;joy.y=dy/50;knob.style.transform=`translate(${dx}px,${dy}px)`}
-pad.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];joy.id=t.identifier;padMove(t)},{passive:false});
-pad.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===joy.id)padMove(t)},{passive:false});
-const padEnd=e=>{for(const t of e.changedTouches)if(t.identifier===joy.id){joy={x:0,y:0,id:null};knob.style.transform=''}};
-pad.addEventListener('touchend',padEnd);pad.addEventListener('touchcancel',padEnd);
-const actB=document.getElementById('act'),drB=document.getElementById('drink');let runHeld=0;
+const pad=document.getElementById('pad'),knob=document.getElementById('knob');let joy={x:0,y:0,id:null,run:false,cx:0,cy:0};
+const JR=56;
+function padMove(t){let dx=t.clientX-joy.cx,dy=t.clientY-joy.cy;const m=Math.hypot(dx,dy);if(m>JR){dx*=JR/m;dy*=JR/m}joy.x=dx/JR;joy.y=dy/JR;joy.run=m>JR*.92;pad.classList.toggle('run',joy.run);knob.style.transform=`translate(${dx}px,${dy}px)`}
+addEventListener('touchstart',e=>{if(joy.id!==null||!state||!state.on||state.paused)return;const t=e.changedTouches[0];if(t.target!==cv||t.clientX>innerWidth*.45)return;
+  e.preventDefault();joy.id=t.identifier;joy.cx=t.clientX;joy.cy=t.clientY;pad.style.left=(t.clientX-66)+'px';pad.style.top=(t.clientY-66)+'px';pad.classList.add('on');padMove(t)},{passive:false});
+addEventListener('touchmove',e=>{if(joy.id===null)return;for(const t of e.changedTouches)if(t.identifier===joy.id){e.preventDefault();padMove(t)}},{passive:false});
+const padEnd=e=>{for(const t of e.changedTouches)if(t.identifier===joy.id){joy={x:0,y:0,id:null,run:false};knob.style.transform='';pad.classList.remove('on','run')}};
+addEventListener('touchend',padEnd);addEventListener('touchcancel',padEnd);
+const actB=document.getElementById('act'),drB=document.getElementById('drink');
 for(const b of document.querySelectorAll('#fb [data-m]')){b.addEventListener('touchstart',e=>{e.preventDefault();pAttack(b.dataset.m)},{passive:false});b.addEventListener('click',()=>pAttack(b.dataset.m))}
-{const rb=document.getElementById('run');rb.addEventListener('touchstart',e=>{e.preventDefault();runHeld=1;rb.classList.add('held')},{passive:false});const up=()=>{runHeld=0;rb.classList.remove('held')};rb.addEventListener('touchend',up);rb.addEventListener('touchcancel',up)}
 actB.addEventListener('touchstart',e=>{e.preventDefault();action()},{passive:false});actB.addEventListener('click',action);
 drB.addEventListener('touchstart',e=>{e.preventDefault();drink()},{passive:false});drB.addEventListener('click',drink);
 
@@ -341,25 +349,16 @@ const faceAt=c=>{P.dir=Math.atan2(c.x-P.x,c.y-P.y);P.face=P.dir};
 // GTA-style context menu: tap an option (or 1–4; E = first)
 function getOptions(){
   if(!P||!state||!state.on||state.paused||P.anim||P.cs||P.atk)return[];
+  if(state.pm){const c=state.pm;if(dist(c,P)>95||c.cs||c.fight&&state.fightS===c){state.pm=null}else return peopleOptions(c)}
   if(P.tub)return[opt('Climb out of the plunge',()=>startTub('out',P.tub),{b:'OUT'})];
   if(P.sit)return[opt(P.sit.zone==='sauna'?'Stand up':'Get up',standUp,{b:'UP'})];
   if(P.use)return[];
   if(P.x>exitZ.x&&P.x<exitZ.x+exitZ.w&&P.y<exitZ.y+30)return[opt('Leave the spa',()=>finish('left'),{b:'EXIT'})];
   let best=null,bd=1e9;const cand=(d,o)=>{if(d<bd){bd=d;best=o}};
-  for(const s of staff){const d=dist(s,P);if(d<48&&!s.chase&&!s.fight&&s.stun<=0&&!s.cs)cand(d-8,{k:'staff',s})}
-  for(const g of guests){const d=dist(g,P);if(d<45&&!g.seat&&!g.cs)cand(d-6,{k:'guest',g})}
   for(const a of acts){const d=dist(a,P);if(d<30)cand(d,{k:'act',a})}
   for(const s of seats){const d=Math.hypot(s.sx-P.x,s.sy-P.y);if(d<28&&!s.by)cand(d+2,{k:'seat',s})}
   if(!best)return[];
   if(best.k==='seat'){const s=best.s;return[opt(s.zone==='sauna'?'Sit on the '+tierName[s.tier]:s.t==='chair'?'Sit down':'Relax on the lounger',()=>{P.sit=s;s.by=P;P.x=s.x;P.y=s.y;if(s.zone==='sauna'&&s.tier===3)toast('Top bench: the hottest spot. Heat builds faster up here.')},{b:'SIT'})]}
-  if(best.k==='guest'){const g=best.g,inS=inSauna(P);
-    return[opt(inS?`Whisper with ${g.n}`:`Talk with ${g.n}`,()=>openChat(g),{b:'TALK'}),
-      opt(`Compliment ${g.n}`,()=>compliment(g)),
-      opt(`Shove ${g.n}`,()=>{faceAt(g);pAttack('shove')},{risky:1})]}
-  if(best.k==='staff'){const s=best.s,low=Object.values(RES).find(r=>r.stock<r.max&&!r.claimed);
-    return[opt(`Talk with ${s.n}`,()=>openChat(s),{b:'TALK'}),
-      ...(low&&s.role!=='desk'&&!s.task?[opt(`Ask ${s.n} to refill the ${low.n}`,()=>askRefill(s,low))]:[]),
-      opt(`Shove ${s.n}`,()=>{faceAt(s);pAttack('shove')},{risky:1})]}
   const a=best.a;
   if(a.k==='tub')return[opt('Climb into the plunge',()=>startTub('in',a.tub),{b:'IN'}),opt('Cannonball!',()=>startTub('cannon',a.tub),{risky:1})];
   if(a.k==='bucket'){const o=[];if(P.hold&&P.hold.k==='oil')o.push(opt('Add essential oil to the bucket',()=>{P.face=faceTo(930,672);P.act={k:'oil',t:0,d:.9}},{b:'OIL'}));
@@ -372,8 +371,30 @@ function getOptions(){
   const gd=GREEDY[a.n];if(gd)o.push(opt(`${gd[0]} +${a.p*gd[1]} (risky)`,go(1),{risky:1}));
   return o;
 }
+function peopleOptions(c){const isS=staff.includes(c),inS=inSauna(P),close=()=>{state.pm=null};const o=[];
+  o.push(opt(inS?`Whisper with ${c.n}`:`Talk with ${c.n}`,()=>{close();openChat(c)},{b:'TALK'}));
+  if(!isS)o.push(opt(`Compliment ${c.n}`,()=>{close();compliment(c)}));
+  if(isS){const low=Object.values(RES).find(r=>r.stock<r.max&&!r.claimed);if(low&&c.role!=='desk'&&!c.task)o.push(opt(`Ask ${c.n} to refill the ${low.n}`,()=>{close();askRefill(c,low)}))}
+  o.push(opt(`Shove ${c.n}`,()=>{close();faceAt(c);pAttack('shove')},{risky:1}));
+  o.push(opt(`Start a fight with ${c.n}`,()=>{close();startFight(c,isS?'fight':'brawl')},{risky:1}));
+  o.push(opt('Never mind',close));return o}
+function openPerson(c){if(!state||!state.on||state.paused)return;if(dist(c,P)<90){state.pm=c;faceAt(c);PERF.ops=null;return}
+  P.auto={c,path:findPath(P,{x:c.x,y:c.y}),t:0};toast(`Walking over to ${c.n}…`)}
+function jump(){if(!state||!state.on||state.paused||P.anim||P.tub||P.sit||P.cs||P.atk||P.jump)return;P.jump={t:0,d:.62}}
 function action(){const o=getOptions();if(o[0])o[0].f()}
 function pick(i){const o=getOptions();if(o[i])o[i].f()}
+const inEl=document.getElementById('incoming');let inc=null;
+function showIncoming(c,kind,text){if(!state||!state.on||state.paused||chatC||state.fightS&&kind!=='hit')return;if(inc&&inc.kind==='hit'&&kind!=='hit')return;
+  inc={c,kind,text,t:0};document.getElementById('inname').textContent=c.n;document.getElementById('intext').textContent=text?`"${text}"`:({hit:'shoved you!'}[kind]||'');
+  const B={greet:[['Say hi back','hi'],['Chat','chat'],['Ignore','x']],flirt:[['Flirt back','flirt'],['Chat','chat'],['Ignore','x']],glare:[['Sorry!','sorry'],['Chat','chat'],['Ignore','x']],hit:[['Fight back!','fight'],['Walk away','x']]}[kind];
+  const box=document.getElementById('inbtns');box.textContent='';for(const [l,k] of B){const b=document.createElement('button');b.type='button';b.textContent=l;if(k==='fight')b.className='risky';b.addEventListener('click',()=>reply(k));box.appendChild(b)}inEl.classList.add('on')}
+function hideIncoming(){inc=null;inEl.classList.remove('on')}
+function reply(k){if(!inc)return;const c=inc.c,text=inc.text;hideIncoming();
+  if(k==='hi'){say(P,['Hi!','Hey there!','Evening!'][Math.floor(Math.random()*3)]);c.like=(c.like||0)+6;setExpr(c,'h');remember(c,'the player said hi back')}
+  if(k==='flirt'){say(P,['Hey yourself.','Nice to see you too.','Saving me a seat?'][Math.floor(Math.random()*3)]);fx(P,'♥','heart');fx(c,'♥','heart');c.like=(c.like||0)+10;c.flirtT=2;P.flirtT=2;setExpr(c,'h',4);remember(c,'the player flirted back')}
+  if(k==='sorry'){say(P,'Sorry!');c.mad=Math.max(0,(c.mad||0)-40);c.grudge=0;c.like=(c.like||0)+5;setExpr(c,'n');remember(c,'the player apologized to you')}
+  if(k==='chat'){c.chat=c.chat||[];if(text&&(!c.chat.length||c.chat[c.chat.length-1].text!==text))c.chat.push({text});openChat(c)}
+  if(k==='fight')startFight(c,staff.includes(c)?'fight':'brawl')}
 function remember(c,e){c.mem=(c.mem||[]).concat(e).slice(-5)}
 function compliment(g){faceAt(g);remember(g,'the player complimented you');g.like=Math.min(100,(g.like||0)+12);fx(g,'♥','heart');
   if(g.n==='Gwen'){g.friend=1;toast('Gwen: "Oh! Well... thank you. Maybe you\'re not so bad."','good')}else{toast(`${g.n}: "Aw, thanks! Yours looks comfy too."`,'good');P.sus=Math.max(0,P.sus-5)}}
@@ -467,11 +488,11 @@ document.getElementById('cbtns').addEventListener('click',e=>{const c=e.target.d
 const MOVES={
  punch:{d:.34,a:.1,b:.18,r:40,arc:1.1,dmg:6,kb:80,fx:'POW!'},kick:{d:.55,a:.2,b:.32,r:48,arc:.9,dmg:10,kb:125,fx:'WHAM!'},
  shove:{d:.42,a:.12,b:.24,r:38,arc:1.3,dmg:2,kb:195,fx:'SHOVE!',push:1},dodge:{d:.4},
- sPunch:{d:.8,a:.45,b:.55,r:40,arc:1,dmg:8,kb:95,fx:'BAM!'},sGrab:{d:1.15,a:.72,b:.85,r:36,arc:.9,dmg:14,kb:215,fx:'THROW!'},
+ sPunch:{d:.8,a:.45,b:.55,r:40,arc:1,dmg:8,kb:95,fx:'BAM!'},sGrab:{d:1.15,a:.72,b:.85,r:36,arc:.9,dmg:14,kb:215,fx:'THROW!'},gPunch:{d:.7,a:.36,b:.46,r:38,arc:1,dmg:5,kb:80,fx:'SLAP!'},
  gShove:{d:.7,a:.35,b:.47,r:38,arc:1.2,dmg:3,kb:175,fx:'HEY!',push:1}};
 let shake=0;
 function attack(c,mv){if(c.atk||c.cs)return;if(c===P){if(P.anim||P.tub)return;standUp();P.use=null;P.face=P.dir??P.face??0}else{c.face=Math.atan2(P.x-c.x,P.y-c.y);if(c.seat){c.x=c.seat.sx;c.y=c.seat.sy;c.seat.by=null;c.seat=null}}
-  c.atk={m:mv,t:0,hit:new Set()};if(mv==='dodge')c.iframe=.4}
+  c.combo=(c.combo||0)+1;c.atk={m:mv,t:0,hit:new Set(),side:c.combo%2};if(mv==='dodge')c.iframe=.4}
 function pAttack(mv){if(!state||!state.on||state.paused)return;attack(P,mv)}
 function knock(tgt,ang,sp,down){tgt.kv={x:Math.sin(ang)*sp,y:Math.cos(ang)*sp};tgt.face=ang+Math.PI;tgt.atk=null;
   if(tgt.seat){tgt.x=tgt.seat.sx;tgt.y=tgt.seat.sy;tgt.seat.by=null;tgt.seat=null}if(tgt===P){standUp();P.use=null;P.act=null}
@@ -479,30 +500,32 @@ function knock(tgt,ang,sp,down){tgt.kv={x:Math.sin(ang)*sp,y:Math.cos(ang)*sp};t
 function hit(att,tgt,M){
   if(tgt.iframe>0){fx(tgt,'MISS','miss');return}
   const ang=Math.atan2(tgt.x-att.x,tgt.y-att.y);tgt.dmg=(tgt.dmg||0)+M.dmg;const sp=M.kb*(1+tgt.dmg/90);knock(tgt,ang,sp,sp>185);
-  fx(tgt,M.fx,'pow');fx(tgt,`${Math.round(tgt.dmg)}%`,'pct');if(att===P||tgt===P)shake=Math.min(.35,shake+(M.dmg>8?.22:.12));
-  if(tgt===P){P.health=Math.max(0,P.health-M.dmg*.3);if(P.dmg>=120&&P.cs.k==='down'&&!state.koT){state.koT=1.6;toast('You\'re down for the count...','bad')}return}
+  state.hitStop=M.dmg>=8?.09:.05;fx(tgt,M.fx,'pow');fx(tgt,`${Math.round(tgt.dmg)}%`,'pct');if(att===P||tgt===P)shake=Math.min(.35,shake+(M.dmg>8?.22:.12));
+  if(tgt===P){if(!state.fightS)showIncoming(att,'hit');P.health=Math.max(0,P.health-M.dmg*.3);if(P.dmg>=120&&P.cs.k==='down'&&!state.koT){state.koT=1.6;toast('You\'re down for the count...','bad')}return}
   if(att===P){
     remember(tgt,M.push?'the player shoved you':'the player hit you');witness((M.push?'shove ':'hit ')+tgt.n,tgt);tgt.like=(tgt.like||0)-25;
     if(staff.includes(tgt)){if(!tgt.fight)startFight(tgt,'angry');if(tgt.dmg>=100&&tgt.cs.k==='down')koStaff(tgt)}
+    else if(tgt.fight){if(tgt.dmg>=70&&tgt.cs.k==='down')koGuest(tgt)}
     else{tgt.mad=100;tgt.grudge=1;const w=seenBy();
       if(w&&!w.fight&&!staff.some(s=>s.fight)){startFight(w,'security')}else{const add=tgt.n==='Gwen'?28:M.push?12:20;P.sus=Math.min(100,P.sus+add);toast(`${tgt.n}: "Hey! What's your problem?!" +${add} suspicion${tgt.n==='Gwen'?' (Gwen will tell the staff)':''}`,'bad');if(P.sus>=100)alarm()}}}
 }
-function startFight(s,why){if(!s||s.fight)return;s.fight=1;s.chase=0;dropTask(s);s.dmg=s.dmg||0;s.acd=.6;s.lostT=0;state.fightS=s;
-  toast({throw:`${s.n} is throwing you out! Fight back (punch, kick, shove, dodge) or go quietly.`,angry:`${s.n}: "That's it!" Fight!`,security:`${s.n}: "Hey! Hands off the guests!" Fight!`,fight:`You square up to ${s.n}!`}[why],'bad');
+function startFight(s,why){if(!s||s.fight)return;if(state.fightS&&state.fightS!==s)endFight();hideIncoming();state.pm=null;if(s.seat){s.x=s.seat.sx;s.y=s.seat.sy;s.seat.by=null;s.seat=null}s.react=null;s.grudge=0;s.fight=1;s.chase=0;dropTask(s);s.dmg=s.dmg||0;s.acd=.6;s.lostT=0;state.fightS=s;
+  toast({throw:`${s.n} is throwing you out! Fight back (punch, kick, shove, dodge) or go quietly.`,angry:`${s.n}: "That's it!" Fight!`,security:`${s.n}: "Hey! Hands off the guests!" Fight!`,fight:`You square up to ${s.n}!`,brawl:`You square up to ${s.n}! Punch, kick, shove, dodge.`}[why],'bad');if(why==='brawl'){const w=seenBy();if(w&&!w.fight){setTimeout(()=>{if(state.fightS===s&&state.on){endFight();s.grudge=0;startFight(w,'security')}},2500)}}
   document.getElementById('fname').textContent=s.n.toUpperCase();document.body.classList.add('fighting')}
 function endFight(){const s=state.fightS;if(s){s.fight=0;s.path=null}state.fightS=null;document.body.classList.remove('fighting')}
+function koGuest(g){g.cs={k:'down',t:0,d:6};g.fight=0;g.grudge=0;g.mad=60;endFight();g.dmg=0;P.fights++;fx(g,'K.O.!','pow');remember(g,'the player beat you in a fight');const w=seenBy();P.sus=Math.min(100,P.sus+(w?30:10));toast(`${g.n} is down! You won the scuffle.${w?` ${w.n} saw it.`:''}`,'good');if(P.sus>=100)alarm()}
 function koStaff(s){s.cs={k:'down',t:0,d:10};s.stun=10;endFight();s.dmg=0;P.fights++;P.sus=60;staff.forEach(x=>x.speed+=6);fx(s,'K.O.!','pow');toast(`You knocked ${s.n} down! They're dazed for a while. Staff will be tougher next time.`,'good')}
 document.getElementById('quiet').addEventListener('click',()=>{if(state&&state.fightS){toast('You go quietly. Staff walk you to the door.');finish('kicked')}});
 function fightAI(s,dt){
   if(s.atk)return;s.acd-=dt;const d=dist(s,P);
   if(inSauna(P)){s.lostT+=dt;s.rp=(s.rp||0)-dt;if(s.rp<=0){s.rp=.5;s.path=findPath(s,{x:690,y:640})}follow(s,s.speed*1.3,dt);if(s.lostT>6){endFight();toast(`${s.n} gave up waiting outside the sauna.`,'good')}return}
   s.lostT=0;
-  if(d>30){s.rp=(s.rp||0)-dt;if(s.rp<=0||!s.path){s.rp=.55;s.path=findPath(s,P)}follow(s,s.speed*1.5,dt)}
-  else if(s.acd<=0&&!(P.cs&&P.cs.k==='down')){attack(s,Math.random()<.68?'sPunch':'sGrab');s.acd=.8+Math.random()*.8-Math.min(.4,P.fights*.08)}
+  if(d>30){s.rp=(s.rp||0)-dt;if(s.rp<=0||!s.path){s.rp=.55;s.path=findPath(s,P)}follow(s,(s.speed||62)*1.5,dt)}
+  else if(s.acd<=0&&!(P.cs&&P.cs.k==='down')){attack(s,staff.includes(s)?(Math.random()<.68?'sPunch':'sGrab'):(Math.random()<.7?'gPunch':'gShove'));s.acd=.8+Math.random()*.8-Math.min(.4,P.fights*.08)}
 }
 function guestAI(g,dt){if(g.atk)return;const d=dist(g,P);
   if(d>32){g.rp=(g.rp||0)-dt;if(g.rp<=0||!g.path){g.rp=.7;g.path=findPath(g,P)}follow(g,75,dt);g.gT=(g.gT||0)+dt;if(g.gT>8){g.grudge=0;g.gT=0;g.path=null}}
-  else{attack(g,'gShove');g.grudge=0;g.gT=0;g.mad=40;g.path=null;toast(`${g.n} storms over and shoves you back!`,'bad')}}
+  else{attack(g,'gShove');g.grudge=0;g.gT=0;g.mad=40;g.path=null;say(g,'Take that!')}}
 const FLIRT=['Oh! Sorry... nice robe, by the way.','We have to stop meeting like this.','Careful, the floor\'s slippery. Unless you meant to bump into me?','Hi there. Come here often?','If you wanted to talk, you could have just said hi.'];
 function bump(o){
   if(o.cs||o.atk)return;
@@ -521,7 +544,7 @@ function combatTick(dt){
     if(c.cs){c.cs.t+=dt;if(c.cs.t>=c.cs.d){c.cs=c.cs.k==='down'?{k:'getup',t:0,d:.6}:null;if(!c.cs&&c!==P&&!staff.includes(c)&&c.mad>50)c.grudge=1}}
     if(c.atk){const A=c.atk,M=MOVES[A.m];A.t+=dt;
       if(A.m==='dodge'){const sp=260*(1-A.t/M.d);moveC(c,Math.sin(c.face)*sp*dt,Math.cos(c.face)*sp*dt)}
-      else{if(A.t>=M.a&&A.t<=M.b){if(c!==P&&A.t-dt<M.a)moveC(c,Math.sin(c.face)*10,Math.cos(c.face)*10);
+      else{if(A.t>=M.a&&A.t<=M.b){if(A.t-dt<M.a)moveC(c,Math.sin(c.face)*(c===P?8:10),Math.cos(c.face)*(c===P?8:10));
           const tg=c===P?[...staff,...guests]:[P];for(const t of tg){if(A.hit.has(t)||t.cs&&t.cs.k==='down')continue;const d=dist(c,t);if(d>M.r)continue;const ang=Math.atan2(t.x-c.x,t.y-c.y);const da=Math.abs(((ang-c.face)%(2*Math.PI)+3*Math.PI)%(2*Math.PI)-Math.PI);if(da>M.arc)continue;A.hit.add(t);hit(c,t,M)}}}
       if(A.t>=M.d)c.atk=null}}
   // body collisions: push apart, bumps (friendly flirt or a hard smack when sprinting)
@@ -625,9 +648,9 @@ function applyReact(c,r,s){
   const face=t=>{c.face=Math.atan2(t.x-c.x,t.y-c.y)};
   if(c.seat&&['approach','avoid','follow','warn_staff'].includes(r.action))r={action:'wave',say:r.say};
   switch(r.action){
-    case'wave':face(P);setExpr(c,'h');say(c,r.say);c.react={k:'wave',t:0,d:1.8};break;
-    case'flirt':face(P);setExpr(c,'h',4);say(c,r.say);fx(c,'♥','heart');c.flirtT=2;c.like=(c.like||0)+3;c.react={k:'wave',t:0,d:1.5};break;
-    case'glare':face(P);setExpr(c,'a',4);say(c,r.say);c.react={k:'glare',t:0,d:2.6};if(s.staff)P.sus=Math.min(100,P.sus+3);break;
+    case'wave':face(P);setExpr(c,'h');say(c,r.say);c.react={k:'wave',t:0,d:1.8};if(s.sees!==false&&dist(c,P)<260&&r.say)showIncoming(c,'greet',r.say);break;
+    case'flirt':face(P);setExpr(c,'h',4);say(c,r.say);fx(c,'♥','heart');c.flirtT=2;c.like=(c.like||0)+3;c.react={k:'wave',t:0,d:1.5};if(dist(c,P)<260)showIncoming(c,'flirt',r.say);break;
+    case'glare':face(P);setExpr(c,'a',4);say(c,r.say);c.react={k:'glare',t:0,d:2.6};if(s.staff)P.sus=Math.min(100,P.sus+3);if(dist(c,P)<260)showIncoming(c,'glare',r.say);break;
     case'approach':setExpr(c,'h');c.react={k:'goto',t:0,d:7,tx:P.x,ty:P.y,then:{action:'wave',say:r.say||'Hi!'}};c.path=findPath(c,{x:P.x+(c.x>P.x?30:-30),y:P.y});break;
     case'follow':setExpr(c,'h');say(c,r.say);c.react={k:'follow',t:0,d:6};break;
     case'avoid':{setExpr(c,'a',2);say(c,r.say);const dx=c.x-P.x,dy=c.y-P.y,d=Math.max(1,Math.hypot(dx,dy));c.path=findPath(c,{x:c.x+dx/d*140,y:c.y+dy/d*140});c.react={k:'goto',t:0,d:3,fast:1};break}
@@ -702,6 +725,7 @@ document.getElementById('start').addEventListener('click',e=>{const v=e.target.d
 // ---------- update ----------
 function update(dt){
   if(!state||!state.on||state.paused)return;
+  if(state.hitStop>0){state.hitStop-=dt;return}
   state.t+=dt;if(state.t>=state.len)return finish('time');
   // climbing in/out of a plunge
   if(P.anim){const A=P.anim;A.t+=dt;let kf=tubKF(A.tub);if(A.k==='out')kf=kf.slice().reverse();if(A.k==='cannon'){const t=A.tub;kf=[[t.ax,t.ay,0],[t.ax,t.y-6,.95],[t.ax+8,t.y+20,1.6],[t.x+45,t.y+45,-.55]]}const f=Math.min(1,A.t/A.d)*(kf.length-1),i=Math.min(kf.length-2,Math.floor(f)),u=f-i,a=kf[i],b=kf[i+1];
@@ -709,7 +733,10 @@ function update(dt){
     if(A.t>=A.d){if(A.k!=='out'){P.tub=A.tub;if(A.k==='cannon')cannonSplash(A.tub);else toast('Brrr! Cold plunge 3–11°C. 1–3 minutes is ideal.')}else{P.tub=null}P.anim=null}}
   let mx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+joy.x,my=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+joy.y;
   const m=Math.hypot(mx,my),busy=P.anim||P.tub||(P.act&&P.act.k!=='drink')||P.cs||P.atk;
-  if(m>.15&&!busy){if(P.sit)standUp();if(P.use)P.use=null;mx/=Math.max(1,m);my/=Math.max(1,m);const sp=(keys.shift||runHeld)?175:110,yw=VIEWS[view].fixed?Math.PI:camYaw,fw=-my,rt=mx,wx=Math.sin(yw)*fw-Math.cos(yw)*rt,wz=Math.cos(yw)*fw+Math.sin(yw)*rt;moveC(P,wx*sp*dt,wz*sp*dt);P.dir=Math.atan2(wx,wz);P.inFwd=fw/Math.max(.01,Math.hypot(fw,rt));P.mv=sp}else P.mv=0;
+  if(m>.15&&!busy){if(P.sit)standUp();if(P.use)P.use=null;mx/=Math.max(1,m);my/=Math.max(1,m);const sp=(keys.shift||joy.run)?175:110,yw=VIEWS[view].fixed?Math.PI:camYaw,fw=-my,rt=mx,wx=Math.sin(yw)*fw-Math.cos(yw)*rt,wz=Math.cos(yw)*fw+Math.sin(yw)*rt;moveC(P,wx*sp*dt,wz*sp*dt);P.dir=Math.atan2(wx,wz);P.inFwd=fw/Math.max(.01,Math.hypot(fw,rt));P.mv=sp}else P.mv=0;
+  if(P.jump){P.jump.t+=dt;if(P.jump.t>=P.jump.d)P.jump=null}
+  if(P.auto){if(m>.15){P.auto=null}else{const A=P.auto;A.t+=dt;const tgt=A.c;if(dist(P,tgt)<60||!A.path.length||A.t>8){P.auto=null;if(dist(P,tgt)<95){state.pm=tgt;faceAt(tgt);PERF.ops=null}}else{const ox=P.x,oy=P.y;follow(P,110,dt);P.dir=Math.atan2(P.x-ox,P.y-oy);P.mv=110;if(A.t%0.6<dt)A.path=findPath(P,{x:tgt.x,y:tgt.y})}}}
+  if(inc){inc.t+=dt;if(inc.t>7||dist(inc.c,P)>420)hideIncoming()}
   combatTick(dt);if(!state.on)return;mindTick(dt);
   if(P.use){P.use.t+=dt;if(dist(P,P.use.a)>34)P.use=null;else if(P.use.t>=P.use.a.d){complete(P.use.a,P.use.g);P.use=null}}
   if(P.act){const A=P.act;A.t+=dt;if(!A.done&&A.t>=A.d*.55){A.done=1;actEffect(A.k)}if(A.t>=A.d)P.act=null}
@@ -751,6 +778,7 @@ function update(dt){
   }
   for(const g of guests){
     if(g.cs||g.atk)continue;
+    if(g.fight){fightAI(g,dt);continue}
     if(g.react&&!g.grudge){reactTick(g,dt);if(!g.seat)continue}
     if(g.grudge){if(g.seat){g.x=g.seat.sx;g.y=g.seat.sy;g.seat.by=null;g.seat=null}guestAI(g,dt);continue}
     if(g.seat){g.sitT-=dt;if(g.sitT<=0){g.x=g.seat.sx;g.y=g.seat.sy;g.seat.by=null;g.seat=null;g.wait=1}continue}
@@ -944,8 +972,8 @@ box(945,862,44,44,.72,pbr('planks','#a57a4e','#5e4128',1,1,.7));
 const ex=box(exitZ.x,exitZ.y,exitZ.w,exitZ.h,.02,new T.MeshBasicMaterial({color:'#3B8FD0',transparent:true,opacity:.35}),.03,false);
 const exl=label('EXIT',1.2,'#ffffff','rgba(30,90,138,.85)');exl.position.set((exitZ.x+exitZ.w/2)*S,1.4,(exitZ.y+20)*S);scene.add(exl);
 const roomLabels=[];for(const [x,y,t] of labels){const l=label(t,1,'#ffffff','rgba(15,42,64,.6)');l.position.set(x*S,3.0,y*S);l.visible=false;scene.add(l);roomLabels.push(l)}
-const markers=[];const mkM=new T.MeshBasicMaterial({color:'#3B8FD0',toneMapped:false});
-for(const a of acts){if(a.k==='tub')continue;const m=new T.Mesh(new T.OctahedronGeometry(.07),mkM);m.position.set(a.x*S,1.85,a.y*S);scene.add(m);markers.push(m);const l=label(a.n.split(' ')[0],.5,'#0F2A40','rgba(255,255,255,.85)');l.position.set(a.x*S,2.08,a.y*S);scene.add(l)}
+const markers=[],stationTags=[];const mkM=new T.MeshBasicMaterial({color:'#3B8FD0',toneMapped:false});
+for(const a of acts){if(a.k==='tub')continue;const m=new T.Mesh(new T.OctahedronGeometry(.07),mkM);m.position.set(a.x*S,1.85,a.y*S);scene.add(m);markers.push(m);const l=label(a.n.split(' ')[0],.5,'#0F2A40','rgba(255,255,255,.85)');l.position.set(a.x*S,2.08,a.y*S);l.userData.act=a;stationTags.push(l);scene.add(l)}
 
 // ---- characters: semi-realistic anime (sculpted body, painted anime face, jointed limbs) ----
 let spawned=[];
@@ -1019,7 +1047,7 @@ function makeChar(suit,hair,sk,isStaff,name){
   const oil=new T.Mesh(CYL,oilM);oil.scale.set(.022,.11,.022);oil.position.set(0,-.05,.04);AR.hand.add(oil);oil.visible=false;
   const ladle=new T.Group();AR.hand.add(ladle);{const h=new T.Mesh(CYL,woodM);h.scale.set(.012,.45,.012);h.position.set(0,-.05,.2);h.rotation.x=Math.PI/2;ladle.add(h);const b=new T.Mesh(SPH,woodM);b.scale.set(.05,.03,.05);b.position.set(0,-.07,.43);ladle.add(b)}ladle.visible=false;
   const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15;g.add(tag);
-  const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,ph:Math.random()*6};
+  const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,tag,ph:Math.random()*6};
   if(isStaff){o.carryT=new T.Group();for(let i=0;i<4;i++){const t=new T.Mesh(BOX,towelM);t.scale.set(.34,.05,.26);t.position.set(0,1.02+i*.052,.3);o.carryT.add(t)}o.carryT.visible=false;body.add(o.carryT);
     o.carryK=new T.Mesh(CYL,new T.MeshStandardMaterial({color:lin('#c9ced2'),metalness:.9,roughness:.3}));o.carryK.scale.set(.15,.4,.15);o.carryK.position.set(0,1.08,.3);o.carryK.visible=false;body.add(o.carryK);
     o.ex=label('!',1.4,'#ffffff','rgba(224,83,58,.95)');o.ex.position.y=2.6;g.add(o.ex);o.st=label('✶ dazed ✶',.7,'#0F2A40','rgba(240,168,48,.95)');o.st.position.y=2.6;g.add(o.st);
@@ -1037,49 +1065,68 @@ const VIEWS=[{n:'Follow cam',d:4.3,look:1.35},{n:'Close cam',d:2.3,look:1.5},{n:
 const ct=new T.Vector3(12,0,10),cp=new T.Vector3(12,16,30),tmp=new T.Vector3(),tmp2=new T.Vector3();
 const vb=document.getElementById('view');vb.textContent='Camera: Follow';vb.addEventListener('click',()=>{view=(view+1)%3;vb.textContent='Camera: '+VIEWS[view].n.replace(' cam','');roomLabels.forEach(l=>l.visible=!!VIEWS[view].fixed)});
 // drag (touch or mouse) on the scene to orbit the camera, wheel to zoom
-{let drag=null;cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,id:e.pointerId};cv.setPointerCapture(e.pointerId)});
+const picker=new T.Raycaster(),ndc=new T.Vector2();
+function handleTap(x,y){if(!P||!state||!state.on||state.paused)return;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);
+  const tags=[...staff,...guests].filter(c=>c.m&&c.m.tag).map(c=>c.m.tag);const hit=picker.intersectObjects(tags,false)[0];
+  if(hit){const c=[...staff,...guests].find(c=>c.m.tag===hit.object);if(c){openPerson(c);return}}
+  const st=picker.intersectObjects(stationTags,false)[0];if(st){const a=st.object.userData.act;P.auto={c:{x:a.x,y:a.y},path:findPath(P,{x:a.x,y:a.y}),t:0};return}
+  jump()}
+{let drag=null;cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX<innerWidth*.45&&state&&state.on)return;drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),id:e.pointerId};cv.setPointerCapture(e.pointerId)});
  cv.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;if(VIEWS[view].fixed)return;camYaw-=dx*.0065;camPitch=Math.max(.08,Math.min(1.1,camPitch+dy*.004));lastDrag=performance.now()/1000});
- const end=e=>{if(drag&&e.pointerId===drag.id)drag=null};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+ const end=e=>{if(drag&&e.pointerId===drag.id){if(e.type==='pointerup'&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<9&&performance.now()-drag.t<350)handleTap(e.clientX,e.clientY);drag=null}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
  cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.6,Math.min(1.8,zoom*(1+Math.sign(e.deltaY)*.08)))},{passive:false})}
 const pr=document.getElementById('prompt'),menu=document.getElementById('menu');let doorA=0,menuKey='';const ray=new T.Raycaster();
 const angDiff=(a,b)=>{let d=(b-a)%(2*Math.PI);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;return d};
-const JOINTS=['hL','hR','kL','kR','sL','sR','eL','eR','tilt','sway','y','headX','headY','headZ','fall'];
+const JOINTS=['hL','hR','kL','kR','sL','sR','eL','eR','tilt','sway','y','headX','headY','headZ','fall','armZ'];
+const ease=t=>t<0?0:t>1?1:t*t*(3-2*t);
 function pose(c,m,dt){
-  const x=c.x*S,z=c.y*S,isP=c===P,seat=isP?P.sit:c.seat,tub=isP&&P.tub&&!P.anim,anim=isP&&P.anim,cs=c.cs,A=c.atk;
+  const x=c.x*S,z=c.y*S,isP=c===P,seat=isP?P.sit:c.seat,tub=isP&&P.tub&&!P.anim,anim=isP&&P.anim,cs=c.cs,A=c.atk,jumpA=isP&&P.jump;
+  // per-character personality in how they move
+  m.var??={arm:.8+Math.random()*.45,stride:.9+Math.random()*.2,slouch:(Math.random()-.4)*.1,sway:.02+Math.random()*.035,bob:.8+Math.random()*.5,seed:Math.random()*9};const V=m.var;
   m.lx??=x;m.lz??=z;const ddx=x-m.lx,ddz=z-m.lz;m.lx=x;m.lz=z;
-  const spd=Math.min(5,Math.hypot(ddx,ddz)/Math.max(dt,1e-3));m.spd??=0;m.spd+=(spd-m.spd)*(1-Math.exp(-dt*10));
-  const v=m.spd,moving=!seat&&!tub&&!anim&&!cs&&!A&&v>.12,runK=Math.max(0,Math.min(1,(v-2.5)/.9)),tm=performance.now()/1000;
-  // heading: turn smoothly toward travel direction (or forced facing)
+  const spd=Math.min(5,Math.hypot(ddx,ddz)/Math.max(dt,1e-3));m.spd??=0;m.spd+=(spd-m.spd)*(1-Math.exp(-dt*8));
+  const v=m.spd,inFight=!!(c.fight||(isP&&state&&state.fightS)),moving=!seat&&!tub&&!anim&&!cs&&!A&&v>.12,runK=Math.max(0,Math.min(1,(v-2.5)/.9)),tm=performance.now()/1000+V.seed;
   m.g.rotation.order='YXZ';let want=m.yaw??m.g.rotation.y;
   if(moving&&Math.hypot(ddx,ddz)>1e-4)want=Math.atan2(ddx,ddz);if(seat)want=seat.rot;if(tub)want=0;
-  if(isP&&(P.act||P.use||anim))want=P.face;if(A||cs)want=c.face;if(c.flirtT>0&&!isP&&!seat)want=Math.atan2(P.x-c.x,P.y-c.y);if(c.react&&c.react.k!=='goto'&&c.react.k!=='follow'&&!seat&&c.face!=null)want=c.face;
-  m.yaw=(m.yaw??want)+angDiff(m.yaw??want,want)*(1-Math.exp(-dt*(A||cs?22:9)));
-  // gait: phase advances with distance so feet don't skate (stride ~1.3 m walking, ~2.1 m running)
-  if(moving)m.ph+=v*dt/(1.3+.8*runK)*Math.PI*2;const ph=m.ph,s=Math.sin(ph),co=Math.cos(ph);
-  const amp=moving?(.42+.45*runK)*Math.min(1,v/.9):0,kneeA=.75+.9*runK;
-  const T={hL:amp*s,hR:-amp*s,kL:moving?kneeA*Math.max(0,-co)*Math.min(1,v)+.08:.05,kR:moving?kneeA*Math.max(0,co)*Math.min(1,v)+.08:.05,
-    sL:-amp*.8*s,sR:amp*.8*s,eL:-.18-(.25+1.1*runK)*(moving?.6+.4*Math.max(0,-s):0)*(moving?1:0),eR:-.18-(.25+1.1*runK)*(moving?.6+.4*Math.max(0,s):0)*(moving?1:0),
-    tilt:moving?.05+.2*runK:0,sway:moving?.035*s:.018*Math.sin(tm*.6+ph),y:moving?(.018+.03*runK)*Math.cos(2*ph):.004*Math.sin(tm*2.1+ph),
-    headX:moving?-.03-.08*runK:.03*Math.sin(tm*.7+ph),headY:moving?0:.35*Math.sin(tm*.27+ph*3)*Math.max(0,Math.sin(tm*.13+ph)),headZ:0,fall:0};
-  if(seat){if(seat.t==='lounge'){Object.assign(T,{hL:-1.15,hR:-1.2,kL:.3,kR:.45,tilt:-.55,y:seat.h-.76,sL:-.15,sR:-.15,eL:-.4,eR:-.4,headX:.25,sway:0})}
-    else Object.assign(T,{hL:-1.5,hR:-1.5,kL:1.5,kR:1.4,y:seat.h+.06-.86,sL:-.35,sR:-.35,eL:-.6,eR:-.6,tilt:-.04,sway:0})}
-  if(tub)Object.assign(T,{hL:-1.4,hR:-1.4,kL:1.2,kR:1.2,y:-.6,sL:-.3,sR:-.3,eL:-.5,eR:-.5,sway:0});
+  if(isP&&(P.act||P.use||anim))want=P.face;if(A||cs)want=c.face;if(c.flirtT>0&&!isP&&!seat)want=Math.atan2(P.x-c.x,P.y-c.y);
+  if(c.react&&c.react.k!=='goto'&&c.react.k!=='follow'&&!seat&&c.face!=null)want=c.face;
+  if(inFight&&!cs){const o=isP?state.fightS:P;if(o&&!(A&&A.m==='dodge'))want=Math.atan2(o.x-c.x,o.y-c.y)}
+  m.yaw=(m.yaw??want)+angDiff(m.yaw??want,want)*(1-Math.exp(-dt*(A||cs?20:inFight?12:7)));
+  if(moving)m.ph+=v*dt/((1.3+.8*runK)*V.stride)*Math.PI*2;const ph=m.ph,s=Math.sin(ph),co=Math.cos(ph);
+  const amp=moving?(.4+.45*runK)*Math.min(1,v/.9):0,kneeA=.8+.9*runK;
+  const T={hL:amp*s,hR:-amp*s,kL:moving?kneeA*Math.max(0,-co)*Math.min(1,v)+.1:.06,kR:moving?kneeA*Math.max(0,co)*Math.min(1,v)+.1:.06,
+    sL:-amp*.85*s*V.arm,sR:amp*.85*s*V.arm,eL:moving?-.2-(.2+1.1*runK)*(.5+.5*Math.max(0,-s)):-.16,eR:moving?-.2-(.2+1.1*runK)*(.5+.5*Math.max(0,s)):-.16,
+    tilt:V.slouch+(moving?.04+.2*runK:0),sway:moving?V.sway*s:.02*Math.sin(tm*.55),y:moving?(.016+.03*runK)*V.bob*Math.cos(2*ph):.005*Math.sin(tm*2.1),
+    headX:moving?-.02-.08*runK-.03*Math.cos(2*ph):.03*Math.sin(tm*.7),headY:moving?-.06*s:.35*Math.sin(tm*.27)*Math.max(0,Math.sin(tm*.13)),headZ:moving?-.5*V.sway*s:0,fall:0,armZ:moving?.03+.05*runK:.02+.015*Math.sin(tm*.9)};
+  // fighting stance: fists up, knees soft, bouncing on the balls of the feet
+  if(inFight&&!A&&!cs&&!seat){const b=Math.sin(tm*7.5);Object.assign(T,{sL:-1.05,eL:-2.05,sR:-.8,eR:-2.25,armZ:.25,hL:moving?amp*s*.6-.15:-.25,hR:moving?-amp*s*.6+.15:.12,kL:.45+(moving?.3*Math.max(0,-co):0),kR:.3+(moving?.3*Math.max(0,co):0),tilt:.12,y:-.04+.018*b,headX:.12,headY:0,sway:.03*b})}
+  if(seat){if(seat.t==='lounge'){Object.assign(T,{hL:-1.15,hR:-1.25,kL:.3,kR:.5,tilt:-.55,y:seat.h-.76,sL:-.15,sR:-.2,eL:-.4,eR:-.5,headX:.25+.04*Math.sin(tm*.4),sway:0,armZ:.12})}
+    else Object.assign(T,{hL:-1.5,hR:-1.45,kL:1.5,kR:1.35,y:seat.h+.06-.86,sL:-.35,sR:-.3,eL:-.65,eR:-.55,tilt:.06+V.slouch,sway:.01*Math.sin(tm*.5),armZ:.1})}
+  if(tub)Object.assign(T,{hL:-1.4,hR:-1.4,kL:1.2,kR:1.2,y:-.6,sL:-.3,sR:-.3,eL:-.5,eR:-.5,sway:.02*Math.sin(tm*3),armZ:.4});
   if(anim){const An=P.anim,f=Math.min(1,An.t/An.d),st=Math.sin(f*Math.PI*4);Object.assign(T,{hL:-.7-.5*Math.max(0,st),hR:-.7-.5*Math.max(0,-st),kL:1.1*Math.max(0,st)+.3,kR:1.1*Math.max(0,-st)+.3,sL:-.8,sR:-.8,eL:-.4,eR:-.4,y:P.animH,tilt:.15});
     if(An.k==='cannon')Object.assign(T,{hL:-1.6,hR:-1.6,kL:2.2,kR:2.2,sL:-1.2,sR:-1.2,eL:-1.6,eR:-1.6,tilt:.3});else if(Math.abs(f-.5)<.18){T.hL=T.hR=-1.4;T.kL=T.kR=1.3;T.y=P.animH-.38}}
-  if(c.carry){T.sL=T.sR=-1.1;T.eL=T.eR=-.5}
-  if(c.flirtT>0&&!seat){T.headZ=.2;T.sR=-2.7;T.eR=-1.5;T.headX=.08}
-  if(c.react&&!A&&!cs){const R=c.react;if(R.k==='wave'){T.sR=-2.85;T.eR=-.5+.45*Math.sin(tm*12);T.headZ=.12}if(R.k==='glare'){T.sL=-.95;T.sR=-.95;T.eL=-2.1;T.eR=-2.1;T.headX=.12;T.tilt=-.05}if(R.k==='talk'){T.sR=-.7+.25*Math.sin(tm*5);T.eR=-1.3;T.headZ=.06*Math.sin(tm*3)}}
-  if(A){const M=MOVES[A.m],f=A.t/M.d,act=A.t>=(M.a||0)&&A.t<=(M.b||0)+.06,wind=A.t<(M.a||0);
-    if(A.m==='punch'||A.m==='sPunch'){Object.assign(T,wind?{sR:.55,eR:-1.7,tilt:-.06,sL:-.5,eL:-1.5}:act?{sR:-1.6,eR:-.05,tilt:.2,sL:.35,eL:-1.4}:{sR:-.7,eR:-1,sL:-.4,eL:-1.4});T.hL=-.3;T.hR=.3;T.kL=.25;T.kR=.35}
-    if(A.m==='kick')Object.assign(T,wind?{hR:.55,kR:1.4,tilt:-.08,sL:-.5,sR:.3}:act?{hR:-1.55,kR:.05,tilt:-.28,sL:-.7,sR:.5,eL:-.5,eR:-.5}:{hR:-.5,kR:.9},{hL:.12,kL:.2});
-    if(A.m==='shove'||A.m==='gShove')Object.assign(T,wind?{sL:-.6,sR:-.6,eL:-1.7,eR:-1.7,tilt:-.12}:{sL:-1.5,sR:-1.5,eL:-.05,eR:-.05,tilt:.3,hL:-.55,kL:.45,hR:.35,kR:.15});
-    if(A.m==='sGrab')Object.assign(T,wind?{sL:-1.1,sR:-1.1,eL:-.25,eR:-.25,tilt:.1,hL:-.3,kL:.3}:{sL:-1.65,sR:-1.65,eL:0,eR:0,tilt:.35,hL:-.6,kL:.5,hR:.4});
-    if(A.m==='dodge')Object.assign(T,{tilt:Math.sin(f*Math.PI)*1.1,y:-.35*Math.sin(f*Math.PI),hL:-1.4,hR:-1.4,kL:1.9,kR:1.9,sL:-1,sR:-1,eL:-1.8,eR:-1.8})}
-  if(cs){if(cs.k==='stagger'){const k=Math.sin(Math.min(1,cs.t/cs.d)*Math.PI);Object.assign(T,{tilt:-.45*k,sL:-2.3*k,sR:-1.9*k,eL:-.4,eR:-.4,hL:.35*k,kR:.5*k,headX:-.35*k,sway:.15*Math.sin(cs.t*25)*k})}
-    if(cs.k==='down'){const f=Math.min(1,cs.t/.25);Object.assign(T,{fall:-1.48*f,y:.13*f,sL:-2.6,sR:-2.4,eL:-.2,eR:-.3,hL:-.2,hR:-.45,kL:.2,kR:.7,headX:.25,sway:0})}
-    if(cs.k==='getup'){const f=cs.t/cs.d;Object.assign(T,{fall:-1.48*(1-f),y:.13*(1-f),hL:-1.4*(1-f),hR:-.6*(1-f),kL:1.8*(1-f),kR:.9*(1-f),sL:-.8,sR:-.3,eL:-.3,eR:-1})}}
+  if(jumpA){const f=P.jump.t/P.jump.d,h=4*.5*f*(1-f);T.y=h+(f<.12?-.08:0);const tuck=Math.sin(f*Math.PI);T.hL=-.7*tuck;T.hR=-.4*tuck;T.kL=1.3*tuck;T.kR=.9*tuck;T.sL=T.sR=-.4-1.2*tuck;T.eL=T.eR=-.6;T.tilt=.1*tuck;T.armZ=.35*tuck}
+  if(c.carry){T.sL=T.sR=-1.1;T.eL=T.eR=-.5;T.armZ=.05}
+  if(c.flirtT>0&&!seat){T.headZ=.2;T.sR=-2.7;T.eR=-1.5;T.headX=.08;T.sway=.05}
+  if(c.react&&!A&&!cs){const R=c.react;if(R.k==='wave'){T.sR=-2.85;T.eR=-.5+.45*Math.sin(tm*12);T.headZ=.12;T.armZ=.2}if(R.k==='glare'){T.sL=-.95;T.sR=-.95;T.eL=-2.1;T.eR=-2.1;T.headX=.12;T.tilt=-.06;T.hL=-.08;T.hR=.1}if(R.k==='talk'){T.sR=-.7+.25*Math.sin(tm*5);T.eR=-1.3;T.headZ=.06*Math.sin(tm*3);T.headY=.1*Math.sin(tm*1.7)}}
+  // strikes: wind-up, snap, follow-through, with weight shifting through the hips
+  if(A){const M=MOVES[A.m],f=A.t/M.d,a=M.a||0,b=M.b||0,wind=A.t<a,act=A.t>=a&&A.t<=b+.05,rec=A.t>b+.05,wk=ease(A.t/Math.max(a,.01)),rk=ease((A.t-b)/Math.max(.05,M.d-b));
+    const lead=(A.side??0)?'L':'R',off=lead==='R'?'L':'R';const J={};
+    if(A.m==='punch'||A.m==='sPunch'||A.m==='gPunch'){J['s'+lead]=wind?-.9+.5*wk:act?-1.62:-1.62+.8*rk;J['e'+lead]=wind?-2.1:act?-.08:-.08-1.6*rk;J['s'+off]=-1.05;J['e'+off]=-2.1;
+      Object.assign(T,J,{tilt:wind?.02:act?.22:.22-.12*rk,headX:.08,hL:lead==='R'?-.35:.15,hR:lead==='R'?.15:-.35,kL:.35,kR:.4,armZ:.15,sway:(lead==='R'?-1:1)*(act?.12:.04)})}
+    if(A.m==='kick')Object.assign(T,wind?{hR:-1.25*wk,kR:1.9*wk,hL:.08,kL:.35,tilt:-.12*wk,sL:-.9,eL:-1.9,sR:-.4,eR:-1.4,armZ:.35}:act?{hR:-1.55,kR:.08,hL:.15,kL:.45,tilt:-.32,sL:-.7,sR:.45,eL:-1.2,eR:-.6,armZ:.45,headX:.15}:{hR:-1.55+1.3*rk,kR:.08+1.4*(1-rk)*rk*2,hL:.1,kL:.4,tilt:-.3+.25*rk,sL:-.9,eL:-1.9,sR:-.5,eR:-1.5,armZ:.3});
+    if(A.m==='shove'||A.m==='gShove')Object.assign(T,wind?{sL:-.6,sR:-.6,eL:-1.8,eR:-1.8,tilt:-.14,kL:.4,kR:.4}:act?{sL:-1.5,sR:-1.5,eL:-.05,eR:-.05,tilt:.34,hL:-.6,kL:.5,hR:.4,kR:.15,headX:.1}:{sL:-1.3+.6*rk,sR:-1.3+.6*rk,eL:-.3-.6*rk,eR:-.3-.6*rk,tilt:.25-.2*rk,hL:-.4+.3*rk,kL:.4,hR:.3,kR:.2});
+    if(A.m==='sGrab')Object.assign(T,wind?{sL:-1.1,sR:-1.1,eL:-.25,eR:-.25,tilt:.12,hL:-.3,kL:.4,kR:.3}:act?{sL:-1.7,sR:-1.7,eL:0,eR:0,tilt:.38,hL:-.65,kL:.55,hR:.45}:{sL:-1.2,sR:-1.2,eL:-.6,eR:-.6,tilt:.2,hL:-.3,kL:.4});
+    if(A.m==='dodge')Object.assign(T,{tilt:Math.sin(f*Math.PI)*1.15,y:-.38*Math.sin(f*Math.PI),hL:-1.45,hR:-1.45,kL:2,kR:2,sL:-1,sR:-1,eL:-1.8,eR:-1.8,armZ:.3})}
+  // getting hit: head snaps, body twists, stumbling steps, a heavy fall and a two-stage get-up
+  if(cs){if(cs.k==='stagger'){const f=Math.min(1,cs.t/cs.d),k=Math.sin(f*Math.PI),snap=Math.max(0,1-cs.t/.15),st=Math.sin(cs.t*22);
+      Object.assign(T,{tilt:-.42*k,sway:(m.var.seed>4.5?1:-1)*.22*k,headX:-.55*snap-.25*k,headY:.25*snap,sL:-2*k-.3,sR:-1.6*k-.3,eL:-.5,eR:-.7,armZ:.5*k,hL:.35*k*st,hR:-.35*k*st,kL:.5*k*Math.max(0,st),kR:.5*k*Math.max(0,-st)})}
+    if(cs.k==='down'){const f=Math.min(1,cs.t/.32),fe=f*f,land=cs.t>.32?Math.max(0,.06*Math.sin((cs.t-.32)*18)*Math.exp(-(cs.t-.32)*7)):0;
+      Object.assign(T,{fall:-1.5*fe,y:.13*fe+land,sL:f<1?-2.8:-2.5,sR:f<1?-2.4:-2.2,eL:-.25,eR:-.4,armZ:f<1?.7:.9,hL:-.25-.2*Math.sin(tm*1.5)*(cs.d>3?0:1)*0,hR:-.5,kL:.25,kR:.8,headX:.25,sway:0})}
+    if(cs.k==='getup'){const f=cs.t/cs.d,p1=ease(f/.5),p2=ease((f-.5)/.5);
+      Object.assign(T,f<.5?{fall:-1.5+.95*p1,y:.13-.05*p1,hL:-1.5*p1,hR:-1.2*p1,kL:1.9*p1,kR:1.6*p1,sL:-.4,sR:-.4,eL:-.1,eR:-.1,armZ:.5,tilt:.3*p1}:{fall:-.55*(1-p2),y:.08*(1-p2),hL:-1.5*(1-p2),hR:-1.2*(1-p2),kL:1.9*(1-p2),kR:1.6*(1-p2),sL:-.6+.4*p2,sR:-.4,eL:-.6,eR:-.3,armZ:.3,tilt:.3*(1-p2)})}}
   if(isP){
-    if(P.hold&&!P.act&&!A&&!cs){T.sR=-.45;T.eR=-1.25}
+    if(P.hold&&!P.act&&!A&&!cs&&!inFight){T.sR=-.45;T.eR=-1.25}
     if(P.use){const k=Math.sin(Math.min(1,P.use.t/P.use.a.d)*Math.PI);T.sR=-.4-.9*k;T.eR=-.6+.3*k;if(P.use.a.k!=='komb'){T.sL=T.sR;T.eL=T.eR}T.tilt=.12*k}
     if(P.act){const Ac=P.act,f=Math.min(1,Ac.t/Ac.d),k=Math.sin(f*Math.PI);
       if(Ac.k==='drink')Object.assign(T,{sR:-.45-.55*k,eR:-1.25-1.05*k,headX:-.35*k});
@@ -1089,11 +1136,12 @@ function pose(c,m,dt){
     m.cup.visible=!!((P.hold&&P.hold.k==='kombucha')||(P.use&&P.use.a.k==='komb'&&P.use.t>P.use.a.d*.4));m.oil.visible=!!((P.hold&&P.hold.k==='oil')||(P.act&&P.act.k==='oil'));
     m.ladle.visible=!!(P.act&&(P.act.k==='pour'||P.act.k==='dump'));bucketLadle.visible=!m.ladle.visible;
   }
-  // ease every joint toward its target (snappier for strikes and hits, softer for walking and idling)
-  const kk=1-Math.exp(-dt*(A?28:cs?18:anim?16:11));m.cur??={};for(const j of JOINTS){const cur=m.cur[j]??T[j];m.cur[j]=cur+(T[j]-cur)*(j==='y'&&moving?1:kk)}const C=m.cur;
+  // springs instead of plain easing: limbs overshoot a little and settle, which reads as loose and alive
+  const K=A?420:cs?260:inFight?200:130,D=A?34:cs?24:inFight?22:15;m.cur??={};m.vel??={};
+  for(const j of JOINTS){let cur=m.cur[j]??T[j],vel=m.vel[j]??0;if(j==='y'&&(moving||jumpA)){cur=T[j];vel=0}else{const steps=Math.max(1,Math.ceil(dt/.016)),h=dt/steps;for(let i=0;i<steps;i++){vel+=((T[j]-cur)*K-vel*D)*h;cur+=vel*h}}m.cur[j]=cur;m.vel[j]=vel}const C=m.cur;
   let yaw=m.yaw;if(!m.ex&&c.stun>0){m.spin=(m.spin||0)+dt*8;yaw+=m.spin}
   m.LL.hip.rotation.x=C.hL;m.LR.hip.rotation.x=C.hR;m.LL.knee.rotation.x=C.kL;m.LR.knee.rotation.x=C.kR;
-  m.AL.sh.rotation.x=C.sL;m.AR.sh.rotation.x=C.sR;m.AL.el.rotation.x=C.eL;m.AR.el.rotation.x=C.eR;
+  m.AL.sh.rotation.x=C.sL;m.AR.sh.rotation.x=C.sR;m.AL.el.rotation.x=C.eL;m.AR.el.rotation.x=C.eR;m.AL.sh.rotation.z=-.1-C.armZ;m.AR.sh.rotation.z=.1+C.armZ;
   m.body.rotation.x=C.tilt;m.body.rotation.z=C.sway;m.head.rotation.set(C.headX,C.headY,C.headZ);
   m.g.rotation.set(C.fall,yaw,0);m.g.position.set(x,C.y,z);
 }
@@ -1129,7 +1177,8 @@ function render(dt,now){
   if(state&&state.fightS){document.getElementById('fyou').textContent=Math.round(P.dmg||0)+'%';document.getElementById('fthem').textContent=Math.round(state.fightS.dmg||0)+'%'}
   if(PERF.frame%4===0||!PERF.ops)PERF.ops=P&&state.on&&!state.paused?getOptions():[];const ops=PERF.ops;const key=ops.map(o=>o.l).join('|');
   if(key!==menuKey){menuKey=key;menu.innerHTML='';ops.slice(0,4).forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.className='mopt'+(o.risky?' risky':'');const n=document.createElement('span');n.className='mk';n.textContent=i+1;b.append(n,document.createTextNode(o.l));b.addEventListener('click',ev=>{ev.stopPropagation();const cur=getOptions()[i];if(cur&&cur.l===o.l)cur.f()});menu.appendChild(b)})}
-  if(ops.length){menu.style.display='flex';menu.style.left=Math.max(110,Math.min(vw-110,sx))+'px';menu.style.top=Math.max(150,sy)+'px'}else menu.style.display='none';
+  let mx2=sx,my2=sy;if(state&&state.pm&&state.pm.m){const v3=tmp2.set(state.pm.x*S,2.4,state.pm.y*S).project(cam);mx2=(v3.x+1)/2*vw;my2=(1-v3.y)/2*vh}
+  if(ops.length){menu.style.display='flex';menu.style.left=Math.max(110,Math.min(vw-110,mx2))+'px';menu.style.top=Math.max(140+menu.offsetHeight,my2)+'px'}else menu.style.display='none';
 }
 let last=performance.now();
 const fpsEl=document.getElementById('fps');let acc=0,fpsT=0,fpsN=0,lodT=0;
