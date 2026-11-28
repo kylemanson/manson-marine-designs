@@ -2030,16 +2030,18 @@ async function admTest(){const tok=admTok();if(!tok){admStatus('Paste your key i
   try{const r=await ghFetch(`https://api.github.com/repos/${REPO}`,{headers:h,cache:'no-store'});
     if(r.status===401){admStatus('GitHub rejected the key (401): it\'s mistyped, expired or deleted. Make a new one.',1);return}
     if(!r.ok){admStatus('GitHub said '+r.status+' when looking up the repository. Make sure the key includes manson-marine-designs.',1);return}
-    const j=await r.json(),pm=j.permissions||{};
-    if(!pm.push){admStatus('The key works but can\'t write. On GitHub, edit the key: Repository access → Only select repositories → manson-marine-designs, and Permissions → Contents → Read and write.',1);return}
-    admStatus('Key is good: it can write to the repository. Tap Remember, then Save to website.')}catch(e){admStatus(String(e.message||e),1)}}
+    // a real write check that changes nothing: create a loose git blob (needs Contents: Read and write; nothing on any branch changes)
+    const w=await ghFetch(`https://api.github.com/repos/${REPO}/git/blobs`,{method:'POST',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify({content:'tributary key check',encoding:'utf-8'})});
+    if(w.status===201){admStatus('Key is good: it can write to the repository. Tap Remember, then Save to website.');return}
+    let m='';try{m=(await w.json()).message||''}catch(e){}
+    admStatus(w.status===403||w.status===404?'The key can read but not write. On GitHub, edit the key → Repository permissions → Contents → change it to "Read and write" → Update. No new key needed.':'GitHub said '+w.status+(m?': '+m:'')+' on the write check.',1)}catch(e){admStatus(String(e.message||e),1)}}
 async function admSave(){const tok=admTok();
   if(!tok){admStatus('Add your GitHub key first (see below), or use Download file.',1);return}
   const api=`https://api.github.com/repos/${REPO}/contents/${CPATH}`,h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};admStatus('Saving…');
   try{let sha;const g=await ghFetch(api+'?ref=main',{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error(g.status===401?'GitHub rejected the key (401): mistyped, expired or deleted. Make a new one.':'GitHub said '+g.status+' reading the file.');
     const body={message:'Update Tributary characters from the admin editor',content:btoa(unescape(encodeURIComponent(admJSON()))),branch:'main'};if(sha)body.sha=sha;
     const r=await ghFetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){let m='';try{m=(await r.json()).message||''}catch(e){}
-      throw new Error(r.status===403||r.status===404?'GitHub refused the save ('+r.status+(m?': '+m:'')+'). Tap Test my key to see what the key is missing.':r.status===409?'The file changed on GitHub while you were editing. Tap Save again.':'GitHub said '+r.status+(m?': '+m:''))}
+      throw new Error(r.status===403||r.status===404?'GitHub refused the save ('+r.status+(m?': '+m:'')+'). The key needs Contents set to "Read and write": on GitHub, edit the key → Repository permissions → Contents → Read and write → Update.':r.status===409?'The file changed on GitHub while you were editing. Tap Save again.':'GitHub said '+r.status+(m?': '+m:''))}
     ADM.dirty=false;try{localStorage.removeItem('tributary.adminDraft')}catch(e){}admStatus('Saved! Everyone sees the changes after the site rebuilds (about 1–2 minutes).')}
   catch(e){admStatus(String(e.message||e),1)}}
 
