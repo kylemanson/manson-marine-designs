@@ -1430,6 +1430,18 @@ function defTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.cre
       else if(reg==='shin'&&on('legs')){h+=.8*G(y+.13,.06)*G(dB,.9)*K;h-=.5*G(dB,.12)*G(y+.14,.05)*K;h+=.4*G(dF,.15)*sstep(-.4,-.3,y)*sstep(-.02,-.08,y)*K}
       const c=Math.max(0,Math.min(255,128+h*90)),i=(py*W+px)*4;D[i]=D[i+1]=D[i+2]=c;D[i+3]=255}}
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.wrapS=T.RepeatWrapping;return t}
+function shapeSampler(o){
+  const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
+  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1)),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
+    if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
+    else{// two separate glutes: fuller low down, a crisp fold underneath, a cleft between (fabric bridges it)
+      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=F?.068:.062,sxg=F?.062:.054,cy=F?.85:.862,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-(((y-cy)/(y>cy?(F?.1:.08):(F?.042:.033)))**2));
+      const ax=Math.abs(x),cleft=A*.95*Math.exp(-((x/.013)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
+      const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
+    if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
+  const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.009*Math.exp(-(((y+.062)/.012)**2))+.004*Math.exp(-(((y+.12)/.035)**2))):(-.0065*Math.exp(-(((y+.07)/.011)**2))+.002*Math.exp(-(((y+.12)/.03)**2))))*(SHP.glutes||1)}
+    if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
+  return{torsoAt,tube,SHP,F,P,NODES,PF,B}}
 function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thigh,shin}:[swim,street]}
   const pos=[],nor=[],si=[],sw=[],uvs=[],idx=[];const hideArr=[];const N3=new T.Matrix3(),v=new T.Vector3(),n=new T.Vector3();
   const MK=[],MS=[],MY=[],MT=[];
@@ -1445,20 +1457,13 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
       const W=wfn(lx,lyy,v);let tot=0;for(const w of W)tot+=w[1];const W4=[...W,[0,0],[0,0],[0,0]].slice(0,4);for(const w of W4){si.push(w[0]);sw.push(w[1]/tot)}
       const R=UVREG[kind];uvs.push((k%(seg+1))/seg,R[0]+(lyy-R[2])/(R[3]-R[2])*(R[1]-R[0]));MK.push(kind);MS.push(side);MY.push(ly[k]);MT.push((k%(seg+1))/seg*Math.PI*2)}
     for(const i of id)idx.push(i+base)};
-  const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
-  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1)),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
-    if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
-    else{// two separate glutes: fuller low down, a crisp fold underneath, a cleft between (fabric bridges it)
-      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=F?.068:.062,sxg=F?.062:.054,cy=F?.85:.862,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-(((y-cy)/(y>cy?(F?.1:.08):(F?.042:.033)))**2));
-      const ax=Math.abs(x),cleft=A*.95*Math.exp(-((x/.013)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
-      const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
-    if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
+  const SS=shapeSampler(o),{torsoAt,tube,SHP,F,P,NODES,PF,B}=SS;
   const I=o.I;// bone indices
   const torsoW=(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]};
   const thighW=s=>(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]};
   add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),torsoW,o.fns.torso,'torso');
-  const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.009*Math.exp(-(((y+.062)/.012)**2))+.004*Math.exp(-(((y+.12)/.035)**2))):(-.0065*Math.exp(-(((y+.07)/.011)**2))+.002*Math.exp(-(((y+.12)/.03)**2))))*(SHP.glutes||1)}
-    if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
+
+
   const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
   const UP=sca(effL(LIMB0.up,PF.up)),FO=sca(effL(LIMB0.fore,PF.fore));
   const TH=F?effL(LIMB0.thighF,PF.thigh):sc(effL(LIMB0.thighM,PF.thigh)),SH=F?effL(LIMB0.shinF,PF.shin):sc(effL(LIMB0.shinM,PF.shin));
@@ -1814,12 +1819,13 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
   document.getElementById('admTokClr').onclick=()=>{try{localStorage.removeItem('tributary.gh')}catch(e){}tk.value='';admStatus('Key removed from this device.')}}
 // ---------- shaping: curve nodes, push/pull nodes, muscle definition ----------
 const PARTN={torso:'Body',up:'Upper arm',fore:'Forearm',thigh:'Thigh',shin:'Lower leg'},PARTY={torso:[.76,1.54],up:[-.32,.03],fore:[-.27,.03],thigh:[-.45,.08],shin:[-.42,.02]};
-const CVIEWS=[['front','Front (width)'],['side','Side (front / back)'],['top','Top-down slice'],['arms','Arms'],['legs','Legs']];
+const CVIEWS=[['front','Front (width)'],['side','Side (front / back)'],['top','Top-down slice'],['sect','Side slice'],['arms','Arms'],['legs','Legs']];
 function shapeHTML(sp){if(!ADM.cv)ADM.cv={view:'front',soft:.5};if(ADM.ni==null)ADM.ni=-1;const N=sp.nodes||(sp.nodes=[]),n=N[ADM.ni];
   const sl=(p,l,a,b,st,dv)=>`<label class="sl">${l}<input type="range" data-p="${p}" min="${a}" max="${b}" step="${st}" value="${gp(sp,p)}"><output>${(+gp(sp,p)).toFixed(dv)}</output></label>`;
   return`<details open><summary>Shape: curve nodes</summary>
    <div class="crow">${CVIEWS.map(([v,l])=>`<button type="button" class="chp${ADM.cv.view===v?' on':''}" data-cvv="${v}">${l}</button>`).join('')}</div>
    ${ADM.cv.view==='top'?(()=>{const T0=TPROF[sp.sex==='f'?'f':'m'];if(ADM.cv.slice==null)ADM.cv.slice=T0.findIndex(p=>p[0]>1.0);return`<label class="sl">Slice height<input type="range" id="crvSlice" min="1" max="${T0.length-2}" step="1" value="${ADM.cv.slice}"><output>${T0[ADM.cv.slice][0].toFixed(2)} m</output></label>`})():''}
+   ${ADM.cv.view==='sect'?`<label class="sl">Distance from centre line<input type="range" id="crvX" min="0" max=".2" step=".005" value="${ADM.cv.xoff||0}"><output>${Math.round((ADM.cv.xoff||0)*100)} cm</output></label>`:''}
    <canvas id="crv" width="320" height="380"></canvas>
    <label class="sl">Soft ↔ tight<input type="range" id="crvSoft" min="0" max="1" step=".01" value="${1-ADM.cv.soft}"><output>${ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'}</output></label>
    <p class="small">Drag a dot sideways. Soft also moves the neighbouring dots a little; tight keeps the change local. Left and right always match.</p>
@@ -1835,16 +1841,32 @@ function shapeHTML(sp){if(!ADM.cv)ADM.cv={view:'front',soft:.5};if(ADM.ni==null)
    ${[['abs','Abs and waist'],['chest','Chest and collarbones'],['arms','Arms'],['legs','Legs'],['back','Back']].map(([k,l])=>`<label class="fl ck"><input type="checkbox" data-p="defg.${k}"${sp.defg&&sp.defg[k]===0||sp.defg&&sp.defg[k]===false?'':' checked'}> ${l}</label>`).join('')}
    <p class="small">Soft cartoon shading that follows the light. Shows less under street clothes.</p></details>`}
 // top-down slice: the body's cross-section at one control height, with width / front / back handles
-function drawSlice(c){const g=c.getContext('2d'),sp=ADM.list[ADM.i],f=sp.sex==='f',T0=TPROF[f?'f':'m'],i=ADM.cv.slice,pf=sp.prof||(sp.prof={}),W=c.width,H=c.height,cx=W/2,cy=H/2,sc=(W/2-30)/.2,y=T0[i][0],mm=shapeW(sp.body,y);
+function edS(sp,withNodes=true){const f=sp.sex==='f';return shapeSampler({shape:sp.body,fem:f,P:effT(f,sp.prof),nodes:withNodes?sp.nodes:[]})}
+function drawSlice(c){const g=c.getContext('2d'),sp=ADM.list[ADM.i],f=sp.sex==='f',T0=TPROF[f?'f':'m'],i=ADM.cv.slice,pf=sp.prof||(sp.prof={}),W=c.width,H=c.height,cx=W/2,cy=H/2,sc=(W/2-30)/.2,y=T0[i][0];
+  const S=edS(sp),S0=edS(sp,false),pt=(Q,t)=>{const p=Q.torsoAt(y,t);return[p[0],p[2]]};
   const fac=k=>((pf.torso||[])[i]||[1,1,1])[k],setF=(j,k,v)=>{pf.torso=pf.torso||T0.map(()=>[1,1,1]);pf.torso[j]=(pf.torso[j]||[1,1,1]).slice();pf.torso[j][k]=v},getF=(j,k)=>((pf.torso||[])[j]||[1,1,1])[k];
-  const base=[T0[i][1]*mm,T0[i][2]*(1+(mm-1)*.5),T0[i][3]*(1+(mm-1)*.5)],w=base[0]*fac(0),fr=base[1]*fac(1),bk=base[2]*fac(2);
   g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.moveTo(0,cy);g.lineTo(W,cy);g.stroke();
-  g.fillStyle='rgba(242,212,189,.85)';g.strokeStyle='#2a2230';g.lineWidth=2;g.beginPath();for(let k=0;k<=72;k++){const t=k/72*Math.PI*2,x=w*Math.sin(t),z=(Math.cos(t)>0?fr:bk)*Math.cos(t);g.lineTo(cx+x*sc,cy+z*sc)}g.closePath();g.fill();g.stroke();
-  g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('front',cx-14,H-8);g.fillText('back',cx-12,14);g.fillText('seen from above, '+y.toFixed(2)+' m up',8,H-8>0?28:0);
-  const nb=(k)=>[[i-1,.55],[i+1,.55],[i-2,.2],[i+2,.2]].filter(([j])=>j>0&&j<T0.length-1).map(([j,wt])=>({get:()=>getF(j,k),set:v=>setF(j,k,v),wt}));
-  const dot=(x,yy,axis,sd,k,b)=>({x,y:yy,axis,sd,ox:cx,oy:cy,base:b,get:()=>fac(k),set:v=>setF(i,k,v),nb:nb(k)});
-  ADM.cvDots=[dot(cx+w*sc,cy,'x',1,0,base[0]),dot(cx-w*sc,cy,'x',-1,0,base[0]),dot(cx,cy+fr*sc,'y',1,1,base[1]),dot(cx,cy-bk*sc,'y',-1,2,base[2])];
-  for(const d of ADM.cvDots){g.fillStyle=Math.abs(d.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(d.x,d.y,8,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}ADM.cvMap={sc};ADM.slc={w,fr,bk,y,cx,cy,sc};drawCvNodes(g)}
+  const loop=(Q,fill,dash)=>{g.beginPath();for(let k=0;k<=96;k++){const [x,z]=pt(Q,k/96*Math.PI*2);g.lineTo(cx+x*sc,cy+z*sc)}g.closePath();if(fill){g.fillStyle='rgba(242,212,189,.85)';g.fill()}g.setLineDash(dash?[5,4]:[]);g.strokeStyle=dash?'#8aa0b2':'#2a2230';g.lineWidth=dash?1.5:2;g.stroke();g.setLineDash([])};
+  loop(S,1,0);if((sp.nodes||[]).some(n=>n.p==='torso'))loop(S0,0,1);
+  g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('front',cx-14,H-8);g.fillText('back',cx-12,14);g.fillText('seen from above, '+y.toFixed(2)+' m up',8,28);
+  const nb=k=>[[i-1,.55],[i+1,.55],[i-2,.2],[i+2,.2]].filter(([j])=>j>0&&j<T0.length-1).map(([j,wt])=>({get:()=>getF(j,k),set:v=>setF(j,k,v),wt}));
+  const [xr]=pt(S0,Math.PI/2),[,zf]=pt(S0,0),[,zb]=pt(S0,Math.PI);
+  const dot=(x,yy,axis,sd,k,ext)=>({x,y:yy,axis,sd,ox:cx,oy:cy,base:Math.abs(ext)/fac(k),get:()=>fac(k),set:v=>setF(i,k,v),nb:nb(k)});
+  ADM.cvDots=[dot(cx+xr*sc,cy,'x',1,0,xr),dot(cx-xr*sc,cy,'x',-1,0,xr),dot(cx,cy+zf*sc,'y',1,1,zf),dot(cx,cy+zb*sc,'y',-1,2,zb)];
+  for(const d of ADM.cvDots){g.fillStyle=Math.abs(d.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(d.x,d.y,7,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}
+  ADM.cvMap={sc};ADM.slc={y,cx,cy,sc,S,S0,pt};drawCvNodes(g)}
+// side slice: a profile cut straight through the body at a distance from the centre line (torso and thighs)
+function secRows(sp,X0){const f=sp.sex==='f',S=edS(sp),B=sp.body,hx=(f?.097:.088)*(1+(B.hips-1)*.8),LG=B.legs||1,pf=sp.prof||{};
+  const TH=(f?effL(LIMB0.thighF,pf.thigh):effL(LIMB0.thighM,pf.thigh).map(([y,r])=>[y,r*.92])).map(([y,r])=>[y,r*LG]),tq=S.tube(TH,.95,'thigh','R'),rows=[];
+  const cross=(fn,ths,part,ly,y,xo)=>{const out=[];let prev=null;for(const t of ths){const p=fn(t),x=p[0]+xo-X0;if(prev&&(prev.x<=0)!==(x<=0)){const k=prev.x/(prev.x-x);out.push({z:prev.z+(p[2]-prev.z)*k,th:prev.t+(t-prev.t)*k,part,ly,y})}prev={x,z:p[2],t}}return out};
+  const TT=[...Array(121).keys()].map(k=>k/120*Math.PI*2);
+  for(let y=1.54;y>=.42;y-=.005){const L=[];if(y>.757)L.push(...cross(t=>S.torsoAt(y,t),TT,'torso',y,y,0));const ly=y-.86;if(ly<.05&&ly>-.455)L.push(...cross(t=>tq(ly,t),TT,'thigh',ly,y,hx));rows.push({y,L})}return rows}
+function drawSect(c){const g=c.getContext('2d'),sp=ADM.list[ADM.i],W=c.width,H=c.height,X0=ADM.cv.xoff||0,y0=.45,y1=1.56,sc=(H-30)/(y1-y0),cx=W/2,Y=y=>15+(y1-y)*sc;
+  const rows=secRows(sp,X0);g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.stroke();
+  g.fillStyle='rgba(242,212,189,.9)';for(const r of rows){for(const part of['torso','thigh']){const zs=r.L.filter(q=>q.part===part).map(q=>q.z).sort((a,b)=>a-b);for(let k=0;k+1<zs.length;k+=2)g.fillRect(cx+zs[k]*sc,Y(r.y)-1.4,(zs[k+1]-zs[k])*sc,2.8)}}
+  g.fillStyle='#2a2230';for(const r of rows)for(const q of r.L)g.fillRect(cx+q.z*sc-1.2,Y(r.y)-1.2,2.4,2.4);
+  g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('back',8,H-8);g.fillText('front',W-40,H-8);g.fillText(X0<.003?'cut through the centre line':'cut '+Math.round(X0*100)+' cm out to the side',8,16);
+  ADM.cvDots=[];ADM.sec={rows,cx,sc,y1,X0};drawCvNodes(g)}
 // curve editor geometry: which control points each view shows, and how to read/write their factors
 function cvModel(sp,view){const f=sp.sex==='f',B=sp.body,pf=sp.prof||(sp.prof={}),ws=y=>shapeW(B,y);
   if(view==='front'||view==='side'){const T0=TPROF[f?'f':'m'],k0=view==='front'?[0]:[1,2];
@@ -1852,7 +1874,7 @@ function cvModel(sp,view){const f=sp.sex==='f',B=sp.body,pf=sp.prof||(sp.prof={}
   const parts=view==='arms'?[['up',LIMB0.up,(f?.83:1)*B.arms],['fore',LIMB0.fore,(f?.83:1)*B.arms]]:[['thigh',f?LIMB0.thighF:LIMB0.thighM,(f?1:.92)*B.legs],['shin',f?LIMB0.shinF:LIMB0.shinM,(f?1:.92)*B.legs]];
   let off=0;const curves=[];for(const [key,arr,sc] of parts){const top=arr[0][0],o=off-top;curves.push({sgn:0,key,o,pts:arr.map(([y,r],i)=>({y:y+o,base:r*sc,get:()=>((pf[key]||[])[i]||1),set:v=>{pf[key]=pf[key]||arr.map(()=>1);pf[key][i]=v},edit:i>0&&i<arr.length-1}))});off+=arr[arr.length-1][0]-top-.02}
   return{y0:off,y1:0,curves}}
-function drawCurve(){const c=document.getElementById('crv');if(!c)return;if(ADM.cv.view==='top')return drawSlice(c);const g=c.getContext('2d'),sp=ADM.list[ADM.i],M=cvModel(sp,ADM.cv.view),W=c.width,H=c.height,sc=(H-30)/(M.y1-M.y0),xs=ADM.cv.view==='arms'||ADM.cv.view==='legs'?2.4:1,X=sc*xs,cx=W/2,Y=y=>15+(M.y1-y)*sc;
+function drawCurve(){const c=document.getElementById('crv');if(!c)return;if(ADM.cv.view==='top')return drawSlice(c);if(ADM.cv.view==='sect')return drawSect(c);const g=c.getContext('2d'),sp=ADM.list[ADM.i],M=cvModel(sp,ADM.cv.view),W=c.width,H=c.height,sc=(H-30)/(M.y1-M.y0),xs=ADM.cv.view==='arms'||ADM.cv.view==='legs'?2.4:1,X=sc*xs,cx=W/2,Y=y=>15+(M.y1-y)*sc;
   g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.stroke();
   ADM.cvDots=[];for(const cu of M.curves){const P2=cu.pts.map(p=>[p.y,p.base*p.get()]),A=P2.slice().sort((a,b)=>a[0]-b[0]).map(([y,r])=>[y,r,r,r]);
     const sides=cu.sgn?[cu.sgn]:[-1,1];g.fillStyle='rgba(242,212,189,.85)';g.strokeStyle='#2a2230';g.lineWidth=2;
@@ -1866,7 +1888,13 @@ function drawCurve(){const c=document.getElementById('crv');if(!c)return;if(ADM.
 // ---- push/pull nodes in the flat views: place by tapping, move by dragging the ring ----
 const clamp1=v=>Math.max(-1,Math.min(1,v));
 function cvA(cu){return cu.pts.map(p=>[p.y,p.base*p.get()]).sort((a,b)=>a[0]-b[0]).map(([y,r])=>[y,r,r,r])}
-function cvToNode(px,py){const v=ADM.cv.view,m=ADM.cvMap;if(v==='top'){const S=ADM.slc;if(!S)return null;const dx=(px-S.cx)/S.sc,dz=(py-S.cy)/S.sc;if(Math.hypot(dx/S.w,dz/(dz>0?S.fr:S.bk))>1.35)return null;let th=Math.atan2(dx/S.w,dz/(dz>0?S.fr:S.bk));if(th<0)th+=Math.PI*2;return{p:'torso',s:'',y:+S.y.toFixed(3),th:+th.toFixed(3)}}
+function cvToNode(px,py){const v=ADM.cv.view,m=ADM.cvMap;
+  if(v==='top'){const S=ADM.slc;if(!S)return null;const dx=(px-S.cx)/S.sc,dz=(py-S.cy)/S.sc,dir=Math.atan2(dx,dz),rp=Math.hypot(dx,dz);let bt=0,bd=9;for(let k=0;k<180;k++){const t=k/180*Math.PI*2,[x,z]=S.pt(S.S0,t),q=Math.abs(angW(Math.atan2(x,z)-dir));if(q<bd){bd=q;bt=t}}
+    const [x0,z0]=S.pt(S.S0,bt),rb=Math.hypot(x0,z0);if(rp>rb+.06||rp<rb*.4)return null;return{p:'torso',s:'',y:+S.y.toFixed(3),th:+bt.toFixed(3),d:+Math.max(-.03,Math.min(.03,rp-rb)).toFixed(4)}}
+  if(v==='sect'){const C=ADM.sec;if(!C)return null;const y=C.y1-(py-15)/C.sc,pz=(px-C.cx)/C.sc;let row=null,bd=1;for(const r of C.rows){const q=Math.abs(r.y-y);if(q<bd){bd=q;row=r}}if(!row||!row.L.length)return null;
+    let best=null,bz=.08;for(const q of row.L){const h=Math.abs(q.z-pz);if(h<bz){bz=h;best=q}}if(!best)return null;let th=best.th%(Math.PI*2);if(th<0)th+=Math.PI*2;
+    const out=best.z>=(row.L.filter(q=>q.part===best.part).reduce((a,q)=>a+q.z,0)/row.L.filter(q=>q.part===best.part).length)?1:-1,R=PARTY[best.part];
+    return{p:best.part,s:best.part==='torso'?'':'R',y:+Math.max(R[0],Math.min(R[1],best.ly)).toFixed(3),th:+th.toFixed(3),d:+Math.max(-.03,Math.min(.03,(pz-best.z)*out)).toFixed(4)}}
   const y=m.y1-(py-15)/m.sv,M=m.M;
   if(v==='front'||v==='side'){const A0=cvA(M.curves[0]);if(y<A0[0][0]+.01||y>A0[A0.length-1][0]-.01)return null;
     if(v==='front'){const w=profAt(A0,y)[0],q=(px-m.cx)/(w*m.sc);if(Math.abs(q)>1.15)return null;let th=Math.asin(clamp1(q));if(th<0)th+=Math.PI*2;return{p:'torso',s:'',y:+y.toFixed(3),th:+th.toFixed(3)}}
@@ -1874,7 +1902,9 @@ function cvToNode(px,py){const v=ADM.cv.view,m=ADM.cvMap;if(v==='top'){const S=A
   for(const cu of M.curves){const A=cvA(cu);if(y<A[0][0]+.005||y>A[A.length-1][0]-.005)continue;const r=profAt(A,y)[0],q=(px-m.cx)/(r*m.sc);if(Math.abs(q)>1.2)return null;let th=Math.asin(clamp1(q));if(th<0)th+=Math.PI*2;
     const ly=y-cu.o,R=PARTY[cu.key];return{p:cu.key,s:'R',y:+Math.max(R[0],Math.min(R[1],ly)).toFixed(3),th:+th.toFixed(3)}}return null}
 function nodeToCv(n){const v=ADM.cv.view,m=ADM.cvMap,out=[];if(!m)return out;const ths=n.m!==false?[n.th,2*Math.PI-n.th]:[n.th];
-  if(v==='top'){const S=ADM.slc;if(!S||n.p!=='torso'||Math.abs(n.y-S.y)>.06)return out;for(const t of ths)out.push([S.cx+S.w*Math.sin(t)*S.sc,S.cy+(Math.cos(t)>0?S.fr:S.bk)*Math.cos(t)*S.sc]);return out}
+  if(v==='top'){const S=ADM.slc;if(!S||n.p!=='torso'||Math.abs(n.y-S.y)>.06)return out;for(const t of ths){const [x,z]=S.pt(S.S,t);out.push([S.cx+x*S.sc,S.cy+z*S.sc])}return out}
+  if(v==='sect'){const C=ADM.sec;if(!C)return out;const sp=ADM.list[ADM.i];if(n.p!=='torso'&&n.p!=='thigh')return out;const yy=n.p==='torso'?n.y:n.y+.86;let row=null,bd=.01;for(const r of C.rows){const q=Math.abs(r.y-yy);if(q<bd){bd=q;row=r}}if(!row)return out;
+    for(const t of ths){const cand=row.L.filter(q=>q.part===n.p);let best=null,bt=.35;for(const q of cand){const h=Math.abs(angW(q.th-t));if(h<bt){bt=h;best=q}}if(best)out.push([C.cx+best.z*C.sc,15+(C.y1-yy)*C.sc])}return out}
   const Y=y=>15+(m.y1-y)*m.sv,M=m.M;
   if(v==='front'||v==='side'){if(n.p!=='torso')return out;const A0=cvA(M.curves[0]);
     if(v==='front'){for(const t of ths)if(Math.cos(t)>-.05)out.push([m.cx+profAt(A0,n.y)[0]*Math.sin(t)*m.sc,Y(n.y)]);return out}
@@ -1886,12 +1916,13 @@ function wireShape(el,sp){drawCurve();const c=document.getElementById('crv');
   const ca=document.getElementById('crvAdd');if(ca)ca.onclick=()=>{ADM.cvAdd=!ADM.cvAdd;drawAdmin()};
   for(const b of el.querySelectorAll('[data-cvv]'))b.onclick=()=>{ADM.cv.view=b.dataset.cvv;drawAdmin()};
   const so=document.getElementById('crvSoft');if(so)so.oninput=e=>{ADM.cv.soft=1-(+e.target.value);so.nextElementSibling.textContent=ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'};
+  const cxs=document.getElementById('crvX');if(cxs)cxs.oninput=e=>{ADM.cv.xoff=+e.target.value;cxs.nextElementSibling.textContent=Math.round(ADM.cv.xoff*100)+' cm';drawCurve()};
   const slc=document.getElementById('crvSlice');if(slc)slc.oninput=e=>{ADM.cv.slice=+e.target.value;slc.nextElementSibling.textContent=TPROF[sp.sex==='f'?'f':'m'][ADM.cv.slice][0].toFixed(2)+' m';drawCurve()};
-  const rs=document.getElementById('crvReset');if(rs)rs.onclick=()=>{const v=ADM.cv.view,pf=sp.prof||{};if(v==='top'){if(pf.torso)pf.torso[ADM.cv.slice]=[1,1,1]}else if(v==='front'||v==='side'){if(pf.torso)pf.torso=pf.torso.map(t=>v==='front'?[1,t[1],t[2]]:[t[0],1,1])}else if(v==='arms'){delete pf.up;delete pf.fore}else{delete pf.thigh;delete pf.shin}drawCurve();admChanged()};
+  const rs=document.getElementById('crvReset');if(rs)rs.onclick=()=>{const v=ADM.cv.view,pf=sp.prof||{};if(v==='sect'){}else if(v==='top'){if(pf.torso)pf.torso[ADM.cv.slice]=[1,1,1]}else if(v==='front'||v==='side'){if(pf.torso)pf.torso=pf.torso.map(t=>v==='front'?[1,t[1],t[2]]:[t[0],1,1])}else if(v==='arms'){delete pf.up;delete pf.fore}else{delete pf.thigh;delete pf.shin}drawCurve();admChanged()};
   if(c){let dr=null;const at=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
     c.onpointerdown=e=>{const [x,y]=at(e);let nb=null,nd=16;for(const q of ADM.cvNodes||[]){const h=Math.hypot(q.x-x,q.y-y);if(h<nd){nd=h;nb=q}}
       if(nb){dr={node:nb.i};if(ADM.ni!==nb.i){ADM.ni=nb.i;drawCurve();admMarkers()}c.setPointerCapture(e.pointerId);e.preventDefault();return}
-      if(ADM.cvAdd){const nn=cvToNode(x,y);if(!nn){admStatus('Tap on or inside the outline to place a node.',1);return}sp.nodes=sp.nodes||[];sp.nodes.push({...nn,r:.04,d:.008,m:true});ADM.ni=sp.nodes.length-1;ADM.cvAdd=false;dr={node:ADM.ni,added:1};drawCurve();admPreview();c.setPointerCapture(e.pointerId);e.preventDefault();return}
+      if(ADM.cvAdd){const nn=cvToNode(x,y);if(!nn){admStatus('Tap on or inside the outline to place a node.',1);return}sp.nodes=sp.nodes||[];sp.nodes.push({r:.04,d:.008,m:true,...nn});ADM.ni=sp.nodes.length-1;ADM.cvAdd=false;dr={node:ADM.ni,added:1};drawCurve();admPreview();c.setPointerCapture(e.pointerId);e.preventDefault();return}
       let best=null,bd=22;for(const d of ADM.cvDots){const q=Math.hypot(d.x-x,d.y-y);if(q<bd){bd=q;best=d}}if(!best)return;dr=best;c.setPointerCapture(e.pointerId);e.preventDefault()};
     c.onpointermove=e=>{if(!dr)return;if(dr.node!=null){const [x,y]=at(e),nn=cvToNode(x,y),n=sp.nodes[dr.node];if(nn&&n){Object.assign(n,nn);drawCurve();admPreview()}return}const [x,y]=at(e),{sc}=ADM.cvMap,r=Math.max(.004,(dr.axis==='x'?(x-dr.ox):(y-dr.oy))*dr.sd/sc),old=dr.get(),nv=Math.max(.5,Math.min(1.7,r/dr.base)),ratio=nv/old;dr.set(nv);
       const s=ADM.cv.soft;for(const q of dr.nb)q.set(Math.max(.5,Math.min(1.7,q.get()*(1+(ratio-1)*q.wt*s))));
