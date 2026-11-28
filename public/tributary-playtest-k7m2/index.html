@@ -129,6 +129,7 @@ body.editing #hud,body.editing #goal,body.editing #menu,body.editing #pad,body.e
 #creator .btn{width:100%;margin-top:8px}
 #adm{right:0;top:0;bottom:0;width:min(400px,100vw);padding:12px 14px 24px;border-radius:0}
 @media (max-width:700px){#adm{top:auto;height:56vh;border-radius:20px 20px 0 0}}
+#crv{display:block;width:100%;max-width:340px;margin:6px auto;border-radius:12px;touch-action:none;background:#eef5fb}
 #adm .ah{display:flex;gap:10px;align-items:center;margin-bottom:8px}#adm .ah b{font:700 18px 'Josefin Sans',sans-serif}#adm select,#adm input[type=text],#adm input[type=password],#adm textarea{font:14px Nunito,sans-serif;border:1px solid #c9d6e0;border-radius:10px;padding:8px;background:#fff;width:100%;box-sizing:border-box}
 #adm .ah select{flex:1}#adm .arow,#adm .afoot{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#adm .arow button,#adm .afoot button,#adm details button{min-height:38px;padding:0 12px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:700 13px Nunito,sans-serif}
 #adm .afoot .btn{background:#1E5A8A;color:#fff;min-height:44px}#adm details{border-top:1px solid #E6F0F7;padding:6px 0}#adm summary{font-weight:800;cursor:pointer;padding:6px 0}
@@ -1341,6 +1342,20 @@ const OHIDE={up:y=>y>-.11||y<-.275,fore:y=>y>-.03,thigh:y=>y>-.04||y<-.41,shin:y
 const sstep=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
 const TPROF={m:[[.755,.004,.004,.004],[.77,.09,.06,.065],[.8,.148,.092,.104],[.86,.162,.099,.118],[.93,.155,.1,.108],[1.0,.145,.103,.096],[1.07,.143,.107,.093],[1.14,.158,.115,.099],[1.21,.175,.121,.104],[1.28,.186,.119,.105],[1.34,.188,.105,.099],[1.39,.16,.08,.08],[1.43,.108,.06,.061],[1.465,.058,.048,.048],[1.51,.047,.044,.044],[1.535,.03,.03,.03],[1.545,.004,.004,.004]],
              f:[[.755,.004,.004,.004],[.77,.095,.06,.068],[.8,.17,.094,.124],[.86,.193,.102,.146],[.93,.18,.098,.13],[1.0,.145,.09,.097],[1.06,.12,.085,.082],[1.12,.126,.09,.084],[1.19,.137,.097,.088],[1.26,.143,.096,.089],[1.32,.148,.088,.086],[1.355,.14,.076,.076],[1.385,.108,.058,.06],[1.41,.064,.043,.045],[1.435,.039,.034,.035],[1.5,.035,.033,.033],[1.53,.026,.026,.026],[1.545,.004,.004,.004]]};
+const LIMB0={up:[[.035,.004],[.031,.024],[.018,.042],[0,.051],[-.04,.054],[-.1,.05],[-.17,.045],[-.24,.04],[-.29,.036],[-.31,.03],[-.325,.004]],
+ fore:[[.035,.004],[.03,.028],[.01,.037],[-.04,.042],[-.1,.038],[-.17,.031],[-.23,.026],[-.265,.024],[-.28,.004]],
+ thighF:[[.085,.004],[.08,.046],[.055,.086],[0,.095],[-.08,.091],[-.16,.081],[-.25,.069],[-.33,.057],[-.4,.048],[-.44,.045],[-.46,.004]],
+ thighM:[[.085,.004],[.08,.04],[.055,.075],[0,.084],[-.08,.082],[-.16,.074],[-.25,.064],[-.33,.054],[-.4,.048],[-.44,.046],[-.46,.004]],
+ shinF:[[.03,.004],[.025,.034],[0,.043],[-.06,.049],[-.13,.055],[-.2,.05],[-.28,.039],[-.36,.031],[-.41,.029],[-.43,.004]],
+ shinM:[[.03,.004],[.025,.034],[0,.045],[-.06,.05],[-.13,.054],[-.2,.05],[-.28,.04],[-.36,.033],[-.41,.031],[-.43,.004]]};
+// per-character curve nodes: factors on each control point (1 = unchanged)
+function effT(fem,prof){const B=TPROF[fem?'f':'m'],t=(prof&&prof.torso)||[];return B.map((p,i)=>{const f=t[i]||[1,1,1];return[p[0],p[1]*(f[0]||1),p[2]*(f[1]||1),p[3]*(f[2]||1)]})}
+function effL(arr,f){return arr.map(([y,r],i)=>[y,r*((f&&f[i])||1)])}
+// push/pull nodes: soft round bumps, mirrored left/right; strength capped against size so nothing spikes
+const angW=a=>{a=(a+Math.PI)%(2*Math.PI);if(a<0)a+=2*Math.PI;return a-Math.PI};
+function nodeDisp(N,part,side,y,th,rad){if(!N||!N.length)return 0;let d=0;
+  for(const n of N){if(n.p!==part)continue;const A=[];if(part==='torso'){A.push(n.th);if(n.m!==false&&Math.abs(angW(n.th))>.05&&Math.abs(angW(n.th-Math.PI))>.05)A.push(2*Math.PI-n.th)}else{if(n.s===side)A.push(n.th);else if(n.m!==false)A.push(2*Math.PI-n.th)}
+    const r=Math.max(.01,n.r),amt=Math.max(-.6*r,Math.min(.6*r,n.d));for(const a of A){const arc=angW(th-a)*rad,dy=y-n.y;d+=amt*Math.exp(-(dy*dy+arc*arc)/(r*r))}}return d}
 const cr=(p0,p1,p2,p3,t)=>.5*(2*p1+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t);
 function profAt(P,y){const n=P.length;if(y<=P[0][0])return P[0].slice(1);if(y>=P[n-1][0])return P[n-1].slice(1);let k=0;while(k<n-2&&y>P[k+1][0])k++;const a=P[Math.max(0,k-1)],b=P[k],c=P[k+1],d=P[Math.min(n-1,k+2)],t=(y-b[0])/(c[0]-b[0]);
   return[1,2,3].map(i=>Math.max(.003,Math.min(Math.max(b[i],c[i])*1.04,cr(a[i],b[i],c[i],d[i],t))))}
@@ -1368,7 +1383,7 @@ function topEdge(C,x,cs){let f=C.topHi;const ax=Math.abs(x);
   if(C.neck==='v')f-=Math.max(0,.085-ax*1.15);else if(C.neck==='scoop')f-=.045*Math.max(0,1-(ax/.09)**2);else if(C.neck==='sweet')f-=.02*Math.exp(-((ax/.02)**2))-.008*Math.exp(-(((ax-.065)/.03)**2));
   return C.back+(f-C.back)*sstep(-.35,.25,cs)}
 function paintSkinTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data;
-  const sk=hx(o.sk),P=TPROF[o.fem?'f':'m'],sw=o.swim,base=hx(o.suit),acc=hx(sw.acc||'#ffffff'),sc=hx(o.sc),pc=hx(o.pc),SPc=hx('#24303c'),belt=[42,36,32];
+  const sk=hx(o.sk),P=o.P||TPROF[o.fem?'f':'m'],sw=o.swim,base=hx(o.suit),acc=hx(sw.acc||'#ffffff'),sc=hx(o.sc),pc=hx(o.pc),SPc=hx('#24303c'),belt=[42,36,32];
   for(let py=0;py<H;py++){const v=1-(py+.5)/H;let reg='fore';for(const k in UVREG){const r=UVREG[k];if(v>=r[0]&&v<r[1]){reg=k;break}}const R=UVREG[reg],y=R[2]+(v-R[0])/(R[1]-R[0])*(R[3]-R[2]);const w=reg==='torso'?profAt(P,y)[0]*shapeW(o.shape,y):.05;
     for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2,sn=Math.sin(th),cs=Math.cos(th),x=w*sn,s=th*(reg==='torso'?.15:.07);let c=sk;
       if(reg==='torso'){
@@ -1389,9 +1404,29 @@ function paintSkinTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=docume
       const i=(py*W+px)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=255}}
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;t.wrapS=T.RepeatWrapping;t.anisotropy=4;return t}
 
+const DEFK=.03;
+function defTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data,P=o.P||TPROF[o.fem?'f':'m'],F=o.fem,K=F?.55:1;
+  const G=(a,w)=>Math.exp(-(a*a)/(w*w*1.9)),dg={abs:1,chest:1,arms:1,legs:1,back:1,...(o.defg||{})},on=k=>dg[k]?1:0;
+  const seg=(px,py,ax,ay,bx,by)=>{const vx=bx-ax,vy=by-ay,t=Math.max(0,Math.min(1,((px-ax)*vx+(py-ay)*vy)/(vx*vx+vy*vy)));return Math.hypot(px-ax-t*vx,py-ay-t*vy)};
+  for(let py=0;py<H;py++){const v=1-(py+.5)/H;let reg='fore';for(const k in UVREG){const r=UVREG[k];if(v>=r[0]&&v<r[1]){reg=k;break}}const R=UVREG[reg],y=R[2]+(v-R[0])/(R[1]-R[0])*(R[3]-R[2]);const w=reg==='torso'?profAt(P,y)[0]*shapeW(o.shape,y):.05;
+    for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2,sn=Math.sin(th),cs=Math.cos(th),dF=Math.abs(angW(th)),dB=Math.abs(angW(th-Math.PI));let h=0;
+      if(reg==='torso'){const x=w*sn,ax=Math.abs(x),fr=sstep(.15,.45,cs),bk=sstep(-.15,-.45,cs);
+        if(on('abs')&&fr){const m=sstep(.9,.95,y)*sstep(1.19,1.14,y)*sstep(.09,.065,ax);h-=fr*m*(G(ax,.0045)+(F?0:(G(y-1.0,.004)+G(y-1.065,.004)+G(y-1.125,.004))*sstep(.062,.045,ax)*.8)+G(ax-.072,.0065)*.7)*K;
+          h-=fr*G(seg(ax,y,.118,.985,.05,.855),.006)*.8*K;h+=fr*m*.25*sstep(.07,.02,ax)*(F?.3:1)}
+        if(on('chest')&&fr){if(!F){const yl=1.2+3.5*(ax-.02)**2;h-=fr*G(y-yl,.006)*sstep(.155,.125,ax)*sstep(.008,.025,ax);h+=fr*.4*G(ax-.075,.05)*G(y-1.27,.04)}
+          h-=fr*G(ax,.005)*sstep(1.19,1.22,y)*sstep(1.37,1.33,y)*.7*K;if(ax>.02&&ax<.11)h+=fr*.7*G(y-(1.405+.35*(ax-.02)-6*(ax-.05)**2),.006)}
+        if(on('back')&&bk){h-=bk*G(ax,.006)*sstep(.92,.98,y)*sstep(1.42,1.36,y)*K;h+=bk*.7*G(ax-.075,.03)*G(y-1.31,.04)*K;h-=bk*.6*G(ax-.045,.005)*sstep(1.23,1.26,y)*sstep(1.37,1.34,y)*K;
+          if(!F)h-=bk*.4*G(seg(ax,y,.14,1.18,.07,1.0),.008)}}
+      else if(reg==='up'&&on('arms')){h-=.8*G(y-(-.09-.03*Math.abs(cs)),.008)*K;h+=.6*G(dF,.7)*G(y+.17,.05)*K;h+=.5*G(dB,.8)*G(y+.15,.06)*K;h-=.5*G(cs,.25)*sstep(-.26,-.22,y)*sstep(-.05,-.09,y)*K}
+      else if(reg==='fore'&&on('arms')){h+=.35*G(y+.06,.05)*G(dF-.6,.6)*K}
+      else if(reg==='thigh'&&on('legs')){h+=.5*G(y+.34,.04)*(G(dF-.65,.45))*K;h-=.6*G(cs,.22)*sstep(-.41,-.33,y)*sstep(.0,-.07,y)*K;h-=.4*G(dF,.12)*sstep(-.32,-.28,y)*sstep(-.06,-.1,y)*K}
+      else if(reg==='shin'&&on('legs')){h+=.8*G(y+.13,.06)*G(dB,.9)*K;h-=.5*G(dB,.12)*G(y+.14,.05)*K;h+=.4*G(dF,.15)*sstep(-.4,-.3,y)*sstep(-.02,-.08,y)*K}
+      const c=Math.max(0,Math.min(255,128+h*90)),i=(py*W+px)*4;D[i]=D[i+1]=D[i+2]=c;D[i+3]=255}}
+  g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.wrapS=T.RepeatWrapping;return t}
 function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thigh,shin}:[swim,street]}
   const pos=[],nor=[],si=[],sw=[],uvs=[],idx=[];const hideArr=[];const N3=new T.Matrix3(),v=new T.Vector3(),n=new T.Vector3();
-  const add=(rows,seg,at,M,wfn,fns,kind)=>{const base=pos.length/3,g=new T.BufferGeometry(),lp=[],ly=[];
+  const MK=[],MS=[],MY=[],MT=[];
+  const add=(rows,seg,at,M,wfn,fns,kind,side='')=>{const base=pos.length/3,g=new T.BufferGeometry(),lp=[],ly=[];
     for(const r of rows)for(let i=0;i<=seg;i++){const th=i/seg*Math.PI*2;lp.push(...at(r.y,th));ly.push(r.yc)}
     const id=[];for(let r=0;r<rows.length-1;r++)for(let i=0;i<seg;i++){const a=r*(seg+1)+i,b=a+seg+1;id.push(a,a+1,b,a+1,b+1,b)}
     g.setAttribute('position',new T.Float32BufferAttribute(lp,3));g.setIndex(id);g.computeVertexNormals();
@@ -1401,25 +1436,24 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
     N3.getNormalMatrix(M);for(let k=0;k<lp.length/3;k++){const lx=lp[k*3],lyy=lp[k*3+1],lz=lp[k*3+2];v.set(lx,lyy,lz).applyMatrix4(M);pos.push(v.x,v.y,v.z);n.set(na.getX(k),na.getY(k),na.getZ(k)).applyMatrix3(N3).normalize();
       const bl=BLEND[kind];if(bl){const t=bl.t(lyy);if(t>0){const R=new T.Vector3(v.x,(v.y-bl.cy)*bl.k,v.z*1.1).normalize();n.lerp(R,t).normalize()}}nor.push(n.x,n.y,n.z);hideArr.push(OHIDE[kind]?OHIDE[kind](lyy):false);
       const W=wfn(lx,lyy,v);let tot=0;for(const w of W)tot+=w[1];const W4=[...W,[0,0],[0,0],[0,0]].slice(0,4);for(const w of W4){si.push(w[0]);sw.push(w[1]/tot)}
-      const R=UVREG[kind];uvs.push((k%(seg+1))/seg,R[0]+(lyy-R[2])/(R[3]-R[2])*(R[1]-R[0]))}
+      const R=UVREG[kind];uvs.push((k%(seg+1))/seg,R[0]+(lyy-R[2])/(R[3]-R[2])*(R[1]-R[0]));MK.push(kind);MS.push(side);MY.push(ly[k]);MT.push((k%(seg+1))/seg*Math.PI*2)}
     for(const i of id)idx.push(i+base)};
-  const SHP=o.shape||{},F=o.fem,P=TPROF[F?'f':'m'],B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
+  const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
   const torsoAt=(y,th)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
     if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
-    else{const a=(F?.02:.02)*(SHP.glutes||1)*(F?(B(x,y,.06,.855,.085,.095)+B(x,y,-.06,.855,.085,.095)):(B(x,y,.064,.865,.056,.062)+B(x,y,-.064,.865,.056,.062)))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}return[x,y,z]};
+    else{const a=(F?.02:.02)*(SHP.glutes||1)*(F?(B(x,y,.06,.855,.085,.095)+B(x,y,-.06,.855,.085,.095)):(B(x,y,.064,.865,.056,.062)+B(x,y,-.064,.865,.056,.062)))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
+    if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
   const I=o.I;// bone indices
   add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]},o.fns.torso,'torso');
-  const tube=(prof,fl)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{const r=profAt(A,y)[0];return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
+  const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
   const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
-  const UP=sca([[.035,.004],[.031,.024],[.018,.042],[0,.051],[-.04,.054],[-.1,.05],[-.17,.045],[-.24,.04],[-.29,.036],[-.31,.03],[-.325,.004]]);
-  const FO=sca([[.035,.004],[.03,.028],[.01,.037],[-.04,.042],[-.1,.038],[-.17,.031],[-.23,.026],[-.265,.024],[-.28,.004]]);
-  const TH=F?[[.085,.004],[.08,.046],[.055,.086],[0,.095],[-.08,.091],[-.16,.081],[-.25,.069],[-.33,.057],[-.4,.048],[-.44,.045],[-.46,.004]]:sc([[.085,.004],[.08,.04],[.055,.075],[0,.084],[-.08,.082],[-.16,.074],[-.25,.064],[-.33,.054],[-.4,.048],[-.44,.046],[-.46,.004]]);
-  const SH=F?[[.03,.004],[.025,.034],[0,.043],[-.06,.049],[-.13,.055],[-.2,.05],[-.28,.039],[-.36,.031],[-.41,.029],[-.43,.004]]:sc([[.03,.004],[.025,.034],[0,.045],[-.06,.05],[-.13,.054],[-.2,.05],[-.28,.04],[-.36,.033],[-.41,.031],[-.43,.004]]);
+  const UP=sca(effL(LIMB0.up,PF.up)),FO=sca(effL(LIMB0.fore,PF.fore));
+  const TH=F?effL(LIMB0.thighF,PF.thigh):sc(effL(LIMB0.thighM,PF.thigh)),SH=F?effL(LIMB0.shinF,PF.shin):sc(effL(LIMB0.shinM,PF.shin));
   for(const s of['L','R']){
-    add(rowsFor(-.325,.04,.01,[-.13,-.15]),24,tube(UP,.9),o.M['sh'+s],(lx,ly)=>{const wB=.85*sstep(-.03,.065,ly),wE=.5*sstep(-.25,-.33,ly);return[[I['sh'+s],Math.max(.001,1-wB-wE)],[I.body,wB],[I['el'+s],wE]]},o.fns.up,'up');
-    add(rowsFor(-.28,.035,.012,[]),20,tube(FO,.92),o.M['el'+s],(lx,ly)=>{const wS=.5*sstep(-.03,.04,ly);return[[I['el'+s],1-wS],[I['sh'+s],wS]]},o.fns.fore,'fore');
-    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH.map(([y,r])=>[y,r*LG]),.95),o.M['hip'+s],(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]},o.fns.thigh,'thigh');
-    add(rowsFor(-.43,.03,.012,[]),22,tube(SH.map(([y,r])=>[y,r*LG]),.96),o.M['knee'+s],(lx,ly)=>{const wH=.5*sstep(-.03,.03,ly);return[[I['knee'+s],1-wH],[I['hip'+s],wH]]},o.fns.shin,'shin')}
+    add(rowsFor(-.325,.04,.01,[-.13,-.15]),24,tube(UP,.9,'up',s),o.M['sh'+s],(lx,ly)=>{const wB=.85*sstep(-.03,.065,ly),wE=.5*sstep(-.25,-.33,ly);return[[I['sh'+s],Math.max(.001,1-wB-wE)],[I.body,wB],[I['el'+s],wE]]},o.fns.up,'up',s);
+    add(rowsFor(-.28,.035,.012,[]),20,tube(FO,.92,'fore',s),o.M['el'+s],(lx,ly)=>{const wS=.5*sstep(-.03,.04,ly);return[[I['el'+s],1-wS],[I['sh'+s],wS]]},o.fns.fore,'fore',s);
+    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH.map(([y,r])=>[y,r*LG]),.95,'thigh',s),o.M['hip'+s],(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]},o.fns.thigh,'thigh',s);
+    add(rowsFor(-.43,.03,.012,[]),22,tube(SH.map(([y,r])=>[y,r*LG]),.96,'shin',s),o.M['knee'+s],(lx,ly)=>{const wH=.5*sstep(-.03,.03,ly);return[[I['knee'+s],1-wH],[I['hip'+s],wH]]},o.fns.shin,'shin',s)}
   let shell=null;
   if(o.shorts){const Ls=o.shorts.len,FL=o.shorts.flare||0,top=.03,seg=24,A=TH.slice().reverse().map(([y,r])=>[y,r*LG,r*LG,r*LG]),r0=profAt(A,0)[0];
     const P2=[],N2=[],SI=[],SW2=[],UV=[],ID=[],YY=[];
@@ -1441,7 +1475,7 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(idx);
   const op=new Float32Array(pos.length);for(let k=0;k<pos.length;k++)op[k]=pos[k]+nor[k]*.0075;const geoO=new T.BufferGeometry();geoO.setAttribute('position',new T.BufferAttribute(op,3));geoO.setAttribute('skinIndex',siA);geoO.setAttribute('skinWeight',swA);
   const oidx=[];for(let k=0;k<idx.length;k+=3){if(hideArr[idx[k]]&&hideArr[idx[k+1]]&&hideArr[idx[k+2]])continue;oidx.push(idx[k],idx[k+1],idx[k+2])}geoO.setIndex(oidx);
-  return{geo,geoO,shell}}
+  return{geo,geoO,shell,meta:{k:MK,s:MS,y:MY,t:MT}}}
 function shortsTex(sw,C,suit){const W=PERF.fast?64:128,H=PERF.fast?32:64,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data,base=hx(suit),acc=hx(sw.acc||'#ffffff'),Ls=C.len,top=.03;
   for(let py=0;py<H;py++){const v=1-(py+.5)/H,y=-Ls+v*(top+Ls);for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2;let c=patCol(sw.pat,th*.15/C.ps,(y+.86)/C.ps,th,base,acc);if(y<-Ls+.012)c=C.trim?acc:shade(base,.85);const i=(py*W+px)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=255}}
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;t.wrapS=T.RepeatWrapping;return t}
@@ -1512,13 +1546,15 @@ function cutDefault(sp){const k=CASTCUT[sp.n]||[],o={...CUT0};
   if(sp.pat==='trim')o.trim=1;return o}
 function fullCut(sp){return{...cutDefault(sp),...(sp.cut||{})}}
 let SUITS=[];
-function baseSpec(n){const b=BANK.find(x=>x.n===n),lk=looks[n]||{},sw=SWIM[n]||{},B={...BODY0},H={...HEAD0};
+const DEFN={Marco:.85,Minji:.6,Sam:.65,Kai:.5,Leo:.4,Daniel:.3,Theo:.3,Jonah:.12,Gwen:.35,Grace:.2,YOU:.3};
+function baseSpec(n){const b0=baseSpec0(n);return{...b0,def:DEFN[n]??(b0.sex==='m'?.3:.15),defg:{abs:1,chest:1,arms:1,legs:1,back:1},prof:{},nodes:[]}}
+function baseSpec0(n){const b=BANK.find(x=>x.n===n),lk=looks[n]||{},sw=SWIM[n]||{},B={...BODY0},H={...HEAD0};
   if(n==='YOU')return{n,role:'player',sex:'m',style:'short',hair:'#3a2a1f',eye:'#6b4a2a',skin:'#f1c7a8',suit:'#e07a3c',acc:'#ffffff',swim:'trunks',pat:'sidestripe',street:['#3d5a80','#2b2b33'],hat:false,body:B,head:H,persona:''};
   if(STAFFN.includes(n))return{n,role:'staff',sex:lk.sex||'f',style:lk.style||'bob',hair:'#2a1f1a',eye:lk.eye||'#4a3020',skin:'#e9b996',suit:'#1E5A8A',acc:'#ffffff',swim:'',pat:'solid',street:['#1E5A8A','#24303c'],hat:false,body:B,head:H,persona:PERSONA[n]||''};
   if(!b)return{n,role:'guest',sex:'f',style:'bob',hair:'#2b211c',eye:'#3a2618',skin:'#f2d4bd',suit:'#3fb0b0',acc:'#ffffff',swim:'one',pat:'solid',street:['#c8d8e8','#3b3f58'],hat:false,body:B,head:H,persona:PERSONA[n]||''};
   return{n,role:'guest',sex:b.sex,style:b.style,hair:b.hair,eye:b.eye,skin:b.skin,suit:b.suit,acc:sw.acc||'#ffffff',swim:b.sex==='f'?(sw.k||'one'):'trunks',pat:sw.pat||'solid',street:b.street.slice(),hat:BANK.indexOf(b)%3===1,body:B,head:H,persona:PERSONA[n]||''}}
 function defaultSpecs(){return[...BANK.map(b=>baseSpec(b.n)),...STAFFN.map(baseSpec)]}
-function fillSpec(s){const d=baseSpec(s.n);return{...d,...s,body:{...BODY0,...(s.body||{})},head:{...HEAD0,...(s.head||{})},street:(s.street||d.street).slice(0,2)}}
+function fillSpec(s){const d=baseSpec(s.n);return{...d,...s,body:{...BODY0,...(s.body||{})},head:{...HEAD0,...(s.head||{})},street:(s.street||d.street).slice(0,2),defg:{...d.defg,...(s.defg||{})},prof:JSON.parse(JSON.stringify(s.prof||{})),nodes:JSON.parse(JSON.stringify(s.nodes||[]))}}
 function playerSpec(){try{const j=JSON.parse(localStorage.getItem('tributary.player')||'null');if(j)return fillSpec({...j,n:'YOU',role:'player'})}catch(e){}return baseSpec('YOU')}
 function specFor(n){return n==='YOU'?playerSpec():(CHARS[n]||baseSpec(n))}
 function applyChars(list,src){if(!Array.isArray(list)||!list.length)return;const gl=[],next={};
@@ -1562,7 +1598,7 @@ function makeHat(){const pts=[[.158,0],[.158,.012],[.152,.05],[.138,.1],[.112,.1
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;HATM=new T.MeshStandardMaterial({map:t,roughness:1,color:lin('#c4c4c0')})}
 
 function makeChar(suit,hair,sk,isStaff,name,spec){
-  const SP0=spec||specFor(name);if(!isStaff)suit=SP0.suit;hair=SP0.hair;sk=SP0.skin;const BD=SP0.body,HD=SP0.head,CUT=fullCut(SP0);
+  const SP0=spec||specFor(name);if(!isStaff)suit=SP0.suit;hair=SP0.hair;sk=SP0.skin;const BD=SP0.body,HD=SP0.head,CUT=fullCut(SP0),PT=effT(SP0.sex==='f',SP0.prof);
   if(!HATG)makeHat();SWEATM??=new T.MeshStandardMaterial({color:lin('#d8f1ff'),emissive:lin('#6fb8e8'),emissiveIntensity:.35,transparent:true,opacity:.92,roughness:.03,metalness:.1,envMapIntensity:2.4});
   const L={sex:SP0.sex,style:SP0.style,eye:SP0.eye,street:SP0.street,eyeS:HD.eyes,eyeG:HD.eyeGap},fem=L.sex==='f';
   const g=new T.Group(),body=new T.Bone();g.add(body);
@@ -1590,9 +1626,9 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
   // one continuous skinned body with clothes painted on (crisp hems)
   g.updateMatrixWorld(true);const Mrel=b=>new T.Matrix4().copy(b.matrixWorld);
   const bones=[body,LL.hip,LL.knee,LR.hip,LR.knee,AL.sh,AL.el,AR.sh,AR.el],I={body:0,hipL:1,kneeL:2,hipR:3,kneeR:4,shL:5,elL:6,shR:7,elR:8};
-  const SB=makeSkinBody({fem,shape:BD,I,shorts:!isStaff&&CUT.loose&&CUT.len>.02?{len:CUT.len,flare:CUT.flare}:null,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
+  const SB=makeSkinBody({fem,shape:BD,I,P:PT,prof:SP0.prof,nodes:SP0.nodes,shorts:!isStaff&&CUT.loose&&CUT.len>.02?{len:CUT.len,flare:CUT.flare}:null,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
     fns:{torso:[(x,y)=>torsoSwim(x,y),(x,y)=>torsoStreet(x,y)],up:[(x,y)=>upSwim(x,y),(x,y)=>upStreet(x,y)],fore:[()=>sk,()=>sk],thigh:[(x,y)=>thighSwim(x,y),()=>thighStreet()],shin:[()=>shinSwim(),()=>shinStreet()]}});
-  if(fem&&!isStaff){const P0=TPROF.f,o_=0,surf=(x,y,front)=>{const mm=shapeW(BD,y),[w0,f0,b0]=profAt(P0,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*(BD.chest||1)*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
+  if(fem&&!isStaff){const P0=PT,o_=0,surf=(x,y,front)=>{const mm=shapeW(BD,y),[w0,f0,b0]=profAt(P0,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*(BD.chest||1)*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
     const straps=[],C=CUT,R=C.strap==='wide'?.012:.0075,bik=SP0.swim==='bikini';
     if(C.strap==='halter'){for(const sd of[-1,1]){const x0=.05,pts=[[x0,topEdge(C,x0,1)-.004,1],[.046,1.36,1]].map(([x,y,fr])=>new T.Vector3(sd*x,y,surf(x,y,fr)));
         for(const [y,ph] of[[1.42,.95],[1.455,1.45],[1.47,2.1],[1.47,2.65],[1.468,Math.PI]]){const [w,f,b]=profAt(P0,y);pts.push(new T.Vector3(sd*(w+.006)*Math.sin(ph),y,(Math.cos(ph)>0?f:b)*Math.cos(ph)*1.08))}
@@ -1602,10 +1638,11 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
         if(yb<1.22)bk.push([.07,(1.33+yb)/2]);bk.push([.066,yb]);const pts=[...fr.map(([x,y])=>[x,y,1]),...bk.map(([x,y])=>[x,y,0])].map(([x,y,f])=>new T.Vector3(sd*x,y,(y>1.37?(f?.014:-.014):surf(x,y,f))));
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
     o_straps.push(...straps)}
-  const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,cut:CUT,stripeShirt:(name||'').length%3===0};
+  const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,cut:CUT,P:PT,stripeShirt:(name||'').length%3===0};
   const texSwim=paintSkinTex({...tsp,street:false}),texStreet=isStaff?texSwim:paintSkinTex({...tsp,street:true});
   const bodyMat=new T.MeshToonMaterial({map:texSwim,gradientMap:gradSoft,toneMapped:false,skinning:true});
-  if(!fem&&!isStaff&&CUT.string){const yd=CUT.rise-.02,f=profAt(TPROF.m,yd)[1]*(1+(shapeW(BD,yd)-1)*.5)+.004;for(const sd of[-1,1]){const d=part(body,CYL,swimSpec.acc||'#ffffff',sd*.011,yd-.025,f,.0035,.05,.0035,false);d.rotation.z=sd*.12;o_straps.push(d)}}
+  const DEF=isStaff?0:Math.max(0,Math.min(1,+SP0.def||0)),DG=SP0.defg||{};if(DEF>.01&&Object.values({abs:1,chest:1,arms:1,legs:1,back:1,...DG}).some(Boolean)){bodyMat.bumpMap=defTex({...tsp,defg:DG});bodyMat.bumpScale=DEF*DEFK}
+  if(!fem&&!isStaff&&CUT.string){const yd=CUT.rise-.02,f=profAt(PT,yd)[1]*(1+(shapeW(BD,yd)-1)*.5)+.004;for(const sd of[-1,1]){const d=part(body,CYL,swimSpec.acc||'#ffffff',sd*.011,yd-.025,f,.0035,.05,.0035,false);d.rotation.z=sd*.12;o_straps.push(d)}}
   const skel=new T.Skeleton(bones);const bm=new T.SkinnedMesh(SB.geo,bodyMat);bm.castShadow=true;bm.receiveShadow=true;bm.frustumCulled=false;g.add(bm);
   const bo=new T.SkinnedMesh(SB.geoO,SKINO);bo.frustumCulled=false;g.add(bo);g.updateMatrixWorld(true);bm.bind(skel);bo.bind(skel,bm.bindMatrix);outs.push(bo);
   if(SB.shell){const sm=new T.SkinnedMesh(SB.shell.geo,new T.MeshToonMaterial({map:shortsTex(swimSpec,CUT,suit),gradientMap:gradSoft,toneMapped:false,skinning:true,side:T.DoubleSide}));sm.castShadow=true;sm.frustumCulled=false;g.add(sm);
@@ -1624,8 +1661,8 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
   const oil=new T.Mesh(CYL,oilM);oil.scale.set(.022,.11,.022);oil.position.set(0,-.05,.04);AR.hand.add(oil);oil.visible=false;
   const ladle=new T.Group();AR.hand.add(ladle);{const h=new T.Mesh(CYL,woodM);h.scale.set(.012,.45,.012);h.position.set(0,-.05,.2);h.rotation.x=Math.PI/2;ladle.add(h);const b=new T.Mesh(SPH,woodM);b.scale.set(.05,.03,.05);b.position.set(0,-.07,.43);ladle.add(b)}ladle.visible=false;
   const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15*(BD.height||1);g.add(tag);
-  const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,tag,hat,hairM,ph:Math.random()*6};
-  o.setStreet=on=>{if(isStaff)return;bodyMat.map=on?texStreet:texSwim;for(const t of o_straps)t.visible=!on;for(const Lg of[LL,LR])for(const f of Lg.feet)f.material=soft(on?shoeSt:sk)};o.street=true;
+  const o={pick:{geo:SB.geo,meta:SB.meta,H:BD.height||1},g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,tag,hat,hairM,ph:Math.random()*6};
+  o.setStreet=on=>{if(isStaff)return;bodyMat.map=on?texStreet:texSwim;if(bodyMat.bumpMap)bodyMat.bumpScale=DEF*DEFK*(on?.25:1);for(const t of o_straps)t.visible=!on;for(const Lg of[LL,LR])for(const f of Lg.feet)f.material=soft(on?shoeSt:sk)};o.street=true;
   o.band=part(AL.hand,CYL,'#3B8FD0',0,.03,0,.04,.03,.04,false);o.band.visible=false;
   if(!isStaff){o.drops=[];for(const [pa,x,y,z] of [[head,.055,.07,.105],[head,-.065,.05,.105],[head,.1,-.02,.07],[head,-.1,-.03,.06],[head,.03,-.07,.1],[body,.07,1.27,.15],[body,-.06,1.14,.15],[body,.03,1.0,.15]]){const d=new T.Mesh(SPH,SWEATM);d.scale.set(.017,.027,.017);d.position.set(x,y,z);d.visible=false;pa.add(d);o.drops.push({d,y0:y,ph:Math.random()})}}
   if(isStaff){o.carryT=new T.Group();for(let i=0;i<4;i++){const t=new T.Mesh(BOX,towelM);t.scale.set(.34,.05,.26);t.position.set(0,1.02+i*.052,.3);o.carryT.add(t)}o.carryT.visible=false;body.add(o.carryT);
@@ -1663,6 +1700,7 @@ function drawCreator(){const sp=CR.sp,el=document.getElementById('creator');el.c
    <div class="crow">${chip('sex','m','Man')}${chip('sex','f','Woman')}</div>
    <label class="sl">Build <input type="range" id="crBuild" min="0" max="1" step=".01" value="${CR.build}"><span>slim · strong</span></label>
    <label class="sl">Height <input type="range" id="crHeight" min=".92" max="1.08" step=".005" value="${sp.body.height}"></label>
+   <label class="sl">Muscle tone <input type="range" id="crTone" min="0" max="1" step=".01" value="${sp.def??.3}"><span>smooth · toned</span></label>
    <p class="lab">Skin</p><div class="crow">${sw('skin',PAL.skin)}</div>
    <p class="lab">Hair</p><div class="crow">${STYLES.map(([v,l])=>chip('style',v,l)).join('')}</div><div class="crow">${sw('hair',PAL.hair)}</div>
    <p class="lab">Eyes</p><div class="crow">${sw('eye',PAL.eye)}</div>
@@ -1677,6 +1715,7 @@ function drawCreator(){const sp=CR.sp,el=document.getElementById('creator');el.c
   for(const b of el.querySelectorAll('[data-design]'))b.onclick=()=>{const d=SUITS[+b.dataset.design];Object.assign(sp,{swim:d.swim,pat:d.pat,suit:d.suit,acc:d.acc,cut:{...CUT0,...d.cut}});crRebuild();drawCreator()};
   document.getElementById('crBuild').oninput=e=>{CR.build=+e.target.value;applyBuild();crRebuild()};
   document.getElementById('crHeight').oninput=e=>{sp.body.height=+e.target.value;crRebuild()};
+  document.getElementById('crTone').oninput=e=>{sp.def=+e.target.value;crRebuild()};
   document.getElementById('crGo').onclick=closeCreator}
 function applyBuild(){const t=CR.build,b=CR.sp.body,f=CR.sp.sex==='f';Object.assign(b,{shoulders:.95+.1*t,arms:.9+.25*t,legs:.92+.2*t,chest:f?.85+.3*t:.85+.35*t,waist:.96+.1*t,hips:f?.97+.08*t:1,glutes:.9+.2*t})}
 function closeCreator(){try{localStorage.setItem('tributary.player',JSON.stringify(CR.sp))}catch(e){}document.getElementById('creator').classList.remove('on');editorShow(false);PREVIEW.c=null;camPitch=.36;camYaw=Math.PI;P.x=880;P.y=92;P.dressed='street';P.m.g.position.set(P.x*S,0,P.y*S);state.paused=false;P.m.streetOn=null;CR=null}
@@ -1696,7 +1735,7 @@ async function openAdmin(){document.getElementById('start').classList.remove('on
   if(!list){try{const r=await fetch('characters.json',{cache:'no-store'});if(r.ok){const j=await r.json();const L=Array.isArray(j)?j:j&&j.characters;if(L&&L.length){list=L;src='website'}if(j&&Array.isArray(j.suits))suits=j.suits}}catch(e){}}
   if(!list)list=defaultSpecs();ADM={suits:suits||[],list:list.map(fillSpec).map(c=>c.role==='staff'?c:{...c,cut:fullCut(c)}),i:0,out:'swim',src,dirty:src==='draft on this device',c:{x:880,y:175,n:'preview',dressed:'swim',hat:false}};
   PREVIEW.c=ADM.c;PREVIEW.d=2.5;PREVIEW.look=vh>vw?.55:.95;camYaw=0;camPitch=.1;drawAdmin();admPreview()}
-let admT=0;function admPreview(){clearTimeout(admT);admT=setTimeout(()=>{const sp=ADM.list[ADM.i];rebuildChar(ADM.c,sp,sp.role==='staff');ADM.c.dressed=ADM.out},60)}
+let admT=0;function admPreview(){clearTimeout(admT);admT=setTimeout(()=>{const sp=ADM.list[ADM.i];rebuildChar(ADM.c,sp,sp.role==='staff');ADM.c.dressed=ADM.out;admMarkers()},60)}
 function admChanged(){ADM.dirty=true;SUITS=ADM.suits;try{localStorage.setItem('tributary.adminDraft',JSON.stringify({characters:ADM.list,suits:ADM.suits}))}catch(e){}admStatus('Unsaved changes (kept on this device)');admPreview()}
 function admStatus(t,bad){const e=document.getElementById('admStat');if(e){e.textContent=t;e.className=bad?'bad':''}}
 function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];el.classList.add('on');
@@ -1708,18 +1747,18 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
     return`<label class="fl">${l}<input type="text" data-p="${p}" value="${esc(v)}"></label>`};
   el.innerHTML=`<div class="ah"><b>Character editor</b><select id="admSel">${ADM.list.map((c,i)=>`<option value="${i}"${i===ADM.i?' selected':''}>${esc(c.n)}${c.role==='staff'?' (staff)':''}</option>`).join('')}</select></div>
    <div class="arow"><button type="button" id="admNew">New</button><button type="button" id="admDup">Duplicate</button><button type="button" id="admDel">Delete</button><button type="button" id="admOut">Show ${ADM.out==='swim'?'street clothes':'swimwear'}</button></div>
-   ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${fs.map(field).join('')}</details>`+(i===3?suitHTML(sp):'')).join('')}
+   ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${fs.map(field).join('')}</details>`+(i===1?shapeHTML(sp):'')+(i===3?suitHTML(sp):'')).join('')}
    <div class="afoot"><button type="button" class="btn" id="admSave">Save to website</button><button type="button" id="admDl">Download file</button><button type="button" id="admRev">Discard draft</button></div>
    <p id="admStat"></p>
    <details><summary>GitHub key (needed once per device)</summary><p class="small">Create a fine-grained token on GitHub for the repository <b>${REPO}</b> with <b>Contents: Read and write</b>. It is stored only in this browser.</p>
     <input type="password" id="admTok" placeholder="github_pat_…" autocomplete="off"><button type="button" id="admTokSave">Remember on this device</button><button type="button" id="admTokClr">Forget</button></details>`;
   admStatus(ADM.dirty?'Unsaved changes (kept on this device)':`Loaded from the ${ADM.src}`);
-  document.getElementById('admSel').onchange=e=>{ADM.i=+e.target.value;drawAdmin();admPreview()};
+  document.getElementById('admSel').onchange=e=>{ADM.i=+e.target.value;ADM.ni=-1;ADM.nodeMode=false;drawAdmin();admPreview()};
   for(const inp of el.querySelectorAll('[data-p]')){const p=inp.dataset.p;inp.addEventListener(inp.type==='range'||inp.tagName==='TEXTAREA'||inp.type==='text'||inp.type==='color'?'input':'change',()=>{let v=inp.type==='checkbox'?inp.checked:inp.type==='range'?+inp.value:inp.value;
     if(p==='n'){v=v.replace(/[^\w \-']/g,'').slice(0,20)||'Guest';if(ADM.list.some((c,j)=>j!==ADM.i&&c.n===v))return}
-    spth(sp,p,v);if(inp.type==='range')inp.nextElementSibling.textContent=(+v).toFixed(p.startsWith('cut.')?3:2);if(p==='n'||p==='role')document.getElementById('admSel').options[ADM.i].textContent=sp.n+(sp.role==='staff'?' (staff)':'');
+    spth(sp,p,v);if(inp.type==='range')inp.nextElementSibling.textContent=(+v).toFixed(p.startsWith('cut.')||p.startsWith('nodes.')?3:2);if(p==='nodes.'+ADM.ni+'.m')drawAdmin();if(p==='n'||p==='role')document.getElementById('admSel').options[ADM.i].textContent=sp.n+(sp.role==='staff'?' (staff)':'');
     if(p==='sex'){sp.swim=v==='f'?'one':'trunks';sp.pat='solid';sp.cut=cutDefault({...sp,n:''});drawAdmin()}if(p==='role'&&v!=='staff'&&!sp.cut)sp.cut=fullCut(sp);if(p==='cut.loose'||p==='cut.strap')drawAdmin();admChanged()})}
-  wireSuit(el,sp);
+  wireSuit(el,sp);wireShape(el,sp);
   document.getElementById('admNew').onclick=()=>{let k=1;while(ADM.list.some(c=>c.n==='New guest '+k))k++;ADM.list.push(fillSpec({n:'New guest '+k,role:'guest'}));ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
   document.getElementById('admDup').onclick=()=>{const c=JSON.parse(JSON.stringify(sp));let k=2;while(ADM.list.some(x=>x.n===sp.n+' '+k))k++;c.n=sp.n+' '+k;c.role=sp.role==='staff'?'guest':sp.role;ADM.list.push(c);ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
   document.getElementById('admDel').onclick=()=>{if(ADM.list.length<2||sp.role==='staff'){admStatus('Staff and the last guest can\'t be deleted.',1);return}if(!confirmDel(sp.n))return;ADM.list.splice(ADM.i,1);ADM.i=Math.max(0,ADM.i-1);drawAdmin();admChanged()};
@@ -1730,6 +1769,65 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
   const tk=document.getElementById('admTok');try{tk.value=localStorage.getItem('tributary.gh')||''}catch(e){}
   document.getElementById('admTokSave').onclick=()=>{try{localStorage.setItem('tributary.gh',tk.value.trim());admStatus('Key saved on this device.')}catch(e){admStatus('Could not save the key in this browser.',1)}};
   document.getElementById('admTokClr').onclick=()=>{try{localStorage.removeItem('tributary.gh')}catch(e){}tk.value='';admStatus('Key removed from this device.')}}
+// ---------- shaping: curve nodes, push/pull nodes, muscle definition ----------
+const PARTN={torso:'Body',up:'Upper arm',fore:'Forearm',thigh:'Thigh',shin:'Lower leg'},PARTY={torso:[.76,1.54],up:[-.32,.03],fore:[-.27,.03],thigh:[-.45,.08],shin:[-.42,.02]};
+const CVIEWS=[['front','Front (width)'],['side','Side (front / back)'],['arms','Arms'],['legs','Legs']];
+function shapeHTML(sp){if(!ADM.cv)ADM.cv={view:'front',soft:.5};if(ADM.ni==null)ADM.ni=-1;const N=sp.nodes||(sp.nodes=[]),n=N[ADM.ni];
+  const sl=(p,l,a,b,st,dv)=>`<label class="sl">${l}<input type="range" data-p="${p}" min="${a}" max="${b}" step="${st}" value="${gp(sp,p)}"><output>${(+gp(sp,p)).toFixed(dv)}</output></label>`;
+  return`<details open><summary>Shape: curve nodes</summary>
+   <div class="crow">${CVIEWS.map(([v,l])=>`<button type="button" class="chp${ADM.cv.view===v?' on':''}" data-cvv="${v}">${l}</button>`).join('')}</div>
+   <canvas id="crv" width="320" height="380"></canvas>
+   <label class="sl">Soft ↔ tight<input type="range" id="crvSoft" min="0" max="1" step=".01" value="${1-ADM.cv.soft}"><output>${ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'}</output></label>
+   <p class="small">Drag a dot sideways. Soft also moves the neighbouring dots a little; tight keeps the change local. Left and right always match.</p>
+   <div class="arow"><button type="button" id="crvReset">Reset this view</button></div></details>
+  <details open><summary>Shape: push / pull nodes</summary>
+   <div class="arow"><button type="button" id="ndAdd" class="${ADM.nodeMode?'btn':''}">${ADM.nodeMode?'Tap the body now… (tap here to stop)':'Add a node: tap the body'}</button></div>
+   ${N.length?`<div class="crow">${N.map((q,i)=>`<button type="button" class="chp${i===ADM.ni?' on':''}" data-nd="${i}">${i+1}. ${PARTN[q.p]||q.p}</button>`).join('')}</div>`:'<p class="small">No nodes yet. Turn on "Add a node", then tap where you want to push or pull.</p>'}
+   ${n?`${sl(`nodes.${ADM.ni}.d`,'Pull in ↔ push out',-.03,.03,.0005,3)}${sl(`nodes.${ADM.ni}.r`,'Size (how far it spreads)',.015,.12,.001,3)}${sl(`nodes.${ADM.ni}.y`,'Move up / down',PARTY[n.p][0],PARTY[n.p][1],.002,3)}${sl(`nodes.${ADM.ni}.th`,'Move around',0,6.283,.01,2)}
+     <label class="fl ck"><input type="checkbox" data-p="nodes.${ADM.ni}.m"${n.m!==false?' checked':''}> Mirror on the other side</label><div class="arow"><button type="button" id="ndDel">Delete this node</button></div>`:''}
+   <p class="small">Push is strongest in the middle and fades to nothing at the edge. Strength is limited by size, so a small node can't make a spike.</p></details>
+  <details><summary>Muscle definition</summary>${sl('def','Smooth ↔ very toned',0,1,.01,2)}
+   ${[['abs','Abs and waist'],['chest','Chest and collarbones'],['arms','Arms'],['legs','Legs'],['back','Back']].map(([k,l])=>`<label class="fl ck"><input type="checkbox" data-p="defg.${k}"${sp.defg&&sp.defg[k]===0||sp.defg&&sp.defg[k]===false?'':' checked'}> ${l}</label>`).join('')}
+   <p class="small">Soft cartoon shading that follows the light. Shows less under street clothes.</p></details>`}
+// curve editor geometry: which control points each view shows, and how to read/write their factors
+function cvModel(sp,view){const f=sp.sex==='f',B=sp.body,pf=sp.prof||(sp.prof={}),ws=y=>shapeW(B,y);
+  if(view==='front'||view==='side'){const T0=TPROF[f?'f':'m'],k0=view==='front'?[0]:[1,2];
+    return{y0:.75,y1:1.55,curves:k0.map(k=>({sgn:view==='front'?0:(k===1?1:-1),pts:T0.map((p,i)=>({y:p[0],base:p[k+1]*(k===0?ws(p[0]):1+(ws(p[0])-1)*.5),get:()=>((pf.torso||[])[i]||[1,1,1])[k],set:v=>{pf.torso=pf.torso||T0.map(()=>[1,1,1]);pf.torso[i]=(pf.torso[i]||[1,1,1]).slice();pf.torso[i][k]=v},edit:i>0&&i<T0.length-1}))}))}}
+  const parts=view==='arms'?[['up',LIMB0.up,(f?.83:1)*B.arms],['fore',LIMB0.fore,(f?.83:1)*B.arms]]:[['thigh',f?LIMB0.thighF:LIMB0.thighM,(f?1:.92)*B.legs],['shin',f?LIMB0.shinF:LIMB0.shinM,(f?1:.92)*B.legs]];
+  let off=0;const curves=[];for(const [key,arr,sc] of parts){const top=arr[0][0],o=off-top;curves.push({sgn:0,pts:arr.map(([y,r],i)=>({y:y+o,base:r*sc,get:()=>((pf[key]||[])[i]||1),set:v=>{pf[key]=pf[key]||arr.map(()=>1);pf[key][i]=v},edit:i>0&&i<arr.length-1}))});off+=arr[arr.length-1][0]-top-.02}
+  return{y0:off,y1:0,curves}}
+function drawCurve(){const c=document.getElementById('crv');if(!c)return;const g=c.getContext('2d'),sp=ADM.list[ADM.i],M=cvModel(sp,ADM.cv.view),W=c.width,H=c.height,sc=(H-30)/(M.y1-M.y0),xs=ADM.cv.view==='arms'||ADM.cv.view==='legs'?2.4:1,X=sc*xs,cx=W/2,Y=y=>15+(M.y1-y)*sc;
+  g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.stroke();
+  ADM.cvDots=[];for(const cu of M.curves){const P2=cu.pts.map(p=>[p.y,p.base*p.get()]),A=P2.slice().sort((a,b)=>a[0]-b[0]).map(([y,r])=>[y,r,r,r]);
+    const sides=cu.sgn?[cu.sgn]:[-1,1];g.fillStyle='rgba(242,212,189,.85)';g.strokeStyle='#2a2230';g.lineWidth=2;
+    g.beginPath();const ys=[];for(let y=A[0][0];y<=A[A.length-1][0]+1e-9;y+=.004)ys.push(y);
+    ys.forEach((y,j)=>{const x=cx+sides[sides.length-1]*profAt(A,y)[0]*X;j?g.lineTo(x,Y(y)):g.moveTo(x,Y(y))});
+    ys.slice().reverse().forEach(y=>{const x=sides.length>1?cx-profAt(A,y)[0]*X:cx;g.lineTo(x,Y(y))});g.closePath();g.fill();g.stroke();
+    cu.pts.forEach((p,i)=>{if(!p.edit)return;for(const sd of sides){const x=cx+sd*p.base*p.get()*X,y=Y(p.y);g.fillStyle=Math.abs(p.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(x,y,7,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();ADM.cvDots.push({x,y,sd,p,cu,i})}})}
+  if(ADM.cv.view==='side'){g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('back',8,H-8);g.fillText('front',W-40,H-8)}
+  if(xs>1){g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('width shown ×2.4',8,H-8)}
+  ADM.cvMap={sc:X,cx}}
+function wireShape(el,sp){drawCurve();const c=document.getElementById('crv');
+  for(const b of el.querySelectorAll('[data-cvv]'))b.onclick=()=>{ADM.cv.view=b.dataset.cvv;drawAdmin()};
+  const so=document.getElementById('crvSoft');if(so)so.oninput=e=>{ADM.cv.soft=1-(+e.target.value);so.nextElementSibling.textContent=ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'};
+  const rs=document.getElementById('crvReset');if(rs)rs.onclick=()=>{const v=ADM.cv.view,pf=sp.prof||{};if(v==='front'||v==='side'){if(pf.torso)pf.torso=pf.torso.map(t=>v==='front'?[1,t[1],t[2]]:[t[0],1,1])}else if(v==='arms'){delete pf.up;delete pf.fore}else{delete pf.thigh;delete pf.shin}drawCurve();admChanged()};
+  if(c){let dr=null;const at=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+    c.onpointerdown=e=>{const [x,y]=at(e);let best=null,bd=22;for(const d of ADM.cvDots){const q=Math.hypot(d.x-x,d.y-y);if(q<bd){bd=q;best=d}}if(!best)return;dr=best;c.setPointerCapture(e.pointerId);e.preventDefault()};
+    c.onpointermove=e=>{if(!dr)return;const [x]=at(e),{sc,cx}=ADM.cvMap,r=Math.max(.004,(x-cx)*dr.sd/sc),old=dr.p.get(),nv=Math.max(.5,Math.min(1.7,r/dr.p.base)),ratio=nv/old;dr.p.set(nv);
+      const s=ADM.cv.soft;for(const [k,wt] of[[1,.55],[2,.2]])for(const j of[dr.i-k,dr.i+k]){const q=dr.cu.pts[j];if(q&&q.edit)q.set(Math.max(.5,Math.min(1.7,q.get()*(1+(ratio-1)*wt*s))))}
+      drawCurve();admPreview()};
+    c.onpointerup=c.onpointercancel=()=>{if(dr){dr=null;admChanged()}}}
+  const na=document.getElementById('ndAdd');if(na)na.onclick=()=>{ADM.nodeMode=!ADM.nodeMode;drawAdmin()};
+  for(const b of el.querySelectorAll('[data-nd]'))b.onclick=()=>{ADM.ni=+b.dataset.nd;drawAdmin();admMarkers()};
+  const nd=document.getElementById('ndDel');if(nd)nd.onclick=()=>{sp.nodes.splice(ADM.ni,1);ADM.ni=-1;drawAdmin();admChanged()}}
+// tap the 3D preview to drop a node where you tapped
+function pickMesh(c){const m=c.m;if(!m||!m.pick)return null;if(!m.pickMesh){const pm=new T.Mesh(m.pick.geo,new T.MeshBasicMaterial({visible:false}));pm.scale.setScalar(m.pick.H);m.g.add(pm);m.pickMesh=pm}return m.pickMesh}
+function admPick(x,y){const sp=ADM.list[ADM.i],pm=pickMesh(ADM.c);if(!pm||sp.role==='staff')return;ADM.c.m.g.updateMatrixWorld(true);ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);
+  const h=picker.intersectObject(pm)[0];if(!h){admStatus('Missed the body. Tap right on the character.',1);return}const M=ADM.c.m.pick.meta,a=h.face.a,p=M.k[a];
+  sp.nodes.push({p,s:p==='torso'?'':M.s[a],y:+M.y[a].toFixed(3),th:+M.t[a].toFixed(3),r:.04,d:.008,m:true});ADM.ni=sp.nodes.length-1;ADM.nodeMode=false;drawAdmin();admChanged()}
+let admMk=[];function admMarkers(){for(const m of admMk)m.parent&&m.parent.remove(m);admMk=[];if(!ADM)return;const sp=ADM.list[ADM.i],pm=pickMesh(ADM.c);if(!pm||!sp.nodes)return;const M=ADM.c.m.pick.meta,pos=ADM.c.m.pick.geo.attributes.position;
+  sp.nodes.forEach((n,i)=>{let best=-1,bd=1e9;for(let k=0;k<M.k.length;k++){if(M.k[k]!==n.p||(n.p!=='torso'&&M.s[k]!==n.s))continue;const q=(M.y[k]-n.y)**2+(angW(M.t[k]-n.th)*.12)**2;if(q<bd){bd=q;best=k}}if(best<0)return;
+    const mk=new T.Mesh(SPH,new T.MeshBasicMaterial({color:i===ADM.ni?'#e07a3c':'#3B8FD0',depthTest:false,transparent:true,opacity:.95,toneMapped:false}));mk.renderOrder=10;mk.scale.setScalar(i===ADM.ni?.018:.012);mk.position.set(pos.getX(best),pos.getY(best),pos.getZ(best));pm.add(mk);admMk.push(mk)})}
 // ---------- swimsuit designer (inside the admin editor) ----------
 const NECKS=[['straight','Straight'],['sweet','Sweetheart'],['v','V'],['scoop','Scoop']],STRAPS=[['thin','Thin straps'],['wide','Wide straps'],['halter','Halter (ties behind neck)'],['none','Strapless']];
 function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit designer</summary><p class="small">Staff always wear the Tributary uniform.</p></details>`;
@@ -1781,7 +1879,7 @@ const ct=new T.Vector3(12,0,10),cp=new T.Vector3(12,16,30),tmp=new T.Vector3(),t
 const vb=document.getElementById('view');vb.textContent='Camera: Follow';vb.addEventListener('click',()=>{view=(view+1)%3;vb.textContent='Camera: '+VIEWS[view].n.replace(' cam','');roomLabels.forEach(l=>l.visible=!!VIEWS[view].fixed)});
 // drag (touch or mouse) on the scene to orbit the camera, wheel to zoom
 const picker=new T.Raycaster(),ndc=new T.Vector2();
-function handleTap(x,y){if(!P||!state||!state.on||state.paused)return;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);
+function handleTap(x,y){if(PREVIEW.on&&ADM&&ADM.nodeMode){admPick(x,y);return}if(!P||!state||!state.on||state.paused)return;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);
   const tags=[...staff,...guests].filter(c=>c.m&&c.m.tag).map(c=>c.m.tag);const hit=picker.intersectObjects(tags,false)[0];
   if(hit){const c=[...staff,...guests].find(c=>c.m.tag===hit.object);if(c){openPerson(c);return}}
   const st=picker.intersectObjects(stationTags,false)[0];if(st){const a=st.object.userData.act;standUp();P.auto={c:{x:a.x,y:a.y},act:a,path:findPath(P,{x:a.x,y:a.y}),t:0};P.path=P.auto.path;return}
