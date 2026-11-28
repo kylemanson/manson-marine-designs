@@ -1387,7 +1387,7 @@ function suitBands(fem,C,k){const E=C.edges||{},e=(n,th)=>edgeAt(E[n],th),T=[],L
     if(k==='bikini'){T.push({key:'bot',lo:botLo,hi:th=>C.rise-.012*Math.max(0,Math.cos(th))+e('bh',th)});
       T.push({key:'top',lo:th=>{const t=sstep(-.35,.25,Math.cos(th)),bLo=C.back-.045;return(C.topLo<1.12?C.topLo:bLo+(C.topLo-bLo)*t)+e('tl',th)},hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)})}
     else T.push({key:'one',lo:botLo,hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)});
-    L.push({key:'leg',lo:th=>(C.len>0?-C.len:.83+Math.max(0,C.leg-.04)*.7-.86)+e('lg',th),hi:()=>.062})}
+    if(C.len>0)L.push({key:'leg',lo:th=>-C.len+e('lg',th),hi:()=>.062})}
   else{T.push({key:'men',band:!!C.band,lo:()=>.745,hi:th=>C.rise+e('bh',th)});if(!(C.loose&&C.len>.02))L.push({key:'leg',lo:th=>-C.len+e('lg',th),hi:()=>.062})}
   return{T,L}}
 function suitEdges(fem,C,k){const legs=C.len>0?['lg']:['bl'];return fem?(k==='bikini'?['th','tl','bh',...legs]:['th',...legs]):(C.loose&&C.len>.02?['bh']:['bh','lg'])}
@@ -1432,12 +1432,16 @@ function defTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.cre
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.wrapS=T.RepeatWrapping;return t}
 function shapeSampler(o){
   const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
-  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1)),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
-    if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
+  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5)*(1+((SHP.belly||1)-1)*Math.exp(-(((y-1.0)/.075)**2))),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1))*(1+((SHP.back||1)-1)*Math.exp(-(((y-1.26)/.12)**2))),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
+    if(cz>0){const ch=(SHP.chest||1)*(SHP.bust||1);let a;
+      if(F){const A=.038*ch,cy=1.215,vy=Math.exp(-(((y-cy)/(y>cy?.066:.03))**2)),lo=xx=>Math.exp(-((xx/.047)**2));a=A*vy*(lo(x-.07)+lo(x+.07));
+        a-=A*.3*Math.exp(-((x/.012)**2))*Math.exp(-(((y-1.22)/.05)**2))*(bridge?0:1);if(bridge)a=Math.max(a,A*vy*.8*Math.exp(-((x/.075)**2)))}
+      else{const A=.014*ch,cy=1.25,vy=Math.exp(-(((y-cy)/(y>cy?.05:.022))**2)),lo=xx=>Math.exp(-((xx/.058)**2));a=A*vy*(lo(x-.075)+lo(x+.075))-.003*Math.exp(-((x/.01)**2))*sstep(1.17,1.2,y)*sstep(1.37,1.33,y)*(bridge?0:1)}
+      a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
     else{// two separate glutes: fuller low down, a crisp fold underneath, a cleft between (fabric bridges it)
-      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=F?.068:.062,sxg=F?.062:.054,cy=F?.85:.862,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-(((y-cy)/(y>cy?(F?.1:.08):(F?.042:.033)))**2));
+      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=F?.068:.062,sxg=F?.062:.054,cy=(F?.85:.862)+((SHP.gluteLift||1)-1)*.04,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-(((y-cy)/(y>cy?(F?.1:.08):(F?.042:.033)))**2));
       const ax=Math.abs(x),cleft=A*.95*Math.exp(-((x/.013)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
-      const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
+      const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)-(bridge?0:.0035*Math.exp(-((x/.012)**2))*sstep(.97,1.02,y)*sstep(1.43,1.37,y))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
     if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
   const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.009*Math.exp(-(((y+.062)/.012)**2))+.004*Math.exp(-(((y+.12)/.035)**2))):(-.0065*Math.exp(-(((y+.07)/.011)**2))+.002*Math.exp(-(((y+.12)/.03)**2))))*(SHP.glutes||1)}
     if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
@@ -1464,9 +1468,9 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),torsoW,o.fns.torso,'torso');
 
 
-  const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
-  const UP=sca(effL(LIMB0.up,PF.up)),FO=sca(effL(LIMB0.fore,PF.fore));
-  const TH=F?effL(LIMB0.thighF,PF.thigh):sc(effL(LIMB0.thighM,PF.thigh)),SH=F?effL(LIMB0.shinF,PF.shin):sc(effL(LIMB0.shinM,PF.shin));
+  const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]),xk=(p,k)=>p.map(([y,r])=>[y,r*(k||1)]);
+  const UP=xk(sca(effL(LIMB0.up,PF.up)),SHP.upperArm),FO=xk(sca(effL(LIMB0.fore,PF.fore)),SHP.forearm);
+  const TH=xk(F?effL(LIMB0.thighF,PF.thigh):sc(effL(LIMB0.thighM,PF.thigh)),SHP.thigh),SH=xk(F?effL(LIMB0.shinF,PF.shin):sc(effL(LIMB0.shinM,PF.shin)),SHP.calf);
   for(const s of['L','R']){
     add(rowsFor(-.325,.04,.01,[-.13,-.15]),24,tube(UP,.9,'up',s),o.M['sh'+s],(lx,ly)=>{const wB=.85*sstep(-.03,.065,ly),wE=.5*sstep(-.25,-.33,ly);return[[I['sh'+s],Math.max(.001,1-wB-wE)],[I.body,wB],[I['el'+s],wE]]},o.fns.up,'up',s);
     add(rowsFor(-.28,.035,.012,[]),20,tube(FO,.92,'fore',s),o.M['el'+s],(lx,ly)=>{const wS=.5*sstep(-.03,.04,ly);return[[I['el'+s],1-wS],[I['sh'+s],wS]]},o.fns.fore,'fore',s);
@@ -1566,7 +1570,7 @@ function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex+'c2'+(L.eyeS||1)+(
   else{g.moveTo(120,160);g.quadraticCurveTo(124,165,128,161);g.quadraticCurveTo(132,165,136,160);g.stroke()}
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=4;return faceCache[key]=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false})}
 // ---------- character specs: everything the editors can change ----------
-const BODY0={height:1,shoulders:1,chest:1,waist:1,hips:1,glutes:1,arms:1,legs:1},HEAD0={size:1,jaw:1,cheeks:1,eyes:1,eyeGap:1};
+const BODY0={height:1,neck:1,shoulders:1,chest:1,bust:1,ribs:1,waist:1,belly:1,back:1,hips:1,glutes:1,gluteLift:1,arms:1,upperArm:1,forearm:1,legs:1,thigh:1,calf:1},HEAD0={size:1,jaw:1,cheeks:1,eyes:1,eyeGap:1};
 const STAFFN=['Mika','Ren','Sora'],CHARS={};let CHARS_SRC='built-in';
 // ---- swimsuit cuts: every swimsuit is a type (bikini / one-piece / shorts) plus these shape numbers ----
 const CUTP={
@@ -1605,7 +1609,7 @@ function specFor(n){return n==='YOU'?playerSpec():(CHARS[n]||baseSpec(n))}
 function applyChars(list,src){if(!Array.isArray(list)||!list.length)return;const gl=[],next={};
   for(const raw of list){if(!raw||!raw.n||raw.n==='YOU')continue;const s=fillSpec(raw);next[s.n]=s;if(s.persona)PERSONA[s.n]=s.persona;if(s.role!=='staff')gl.push({n:s.n,sex:s.sex,style:s.style,eye:s.eye,hair:s.hair,suit:s.suit,skin:s.skin,street:s.street})}
   for(const k in CHARS)delete CHARS[k];Object.assign(CHARS,next);if(gl.length){BANK.length=0;BANK.push(...gl)}CHARS_SRC=src||'file'}
-function shapeW(S,y){if(!S)return 1;const g=(c,s)=>Math.exp(-(((y-c)/s)**2));return 1+((S.hips||1)-1)*g(.86,.075)+((S.waist||1)-1)*g(1.05,.065)+((S.chest||1)-1)*.5*g(1.22,.07)+((S.shoulders||1)-1)*g(1.34,.05)}
+function shapeW(S,y){if(!S)return 1;const g=(c,s)=>Math.exp(-(((y-c)/s)**2));return 1+((S.hips||1)-1)*g(.86,.075)+((S.waist||1)-1)*g(1.05,.065)+((S.ribs||1)-1)*g(1.13,.055)+((S.chest||1)-1)*.5*g(1.22,.07)+((S.shoulders||1)-1)*g(1.34,.05)+((S.neck||1)-1)*g(1.5,.045)}
 const HGC={};
 function headGeoFor(fem,hd){const k=(fem?'f':'m')+(+hd.jaw).toFixed(2)+(+hd.cheeks).toFixed(2);return HGC[k]||(HGC[k]=headDeform(new T.SphereGeometry(1,36,26),fem,hd))}
 function faceGeoFor(fem,hd){const k='F'+(fem?'f':'m')+(+hd.jaw).toFixed(2)+(+hd.cheeks).toFixed(2);return HGC[k]||(HGC[k]=headDeform(new T.SphereGeometry(1.012,36,18,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4),fem,hd))}
@@ -1746,6 +1750,7 @@ function drawCreator(){const sp=CR.sp,el=document.getElementById('creator');el.c
   const pats=PATS.filter(([v])=>sp.sex==='f'?v!=='hawaii'&&v!=='sidestripe'&&v!=='block':v!=='floral'&&v!=='trim');
   el.innerHTML=`<h2>Create your character</h2>
    <div class="crow">${chip('sex','m','Man')}${chip('sex','f','Woman')}</div>
+   <p class="lab">Body type</p><div class="crow">${BTYPES[sp.sex==='f'?'f':'m'].map(([n],i)=>`<button type="button" class="chp${CR.bt===i?' on':''}" data-bt="${i}">${n}</button>`).join('')}</div>
    <label class="sl">Build <input type="range" id="crBuild" min="0" max="1" step=".01" value="${CR.build}"><span>slim · strong</span></label>
    <label class="sl">Height <input type="range" id="crHeight" min=".92" max="1.08" step=".005" value="${sp.body.height}"></label>
    <label class="sl">Muscle tone <input type="range" id="crTone" min="0" max="1" step=".01" value="${sp.def??.3}"><span>smooth · toned</span></label>
@@ -1762,6 +1767,7 @@ function drawCreator(){const sp=CR.sp,el=document.getElementById('creator');el.c
   for(const b of el.querySelectorAll('[data-cut]'))b.onclick=()=>{const [g,k]=b.dataset.cut.split(':');sp.cut={...fullCut(sp),...CUTP[g][k][1]};crRebuild();drawCreator()};
   for(const b of el.querySelectorAll('[data-design]'))b.onclick=()=>{const d=SUITS[+b.dataset.design];Object.assign(sp,{swim:d.swim,pat:d.pat,suit:d.suit,acc:d.acc,cut:{...CUT0,...d.cut}});crRebuild();drawCreator()};
   document.getElementById('crBuild').oninput=e=>{CR.build=+e.target.value;applyBuild();crRebuild()};
+  for(const b of el.querySelectorAll('[data-bt]'))b.onclick=()=>{CR.bt=+b.dataset.bt;applyBType(sp,CR.bt);crRebuild();drawCreator()};
   document.getElementById('crHeight').oninput=e=>{sp.body.height=+e.target.value;crRebuild()};
   document.getElementById('crTone').oninput=e=>{sp.def=+e.target.value;crRebuild()};
   document.getElementById('crGo').onclick=closeCreator}
@@ -1772,7 +1778,7 @@ function closeCreator(){try{localStorage.setItem('tributary.player',JSON.stringi
 const REPO='kylemanson/manson-marine-designs',CPATH='public/tributary-playtest-k7m2/characters.json';
 let ADM=null;
 const SECT=[['Basics',[['n','Name','text'],['role','Role','select',[['guest','Guest'],['staff','Staff']]],['sex','Body type','select',[['f','Woman'],['m','Man']]],['persona','Personality (the AI plays them like this)','textarea']]],
- ['Body',[['body.height','Height','range',.88,1.12],['body.shoulders','Shoulders','range',.85,1.2],['body.chest','Chest / bust','range',.5,1.7],['body.waist','Waist','range',.85,1.25],['body.hips','Hips','range',.85,1.22],['body.glutes','Rear','range',.4,1.7],['body.arms','Arms','range',.75,1.35],['body.legs','Legs','range',.82,1.28]]],
+ ['Body',[['body.height','Height','range',.88,1.12],['body.neck','Neck','range',.8,1.3],['body.shoulders','Shoulders','range',.85,1.25],['body.chest','Chest width','range',.5,1.7],['body.bust','Bust / pecs','range',.4,1.8],['body.ribs','Ribcage','range',.85,1.2],['body.waist','Waist','range',.82,1.35],['body.belly','Belly','range',.8,1.5],['body.back','Upper back','range',.85,1.25],['body.hips','Hips','range',.85,1.25],['body.glutes','Rear size','range',.4,1.7],['body.gluteLift','Rear lift','range',.75,1.25],['body.arms','Arms overall','range',.75,1.35],['body.upperArm','Upper arms','range',.8,1.35],['body.forearm','Forearms','range',.8,1.3],['body.legs','Legs overall','range',.82,1.28],['body.thigh','Thighs','range',.8,1.3],['body.calf','Calves','range',.8,1.3]]],
  ['Head and face',[['head.size','Head size','range',.88,1.15],['head.jaw','Jaw: soft ↔ pointed','range',.3,1.7],['head.cheeks','Cheeks','range',0,2.2],['head.eyes','Eye size','range',.78,1.22],['head.eyeGap','Eye spacing','range',.9,1.1]]],
  ['Hair and colours',[['style','Hair style','select',STYLES],['hair','Hair colour','color'],['skin','Skin','color'],['eye','Eye colour','color'],['hat','Wears a sauna hat','check']]],
  ['Street clothes',[['street.0','Shirt colour','color'],['street.1','Pants colour','color']]]];
@@ -1795,7 +1801,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
     return`<label class="fl">${l}<input type="text" data-p="${p}" value="${esc(v)}"></label>`};
   el.innerHTML=`<div class="ah"><b>Character editor</b><select id="admSel">${ADM.list.map((c,i)=>`<option value="${i}"${i===ADM.i?' selected':''}>${esc(c.n)}${c.role==='staff'?' (staff)':''}</option>`).join('')}</select></div>
    <div class="arow"><button type="button" id="admNew">New</button><button type="button" id="admDup">Duplicate</button><button type="button" id="admDel">Delete</button><button type="button" id="admOut">Show ${ADM.out==='swim'?'street clothes':'swimwear'}</button></div>
-   ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${fs.map(field).join('')}</details>`+(i===1?shapeHTML(sp):'')+(i===3?suitHTML(sp):'')).join('')}
+   ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${t==='Body'?btypeHTML(sp):''}${fs.map(field).join('')}</details>`+(i===1?shapeHTML(sp):'')+(i===3?suitHTML(sp):'')).join('')}
    <div class="afoot"><button type="button" class="btn" id="admSave">Save to website</button><button type="button" id="admDl">Download file</button><button type="button" id="admRev">Discard draft</button></div>
    <p id="admStat"></p>
    <details><summary>GitHub key (needed once per device)</summary><p class="small">Create a fine-grained token on GitHub for the repository <b>${REPO}</b> with <b>Contents: Read and write</b>. It is stored only in this browser.</p>
@@ -1806,7 +1812,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
     if(p==='n'){v=v.replace(/[^\w \-']/g,'').slice(0,20)||'Guest';if(ADM.list.some((c,j)=>j!==ADM.i&&c.n===v))return}
     spth(sp,p,v);if(inp.type==='range')inp.nextElementSibling.textContent=(+v).toFixed(p.startsWith('cut.')||p.startsWith('nodes.')?3:2);if(p==='nodes.'+ADM.ni+'.m')drawAdmin();if(p==='n'||p==='role')document.getElementById('admSel').options[ADM.i].textContent=sp.n+(sp.role==='staff'?' (staff)':'');
     if(p==='sex'){sp.swim=v==='f'?'one':'trunks';sp.pat='solid';sp.cut=cutDefault({...sp,n:''});drawAdmin()}if(p==='role'&&v!=='staff'&&!sp.cut)sp.cut=fullCut(sp);if(p==='cut.loose'||p==='cut.strap')drawAdmin();admChanged()})}
-  wireSuit(el,sp);wireShape(el,sp);
+  wireSuit(el,sp);wireShape(el,sp);for(const b of el.querySelectorAll('[data-btype]'))b.onclick=()=>{applyBType(sp,+b.dataset.btype);drawAdmin();admChanged()};
   document.getElementById('admNew').onclick=()=>{let k=1;while(ADM.list.some(c=>c.n==='New guest '+k))k++;ADM.list.push(fillSpec({n:'New guest '+k,role:'guest'}));ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
   document.getElementById('admDup').onclick=()=>{const c=JSON.parse(JSON.stringify(sp));let k=2;while(ADM.list.some(x=>x.n===sp.n+' '+k))k++;c.n=sp.n+' '+k;c.role=sp.role==='staff'?'guest':sp.role;ADM.list.push(c);ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
   document.getElementById('admDel').onclick=()=>{if(ADM.list.length<2||sp.role==='staff'){admStatus('Staff and the last guest can\'t be deleted.',1);return}if(!confirmDel(sp.n))return;ADM.list.splice(ADM.i,1);ADM.i=Math.max(0,ADM.i-1);drawAdmin();admChanged()};
@@ -1857,7 +1863,7 @@ function drawSlice(c){const g=c.getContext('2d'),sp=ADM.list[ADM.i],f=sp.sex==='
   ADM.cvMap={sc};ADM.slc={y,cx,cy,sc,S,S0,pt};drawCvNodes(g)}
 // side slice: a profile cut straight through the body at a distance from the centre line (torso and thighs)
 function secRows(sp,X0){const f=sp.sex==='f',S=edS(sp),B=sp.body,hx=(f?.097:.088)*(1+(B.hips-1)*.8),LG=B.legs||1,pf=sp.prof||{};
-  const TH=(f?effL(LIMB0.thighF,pf.thigh):effL(LIMB0.thighM,pf.thigh).map(([y,r])=>[y,r*.92])).map(([y,r])=>[y,r*LG]),tq=S.tube(TH,.95,'thigh','R'),rows=[];
+  const TH=(f?effL(LIMB0.thighF,pf.thigh):effL(LIMB0.thighM,pf.thigh).map(([y,r])=>[y,r*.92])).map(([y,r])=>[y,r*LG*(B.thigh||1)]),tq=S.tube(TH,.95,'thigh','R'),rows=[];
   const cross=(fn,ths,part,ly,y,xo)=>{const out=[];let prev=null;for(const t of ths){const p=fn(t),x=p[0]+xo-X0;if(prev&&(prev.x<=0)!==(x<=0)){const k=prev.x/(prev.x-x);out.push({z:prev.z+(p[2]-prev.z)*k,th:prev.t+(t-prev.t)*k,part,ly,y})}prev={x,z:p[2],t}}return out};
   const TT=[...Array(121).keys()].map(k=>k/120*Math.PI*2);
   for(let y=1.54;y>=.42;y-=.005){const L=[];if(y>.757)L.push(...cross(t=>S.torsoAt(y,t),TT,'torso',y,y,0));const ly=y-.86;if(ly<.05&&ly>-.455)L.push(...cross(t=>tq(ly,t),TT,'thigh',ly,y,hx));rows.push({y,L})}return rows}
@@ -2004,6 +2010,15 @@ function wireSuit(el,sp){if(sp.role==='staff')return;wireSol(sp);
   const sv=document.getElementById('suitSave');if(sv)sv.onclick=()=>{const nm=(document.getElementById('suitName').value||'').replace(/[^\w \-'&]/g,'').trim().slice(0,24);if(!nm){admStatus('Give the design a name first.',1);return}
     const d={name:nm,sex:sp.sex,swim:sp.sex==='f'?sp.swim:'trunks',pat:sp.pat,suit:sp.suit,acc:sp.acc,cut:{...sp.cut}},j=ADM.suits.findIndex(x=>x.name===nm&&x.sex===sp.sex);if(j>=0)ADM.suits[j]=d;else ADM.suits.push(d);drawAdmin();admChanged();admStatus(`Design "${nm}" saved. Use Save to website to publish it.`)};
   const dl=document.getElementById('suitDel');if(dl)dl.onclick=()=>{suitDelMode=true;admStatus('Now tap the design to delete (twice to confirm).',1)}}
+// ---------- starting body types ----------
+const BTYPES={f:[['Petite',{height:.93,neck:.95,shoulders:.94,chest:.9,bust:.85,ribs:.95,waist:.95,belly:.95,hips:.96,glutes:.9,arms:.9,legs:.92,thigh:.92,calf:.92},.15],['Slim',{height:1.01,shoulders:.96,chest:.85,bust:.8,waist:.92,belly:.9,hips:.94,glutes:.8,arms:.88,legs:.9,thigh:.88,calf:.9},.15],['Average',{},.15],
+   ['Curvy',{chest:1.12,bust:1.25,waist:.96,hips:1.12,glutes:1.25,gluteLift:1.05,arms:1.02,thigh:1.1,calf:1.02},.15],['Athletic',{shoulders:1.06,bust:.9,waist:.95,belly:.9,glutes:1.15,gluteLift:1.1,arms:1.05,upperArm:1.05,thigh:1.08,calf:1.1},.55],['Pear',{shoulders:.94,chest:.9,bust:.9,waist:.97,hips:1.15,glutes:1.2,thigh:1.15},.15],
+   ['Plus-size',{shoulders:1.06,neck:1.08,chest:1.25,bust:1.35,ribs:1.12,waist:1.22,belly:1.25,back:1.08,hips:1.18,glutes:1.3,arms:1.2,upperArm:1.15,legs:1.15,thigh:1.2,calf:1.12},.05],['Older',{bust:1.05,waist:1.08,belly:1.1,back:1.04,glutes:.85,gluteLift:.9},.05]],
+ m:[['Slim',{neck:.94,shoulders:.94,chest:.85,waist:.94,hips:.96,arms:.88,legs:.92,thigh:.9,calf:.92},.25],['Average',{},.3],['Athletic',{neck:1.05,shoulders:1.1,chest:1.15,bust:1.15,waist:.95,arms:1.1,upperArm:1.1,thigh:1.08,calf:1.06,glutes:1.1,gluteLift:1.05},.6],
+   ['Muscular',{neck:1.15,shoulders:1.18,chest:1.3,bust:1.35,ribs:1.08,back:1.12,arms:1.25,upperArm:1.25,forearm:1.15,legs:1.15,thigh:1.18,calf:1.12,glutes:1.15},.85],['Lanky',{height:1.08,neck:.95,shoulders:.97,chest:.88,waist:.93,arms:.9,legs:.9,thigh:.88},.2],
+   ['Stocky',{height:.93,neck:1.12,shoulders:1.1,chest:1.15,ribs:1.08,waist:1.12,belly:1.1,arms:1.12,legs:1.12,thigh:1.12,calf:1.1},.35],['Heavy-set',{neck:1.12,shoulders:1.08,chest:1.2,bust:1.2,ribs:1.12,waist:1.28,belly:1.35,back:1.08,hips:1.1,glutes:1.15,arms:1.18,legs:1.15,thigh:1.18,calf:1.08},.05],['Older',{chest:.95,bust:1.05,waist:1.08,belly:1.18,glutes:.85,gluteLift:.9,arms:.95},.1]]};
+function btypeHTML(sp){return`<p class="lab">Start from a body type</p><div class="crow">${BTYPES[sp.sex==='f'?'f':'m'].map(([n],i)=>`<button type="button" class="chp" data-btype="${i}">${n}</button>`).join('')}</div><p class="small">Sets all the sliders below (and muscle tone); fine-tune from there.</p>`}
+function applyBType(sp,i){const t=BTYPES[sp.sex==='f'?'f':'m'][i];if(!t)return;const h=sp.body&&sp.body.height||1;sp.body={...BODY0,height:h,...t[1]};sp.def=t[2]}
 let delArm='';function confirmDel(n){if(delArm===n){delArm='';return true}delArm=n;admStatus(`Tap Delete again to remove ${n}.`,1);setTimeout(()=>{if(delArm===n)delArm=''},4000);return false}
 function admJSON(){return JSON.stringify({version:2,updated:new Date().toISOString(),characters:ADM.list,suits:ADM.suits},null,1)}
 // pasted keys on phones can carry invisible characters, which make the browser refuse the request
