@@ -1405,7 +1405,7 @@ function edgeAt(arr,th){if(!arr||!arr.length)return 0;const n=arr.length-1,a=Mat
 const EDGEN={th:'Top edge',tl:'Top bottom edge',bh:'Waistline',bl:'Leg opening',lg:'Leg hem'};
 function suitBands(fem,C,k){const E=C.edges||{},e=(n,th)=>edgeAt(E[n],th),T=[],L=[];
   if(fem){const botLo=th=>C.len>0?.745:.8+C.leg*Math.abs(Math.sin(th))+e('bl',th);
-    if(k==='bikini'){T.push({key:'bot',lo:botLo,hi:th=>C.rise-.012*Math.max(0,Math.cos(th))+e('bh',th)});
+    if(k==='bikini'){const sideT=C.sides&&C.sides!=='band';T.push({key:'bot',lo:botLo,hi:th=>{const h=C.rise-.012*Math.max(0,Math.cos(th))+e('bh',th);if(!sideT)return h;const l=botLo(th);return l+(h-l)*sstep(.9,.74,Math.abs(Math.sin(th)))}});
       T.push({key:'top',lo:th=>{const t=sstep(-.35,.25,Math.cos(th)),bLo=C.back-.045;return(C.topLo<1.12?C.topLo:bLo+(C.topLo-bLo)*t)+e('tl',th)},hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)})}
     else T.push({key:'one',lo:botLo,hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)});
     if(C.len>0)L.push({key:'leg',lo:th=>-C.len+e('lg',th),hi:()=>.062})}
@@ -1453,17 +1453,19 @@ function defTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.cre
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.wrapS=T.RepeatWrapping;return t}
 function shapeSampler(o){
   const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
-  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5)*(1+((SHP.belly||1)-1)*Math.exp(-(((y-1.0)/.075)**2))),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1))*(1+((SHP.back||1)-1)*Math.exp(-(((y-1.26)/.12)**2))),sx=Math.sin(th),cz=Math.cos(th),nR=2+.28*(SHP.round||1)+(cz<0?.12*(SHP.round||1)+.8*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.09)**2)):.25*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.08)**2))),pe=2/nR,sp_=v=>Math.sign(v)*Math.pow(Math.abs(v),pe);let x=w*sp_(sx),z=(cz>0?f:b)*sp_(cz);
+  const HX=(F?.097:.088)*(1+((SHP.hips||1)-1)*.8),THA=(F?effL(LIMB0.thighF,PF.thigh):effL(LIMB0.thighM,PF.thigh).map(([y,r])=>[y,r*.92])).map(([y,r])=>[y,r*(SHP.legs||1)*(SHP.thigh||1)]).slice().reverse().map(([y,r])=>[y,r,r,r]),thighR=ly=>ly>THA[THA.length-1][0]||ly<THA[0][0]?0:profAt(THA,ly)[0];
+  const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5)*(1+((SHP.belly||1)-1)*Math.exp(-(((y-1.0)/.075)**2))),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1))*(1+((SHP.back||1)-1)*Math.exp(-(((y-1.26)/.12)**2)))*(1-(F?.1:.06)*Math.exp(-(((y-.975)/.048)**2))*(bridge?.5:1)),sx=Math.sin(th),cz=Math.cos(th),nR=2+.28*(SHP.round||1)+(cz<0?.12*(SHP.round||1)+.8*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.09)**2)):.25*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.08)**2))),pe=2/nR,sp_=v=>Math.sign(v)*Math.pow(Math.abs(v),pe);let x=w*sp_(sx),z=(cz>0?f:b)*sp_(cz);
     if(cz>0){const ch=(SHP.chest||1)*(SHP.bust||1);let a;
       if(F){const A=.038*ch,cy=1.215+((SHP.bustLift||1)-1)*.045,vy=Math.exp(-(((y-cy)/(y>cy?.066*(SHP.bustUpper||1):.03*(SHP.bustLower||1)))**2)),bw=.047*(SHP.bustWidth||1),bs=.07*(SHP.bustSpread||1),lo=xx=>Math.exp(-((xx/bw)**2));a=A*vy*(lo(x-bs)+lo(x+bs));
         a-=A*.3*(SHP.cleavage||1)*Math.exp(-((x/.012)**2))*Math.exp(-(((y-cy)/.05)**2))*(bridge?0:1);if(bridge)a=Math.max(a,A*vy*.8*Math.exp(-((x/.075)**2)))}
       else{const A=.014*ch,cy=1.25+((SHP.bustLift||1)-1)*.04,vy=Math.exp(-(((y-cy)/(y>cy?.05*(SHP.bustUpper||1):.022*(SHP.bustLower||1)))**2)),bw=.058*(SHP.bustWidth||1),bs=.075*(SHP.bustSpread||1),lo=xx=>Math.exp(-((xx/bw)**2));a=A*vy*(lo(x-bs)+lo(x+bs))-.003*(SHP.cleavage??1)*Math.exp(-((x/.01)**2))*sstep(1.17,1.2,y)*sstep(1.37,1.33,y)*(bridge?0:1)}
       a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz;if((SHP.bustAngle||1)!==1)x+=a*cz*Math.sign(x)*.7*((SHP.bustAngle||1)-1)}
     else{// two separate glutes: fuller low down, a crisp fold underneath, a cleft between (fabric bridges it)
-      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=(F?.068:.062)*(SHP.gluteSpread||1),sxg=(F?.07:.06)*(SHP.gluteWidth||1),cy=(F?.85:.862)+((SHP.gluteLift||1)-1)*.04,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-Math.pow(Math.abs((y-cy)/(y>cy?(F?.088:.072):(F?.05:.04)*(SHP.gluteUnder||1))),2+1.4*(SHP.gluteRound??1)));
+      const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=(F?.068:.062)*(SHP.gluteSpread||1),sxg=(F?.07:.06)*(SHP.gluteWidth||1),cy=(F?.85:.862)+((SHP.gluteLift||1)-1)*.04,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=(()=>{if(y>=cy){const t=(y-cy)/(F?.078:.066),rr=Math.max(0,Math.min(2,SHP.gluteRound??1));return Math.exp(-Math.pow(t,2+.7*rr))}const t=Math.min(1,(cy-y)/((F?.072:.058)*(SHP.gluteUnder||1))),rr=Math.max(0,Math.min(2,SHP.gluteRound??1)),k=Math.max(.25,1.25-.5*rr),c=Math.pow(Math.max(0,1-t*t),k);return c*(1-.15*rr*(1-c))})();
       const ax=Math.abs(x),cleft=A*.55*Math.exp(-((x/.026)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
       const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)-(bridge?0:.0035*Math.exp(-((x/.012)**2))*sstep(.97,1.02,y)*sstep(1.43,1.37,y))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
-    if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
+    if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}
+    if(bridge&&y<.95){const ly=y-.86,R=thighR(ly);if(R>.01)for(const sg of[-1,1]){const dx=x-sg*HX,dz=z/.95,d=Math.hypot(dx,dz),need=R+.0015;if(d<need&&d>1e-4&&dx*sg>-R*.35){x=sg*HX+dx/d*need;z=dz/d*need*.95}}}return[x,y,z]};
   const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.009*Math.exp(-(((y+.062)/.012)**2))+.004*Math.exp(-(((y+.12)/.035)**2))):(-.0065*Math.exp(-(((y+.07)/.011)**2))+.002*Math.exp(-(((y+.12)/.03)**2))))*(SHP.glutes||1)}
     if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
   return{torsoAt,tube,SHP,F,P,NODES,PF,B}}
@@ -1595,17 +1597,17 @@ const BODY0={height:1,neck:1,shoulders:1,chest:1,bust:1,ribs:1,waist:1,belly:1,b
 const STAFFN=['Mika','Ren','Sora'],CHARS={};let CHARS_SRC='built-in';
 // ---- swimsuit cuts: every swimsuit is a type (bikini / one-piece / shorts) plus these shape numbers ----
 const CUTP={
- top:{tri:['Triangle',{topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25}],bandeau:['Bandeau',{topHi:1.27,topLo:1.172,neck:'straight',strap:'none',back:1.262}],
-  halter:['Halter',{topHi:1.29,topLo:1.16,neck:'v',strap:'halter',back:1.24}],sweet:['Sweetheart',{topHi:1.285,topLo:1.165,neck:'sweet',strap:'thin',back:1.25}],
-  sport:['Sporty crop',{topHi:1.335,topLo:1.115,neck:'scoop',strap:'wide',back:1.33}],tankini:['Tankini',{topHi:1.31,topLo:.95,neck:'scoop',strap:'wide',back:1.3}]},
- bot:{classic:['Classic',{rise:.905,leg:.04,len:0,loose:0}],high:['High-waist',{rise:.985,leg:.03,len:0,loose:0}],cut:['High-cut',{rise:.9,leg:.1,len:0,loose:0}],
-  boy:['Boyshort',{rise:.925,leg:0,len:.07,loose:0}],shorts:['Swim shorts',{rise:.95,leg:0,len:.16,loose:1,flare:.4}]},
- one:{classic:['Classic',{topHi:1.31,neck:'straight',strap:'thin',back:1.31,leg:.055,len:0,loose:0}],hicut:['High-cut',{topHi:1.31,neck:'straight',strap:'thin',back:1.3,leg:.11,len:0,loose:0}],
+ top:{tri:['Triangle',{topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25,bow:0}],cross:['Cross-back',{topHi:1.285,topLo:1.16,neck:'straight',strap:'cross',back:1.22,bow:0}],dstrap:['Double strap',{topHi:1.29,topLo:1.16,neck:'scoop',strap:'double',back:1.25,bow:0}],tiehalter:['Tie halter',{topHi:1.29,topLo:1.16,neck:'v',strap:'halter',back:1.24,bow:1}],bandeau:['Bandeau',{topHi:1.27,topLo:1.172,neck:'straight',strap:'none',back:1.262,bow:0}],
+  halter:['Halter',{topHi:1.29,topLo:1.16,neck:'v',strap:'halter',back:1.24,bow:0}],sweet:['Sweetheart',{topHi:1.285,topLo:1.165,neck:'sweet',strap:'thin',back:1.25,bow:0}],
+  sport:['Sporty crop',{topHi:1.335,topLo:1.115,neck:'scoop',strap:'wide',back:1.33,bow:0}],tankini:['Tankini',{topHi:1.31,topLo:.95,neck:'scoop',strap:'wide',back:1.3,bow:0}]},
+ bot:{classic:['Classic',{rise:.905,leg:.04,len:0,loose:0,sides:'band'}],tie:['Side-tie',{rise:.9,leg:.07,len:0,loose:0,sides:'tie'}],strappy:['Strappy sides',{rise:.92,leg:.06,len:0,loose:0,sides:'double'}],high:['High-waist',{rise:.985,leg:.03,len:0,loose:0,sides:'band'}],cut:['High-cut',{rise:.9,leg:.1,len:0,loose:0,sides:'band'}],
+  boy:['Boyshort',{rise:.925,leg:0,len:.07,loose:0,sides:'band'}],shorts:['Swim shorts',{rise:.95,leg:0,len:.16,loose:1,flare:.4,sides:'band'}]},
+ one:{classic:['Classic',{topHi:1.31,neck:'straight',strap:'thin',back:1.31,leg:.055,len:0,loose:0}],crossb:['Cross-back',{topHi:1.32,neck:'straight',strap:'cross',back:1.08,leg:.06,len:0,loose:0}],dstrap1:['Double strap',{topHi:1.32,neck:'scoop',strap:'double',back:1.24,leg:.055,len:0,loose:0}],tiehalter1:['Tie halter',{topHi:1.33,neck:'v',strap:'halter',back:1.1,leg:.06,len:0,loose:0,bow:1}],hicut:['High-cut',{topHi:1.31,neck:'straight',strap:'thin',back:1.3,leg:.11,len:0,loose:0}],
   scoopb:['Scoop back',{topHi:1.31,neck:'straight',strap:'thin',back:1.05,leg:.06,len:0,loose:0}],vneck:['V-neck',{topHi:1.325,neck:'v',strap:'thin',back:1.28,leg:.06,len:0,loose:0}],
   racer:['Sporty racer',{topHi:1.36,neck:'scoop',strap:'wide',back:1.2,leg:.045,len:0,loose:0}],boyleg:['Boyleg',{topHi:1.32,neck:'scoop',strap:'wide',back:1.3,leg:0,len:.08,loose:0}]},
  men:{square:['Square-cut',{rise:.96,len:.05,loose:0,band:1,string:1}],trunks:['Trunks',{rise:.975,len:.11,loose:0,band:1,string:1}],
   swim:['Swim shorts',{rise:.98,len:.17,loose:1,flare:.35,band:1,string:1}],board:['Board shorts',{rise:.985,len:.3,loose:1,flare:.55,band:1,string:1}],jammer:['Jammers',{rise:.975,len:.36,loose:0,band:1,string:0}]}};
-const CUT0={thk:.006,edges:{},topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25,rise:.905,leg:.04,len:0,loose:0,flare:.4,band:1,string:1,ps:1,trim:0};
+const CUT0={thk:.006,edges:{},sides:'band',bow:0,topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25,rise:.905,leg:.04,len:0,loose:0,flare:.4,band:1,string:1,ps:1,trim:0};
 // the approved cast, with a spread of cuts
 const CASTCUT={Aiko:['tri','classic'],Hana:['bandeau','high'],Mei:['halter','cut'],Minji:['sport','boy'],Priya:['scoopb'],Yuki:['classic'],Gwen:['racer'],Grace:['vneck'],Lucia:['boyleg'],
  Daniel:['board'],Theo:['swim'],Leo:['trunks'],Sam:['jammer'],Marco:['square'],Kai:['board'],Jonah:['trunks'],YOU:['trunks']};
@@ -1698,15 +1700,29 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
   const bones=[body,LL.hip,LL.knee,LR.hip,LR.knee,AL.sh,AL.el,AR.sh,AR.el],I={body:0,hipL:1,kneeL:2,hipR:3,kneeR:4,shL:5,elL:6,shR:7,elR:8};
   const SB=makeSkinBody({fem,shape:BD,I,P:PT,prof:SP0.prof,nodes:SP0.nodes,gar:isStaff?null:{bands:BANDS,thk:CUT.thk},shorts:!isStaff&&CUT.loose&&CUT.len>.02?{len:CUT.len,flare:CUT.flare}:null,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
     fns:{torso:[(x,y)=>torsoSwim(x,y),(x,y)=>torsoStreet(x,y)],up:[(x,y)=>upSwim(x,y),(x,y)=>upStreet(x,y)],fore:[()=>sk,()=>sk],thigh:[(x,y)=>thighSwim(x,y),()=>thighStreet()],shin:[()=>shinSwim(),()=>shinStreet()]}});
-  if(fem&&!isStaff){const P0=PT,o_=0,surf=(x,y,front)=>{const mm=shapeW(BD,y),[w0,f0,b0]=profAt(P0,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*(BD.chest||1)*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
+  if(fem&&!isStaff){const P0=PT,o_=0,SSb=shapeSampler({shape:BD,fem,P:PT,nodes:SP0.nodes}),surf=(x,y,front)=>{let best=null,bd=9;for(let k=0;k<=40;k++){const th=front?k/40*Math.PI/2:Math.PI/2+k/40*Math.PI/2,q=SSb.torsoAt(y,th,true),d=Math.abs(q[0]-x);if(d<bd){bd=d;best=q}}return best[2]+(front?1:-1)*(CUT.thk+.003)};
     const straps=[],C=CUT,R=(C.strap==='wide'?.012:.0075)+C.thk*.55,bik=SP0.swim==='bikini';
     if(C.strap==='halter'){for(const sd of[-1,1]){const x0=.05,pts=[[x0,topEdge(C,x0,1)-.004,1],[.046,1.36,1]].map(([x,y,fr])=>new T.Vector3(sd*x,y,surf(x,y,fr)));
         for(const [y,ph] of[[1.42,.95],[1.455,1.45],[1.47,2.1],[1.47,2.65],[1.468,Math.PI]]){const [w,f,b]=profAt(P0,y);pts.push(new T.Vector3(sd*(w+.006)*Math.sin(ph),y,(Math.cos(ph)>0?f:b)*Math.cos(ph)*1.08))}
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
+    else if(C.strap==='cross'||C.strap==='double'){const x0=C.neck==='v'?.056:C.neck==='scoop'?.074:.066,yb=Math.min(1.3,bik?C.back-.006:Math.max(C.back,1.0)-.004);
+      const lines=C.strap==='double'?[-.011,.011]:[0];
+      for(const sd of[-1,1])for(const off of lines){const y0=Math.min(topEdge(C,x0+off,1),1.345)-.004,fr=[[x0+off,y0],[.074+off*.6,1.33],[.088+off*.4,1.362],[.097,1.378]].filter(([x,y],i)=>i===0||y>y0+.012);
+        const bk=C.strap==='cross'?[[.09,1.37,1],[.05,1.3,1],[0,(1.3+yb)/2+.02,0],[-.05,yb+.03,-1],[-.068,yb,-1]]:[[.088+off*.4,1.362,1],[.075+off*.6,1.32,1],[.068+off,yb,1]];
+        const pts=[...fr.map(([x,y])=>new T.Vector3(sd*x,y,surf(x,y,1))),...bk.map(([x,y])=>new T.Vector3(sd*x,y,y>1.37?-.012:surf(Math.abs(x),y,0)))];
+        const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),32,C.strap==='double'?.0055+C.thk*.4:R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
     else if(C.strap!=='none'){const x0=C.neck==='v'?.056:C.neck==='scoop'?.074:.066,y0=Math.min(topEdge(C,x0,1),1.345)-.004,yb=Math.min(1.33,bik?C.back-.004:Math.max(C.back,1.0)-.004);
       for(const sd of[-1,1]){const fr=[[x0,y0],[.072,1.33],[.086,1.362],[.096,1.378]].filter(([x,y],i)=>i===0||y>y0+.012),bk=[[.096,1.378],[.086,1.362],[.072,1.33]].filter(([x,y])=>y>yb+.012);
         if(yb<1.22)bk.push([.07,(1.33+yb)/2]);bk.push([.066,yb]);const pts=[...fr.map(([x,y])=>[x,y,1]),...bk.map(([x,y])=>[x,y,0])].map(([x,y,f])=>new T.Vector3(sd*x,y,(y>1.37?(f?.014:-.014):surf(x,y,f))));
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
+    const tieC=C.trim||SP0.pat==='trim'?(SP0.acc||'#ffffff'):suit,tieM=soft(tieC),bow=(pos,out,up)=>{const g=new T.Group();g.position.copy(pos);g.lookAt(pos.clone().add(out));body.add(g);
+        const kn=new T.Mesh(SPH,tieM);kn.scale.setScalar(.0075);g.add(kn);for(const sx of[-1,1]){const lp=new T.Mesh(new T.TorusGeometry(.011,.0032,6,14),tieM);lp.position.set(sx*.012,0,.002);lp.scale.set(1.15,.75,1);lp.rotation.z=sx*.25;g.add(lp);
+          const tl=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(sx*.003,-.004,.002),new T.Vector3(sx*.009,-.024,.004),new T.Vector3(sx*.006,-.046,.003)]),8,.0026,5,false),tieM);g.add(tl)}straps.push(g)};
+    if(C.strap==='halter'&&C.bow){const bz=profAt(P0,1.468)[2]*1.08;bow(new T.Vector3(0,1.462,-bz-.006),new T.Vector3(0,0,-1))}
+    if(bik&&C.sides&&C.sides!=='band'){const hiS=C.rise-.004,ys=C.sides==='tie'?[hiS-.012]:[hiS-.008,hiS-.03],a0=Math.asin(.74);
+      for(const sd of[-1,1]){for(const yy of ys){const pts=[];for(let th=a0;th<=Math.PI-a0+1e-6;th+=.07){const q=SSb.torsoAt(yy,th,true),l=Math.hypot(q[0],q[2])||1;pts.push(new T.Vector3(sd*(q[0]+q[0]/l*(CUT.thk+.002)),yy,q[2]+q[2]/l*(CUT.thk+.002)))}
+          const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,.0028,5,false),tieM);body.add(tb);straps.push(tb)}
+        if(C.sides==='tie'){const q=SSb.torsoAt(ys[0],Math.PI/2,true);bow(new T.Vector3(sd*(q[0]+CUT.thk+.006),ys[0],q[2]),new T.Vector3(sd,0,0))}}}
     o_straps.push(...straps)}
   if(!isStaff){const SS=shapeSampler({shape:BD,fem,P:PT,nodes:SP0.nodes}),bot=BANDS.T.find(b=>b.key==='bot'||b.key==='one'||b.key==='men'),lo=bot?bot.lo(Math.PI):9,hi=bot?bot.hi(Math.PI,0):-9,segs=[[]],mat=new T.MeshBasicMaterial({color:'#2a2230'});let prevC=null;
     for(let y=.805;y<=.952;y+=.006){const cov=y>lo+.006&&y<hi-.006,p=SS.torsoAt(y,Math.PI,cov);if(prevC!==null&&cov!==prevC)segs.push([]);prevC=cov;segs[segs.length-1].push(new T.Vector3(p[0],y,p[2]-(cov?CUT.thk+.0012:.0012)))}
@@ -1835,7 +1851,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
   for(const inp of el.querySelectorAll('[data-p]')){const p=inp.dataset.p;inp.addEventListener(inp.type==='range'||inp.tagName==='TEXTAREA'||inp.type==='text'||inp.type==='color'?'input':'change',()=>{let v=inp.type==='checkbox'?inp.checked:inp.type==='range'?+inp.value:inp.value;
     if(p==='n'){v=v.replace(/[^\w \-']/g,'').slice(0,20)||'Guest';if(ADM.list.some((c,j)=>j!==ADM.i&&c.n===v))return}
     spth(sp,p,v);if(inp.type==='range')inp.nextElementSibling.textContent=(+v).toFixed(p.startsWith('cut.')||p.startsWith('nodes.')?3:2);if(p==='nodes.'+ADM.ni+'.m')drawAdmin();if(p==='n'||p==='role')document.getElementById('admSel').options[ADM.i].textContent=sp.n+(sp.role==='staff'?' (staff)':'');
-    if(p==='sex'){sp.swim=v==='f'?'one':'trunks';sp.pat='solid';sp.cut=cutDefault({...sp,n:''});drawAdmin()}if(p==='role'&&v!=='staff'&&!sp.cut)sp.cut=fullCut(sp);if(p==='cut.loose'||p==='cut.strap')drawAdmin();admChanged()})}
+    if(p==='sex'){sp.swim=v==='f'?'one':'trunks';sp.pat='solid';sp.cut=cutDefault({...sp,n:''});drawAdmin()}if(p==='role'&&v!=='staff'&&!sp.cut)sp.cut=fullCut(sp);if(p==='cut.loose'||p==='cut.strap'||p==='cut.sides')drawAdmin();admChanged()})}
   wireSuit(el,sp);wireShape(el,sp);for(const b of el.querySelectorAll('[data-btype]'))b.onclick=()=>{applyBType(sp,+b.dataset.btype);drawAdmin();admChanged()};
   document.getElementById('admNew').onclick=()=>{let k=1;while(ADM.list.some(c=>c.n==='New guest '+k))k++;ADM.list.push(fillSpec({n:'New guest '+k,role:'guest'}));ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
   document.getElementById('admDup').onclick=()=>{const c=JSON.parse(JSON.stringify(sp));let k=2;while(ADM.list.some(x=>x.n===sp.n+' '+k))k++;c.n=sp.n+' '+k;c.role=sp.role==='staff'?'guest':sp.role;ADM.list.push(c);ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
@@ -1979,7 +1995,7 @@ function admGizmoMove(gd,x,y){const sp=ADM.list[ADM.i],n=sp.nodes[gd.i];if(!n)re
   const pm=pickMesh(ADM.c);if(!pm)return;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);const h=picker.intersectObject(pm)[0];if(!h)return;const M=ADM.c.m.pick.meta,a=h.face.a;
   n.p=M.k[a];n.s=n.p==='torso'?'':M.s[a];n.y=+M.y[a].toFixed(3);n.th=+M.t[a].toFixed(3);admPreview()}
 // ---------- swimsuit designer (inside the admin editor) ----------
-const NECKS=[['straight','Straight'],['sweet','Sweetheart'],['v','V'],['scoop','Scoop']],STRAPS=[['thin','Thin straps'],['wide','Wide straps'],['halter','Halter (ties behind neck)'],['none','Strapless']];
+const NECKS=[['straight','Straight'],['sweet','Sweetheart'],['v','V'],['scoop','Scoop']],STRAPS=[['thin','Thin straps'],['wide','Wide straps'],['double','Double straps'],['cross','Cross-back straps'],['halter','Halter (ties behind neck)'],['none','Strapless']],SIDES=[['band','Full band'],['tie','Side ties with bows'],['double','Double strings']];
 function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit designer</summary><p class="small">Staff always wear the Tributary uniform.</p></details>`;
   const C=sp.cut||(sp.cut=fullCut(sp)),f=sp.sex==='f',bik=f&&sp.swim==='bikini',one=f&&sp.swim==='one';
   const chip=(at,l,on)=>`<button type="button" class="chp${on?' on':''}" ${at}>${l}</button>`;
@@ -1992,8 +2008,8 @@ function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit des
   return`<details open><summary>Swimsuit designer</summary>
    ${f?`<p class="lab">Type</p><div class="crow">${chip('data-swim="one"','One-piece',one)}${chip('data-swim="bikini"','Bikini',bik)}</div>`:''}
    ${bik?`<p class="lab">Top styles</p><div class="crow">${pre('top')}</div><p class="lab">Bottom styles</p><div class="crow">${pre('bot')}</div>`:one?`<p class="lab">Styles</p><div class="crow">${pre('one')}</div>`:`<p class="lab">Cuts</p><div class="crow">${pre('men')}</div>`}
-   ${f?`<p class="lab">Top</p>${sl('topHi','Neckline height',1.2,1.37)}${sel('neck','Neckline shape',NECKS)}${bik?sl('topLo','Top length (low = tankini)',.92,1.2):''}${sel('strap','Straps',STRAPS)}${sl('back','Back height (low = open back)',bik?1.18:.98,1.34)}`:''}
-   <p class="lab">${f?'Bottom':'Shorts'}</p>${f&&!bik?'':sl('rise','Waist height',f?.86:.92,f?1.0:1.0)}${f?sl('leg','Leg cut (higher on the hip)',0,.12):''}${sl('len','Leg length (0 = brief, up = shorts)',f?0:.03,.38)}
+   ${f?`<p class="lab">Top</p>${sl('topHi','Neckline height',1.2,1.37)}${sel('neck','Neckline shape',NECKS)}${bik?sl('topLo','Top length (low = tankini)',.92,1.2):''}${sel('strap','Straps',STRAPS)}${C.strap==='halter'?ck('bow','Bow at the back of the neck'):''}${sl('back','Back height (low = open back)',bik?1.18:.98,1.34)}`:''}
+   <p class="lab">${f?'Bottom':'Shorts'}</p>${f&&!bik?'':sl('rise','Waist height',f?.86:.92,f?1.0:1.0)}${f?sl('leg','Leg cut (higher on the hip)',0,.12):''}${bik?sel('sides','Hip sides',SIDES):''}${sl('len','Leg length (0 = brief, up = shorts)',f?0:.03,.38)}
    ${ck('loose','Loose, board-short style')}${C.loose?sl('flare','Looseness',0,1):''}${f?'':ck('band','Waistband')+ck('string','Drawstring')}
    <p class="lab">Fabric</p>${sl('thk','Thickness (doll-like when thick)',.002,.014)}
    <p class="lab">Outline points</p><canvas id="sol" width="320" height="360"></canvas>
