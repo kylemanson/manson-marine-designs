@@ -1434,13 +1434,13 @@ function shapeSampler(o){
   const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
   const torsoAt=(y,th,bridge)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5)*(1+((SHP.belly||1)-1)*Math.exp(-(((y-1.0)/.075)**2))),b=b0*(1+(mm-1)*.5)*(1-(F?.25:.24)*sstep(.83,.765,y)*(bridge?.6:1))*(1+((SHP.back||1)-1)*Math.exp(-(((y-1.26)/.12)**2))),sx=Math.sin(th),cz=Math.cos(th),nR=2+.28*(SHP.round||1)+(cz<0?.12*(SHP.round||1)+.8*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.09)**2)):.25*(SHP.hipRound||1)*Math.exp(-(((y-.86)/.08)**2))),pe=2/nR,sp_=v=>Math.sign(v)*Math.pow(Math.abs(v),pe);let x=w*sp_(sx),z=(cz>0?f:b)*sp_(cz);
     if(cz>0){const ch=(SHP.chest||1)*(SHP.bust||1);let a;
-      if(F){const A=.038*ch,cy=1.215,vy=Math.exp(-(((y-cy)/(y>cy?.066:.03))**2)),bw=.047*(SHP.bustWidth||1),bs=.07*(SHP.bustSpread||1),lo=xx=>Math.exp(-((xx/bw)**2));a=A*vy*(lo(x-bs)+lo(x+bs));
-        a-=A*.3*Math.exp(-((x/.012)**2))*Math.exp(-(((y-1.22)/.05)**2))*(bridge?0:1);if(bridge)a=Math.max(a,A*vy*.8*Math.exp(-((x/.075)**2)))}
+      if(F){const A=.038*ch,cy=1.215+((SHP.bustLift||1)-1)*.045,vy=Math.exp(-(((y-cy)/(y>cy?.066*(SHP.bustUpper||1):.03*(SHP.bustLower||1)))**2)),bw=.047*(SHP.bustWidth||1),bs=.07*(SHP.bustSpread||1),lo=xx=>Math.exp(-((xx/bw)**2));a=A*vy*(lo(x-bs)+lo(x+bs));
+        a-=A*.3*(SHP.cleavage||1)*Math.exp(-((x/.012)**2))*Math.exp(-(((y-cy)/.05)**2))*(bridge?0:1);if(bridge)a=Math.max(a,A*vy*.8*Math.exp(-((x/.075)**2)))}
       else{const A=.014*ch,cy=1.25,vy=Math.exp(-(((y-cy)/(y>cy?.05:.022))**2)),bw=.058*(SHP.bustWidth||1),bs=.075*(SHP.bustSpread||1),lo=xx=>Math.exp(-((xx/bw)**2));a=A*vy*(lo(x-bs)+lo(x+bs))-.003*Math.exp(-((x/.01)**2))*sstep(1.17,1.2,y)*sstep(1.37,1.33,y)*(bridge?0:1)}
-      a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
+      a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz;if(F&&(SHP.bustAngle||1)!==1)x+=a*cz*Math.sign(x)*.7*((SHP.bustAngle||1)-1)}
     else{// two separate glutes: fuller low down, a crisp fold underneath, a cleft between (fabric bridges it)
       const gs=SHP.glutes||1,A=(F?.034:.024)*gs,cx0=(F?.068:.062)*(SHP.gluteSpread||1),sxg=(F?.07:.06)*(SHP.gluteWidth||1),cy=(F?.85:.862)+((SHP.gluteLift||1)-1)*.04,lobe=xx=>Math.exp(-(((xx)/sxg)**2)),vy=Math.exp(-(((y-cy)/(y>cy?(F?.1:.08):(F?.042:.033)))**2));
-      const ax=Math.abs(x),cleft=A*.8*Math.exp(-((x/.016)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
+      const ax=Math.abs(x),cleft=A*.55*Math.exp(-((x/.026)**2))*sstep(.975,.9,y)*sstep(.77,.8,y)*(bridge?.15:1),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.92)/.04)**2);
       const a=A*(lobe(x-cx0)+lobe(x+cx0))*vy-cleft-dimp*(F?1:.6)-(bridge?0:.0035*Math.exp(-((x/.012)**2))*sstep(.97,1.02,y)*sstep(1.43,1.37,y))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
     if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
   const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.009*Math.exp(-(((y+.062)/.012)**2))+.004*Math.exp(-(((y+.12)/.035)**2))):(-.0065*Math.exp(-(((y+.07)/.011)**2))+.002*Math.exp(-(((y+.12)/.03)**2))))*(SHP.glutes||1)}
@@ -1465,7 +1465,7 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   const I=o.I;// bone indices
   const torsoW=(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]};
   const thighW=s=>(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]};
-  add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),torsoW,o.fns.torso,'torso');
+  add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),72,torsoAt,new T.Matrix4(),torsoW,o.fns.torso,'torso');
 
 
   const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]),xk=(p,k)=>p.map(([y,r])=>[y,r*(k||1)]);
@@ -1570,7 +1570,7 @@ function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex+'c2'+(L.eyeS||1)+(
   else{g.moveTo(120,160);g.quadraticCurveTo(124,165,128,161);g.quadraticCurveTo(132,165,136,160);g.stroke()}
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=4;return faceCache[key]=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false})}
 // ---------- character specs: everything the editors can change ----------
-const BODY0={height:1,neck:1,shoulders:1,chest:1,bust:1,ribs:1,waist:1,belly:1,back:1,hips:1,glutes:1,gluteLift:1,arms:1,upperArm:1,forearm:1,legs:1,thigh:1,calf:1,round:1,hipRound:1,bustWidth:1,bustSpread:1,gluteWidth:1,gluteSpread:1},HEAD0={size:1,jaw:1,cheeks:1,eyes:1,eyeGap:1};
+const BODY0={height:1,neck:1,shoulders:1,chest:1,bust:1,ribs:1,waist:1,belly:1,back:1,hips:1,glutes:1,gluteLift:1,arms:1,upperArm:1,forearm:1,legs:1,thigh:1,calf:1,round:1,hipRound:1,bustWidth:1,bustSpread:1,bustLift:1,bustUpper:1,bustLower:1,bustAngle:1,cleavage:1,gluteWidth:1,gluteSpread:1},HEAD0={size:1,jaw:1,cheeks:1,eyes:1,eyeGap:1};
 const STAFFN=['Mika','Ren','Sora'],CHARS={};let CHARS_SRC='built-in';
 // ---- swimsuit cuts: every swimsuit is a type (bikini / one-piece / shorts) plus these shape numbers ----
 const CUTP={
@@ -1687,6 +1687,9 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
         if(yb<1.22)bk.push([.07,(1.33+yb)/2]);bk.push([.066,yb]);const pts=[...fr.map(([x,y])=>[x,y,1]),...bk.map(([x,y])=>[x,y,0])].map(([x,y,f])=>new T.Vector3(sd*x,y,(y>1.37?(f?.014:-.014):surf(x,y,f))));
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
     o_straps.push(...straps)}
+  if(!isStaff){const SS=shapeSampler({shape:BD,fem,P:PT,nodes:SP0.nodes}),bot=BANDS.T.find(b=>b.key==='bot'||b.key==='one'||b.key==='men'),lo=bot?bot.lo(Math.PI):9,hi=bot?bot.hi(Math.PI,0):-9,segs=[[]],mat=new T.MeshBasicMaterial({color:'#2a2230'});let prevC=null;
+    for(let y=.805;y<=.952;y+=.006){const cov=y>lo+.006&&y<hi-.006,p=SS.torsoAt(y,Math.PI,cov);if(prevC!==null&&cov!==prevC)segs.push([]);prevC=cov;segs[segs.length-1].push(new T.Vector3(p[0],y,p[2]-(cov?CUT.thk+.0012:.0012)))}
+    for(const sg of segs)if(sg.length>2){const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(sg),sg.length*2,.0017,5,false),mat);body.add(tb);o_straps.push(tb)}}
   const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,cut:CUT,P:PT,bands:BANDS,stripeShirt:(name||'').length%3===0};
   const texSwim=paintSkinTex({...tsp,street:false}),texStreet=isStaff?texSwim:paintSkinTex({...tsp,street:true});
   const bodyMat=new T.MeshToonMaterial({map:texSwim,gradientMap:gradSoft,toneMapped:false,skinning:true});
@@ -1778,7 +1781,7 @@ function closeCreator(){try{localStorage.setItem('tributary.player',JSON.stringi
 const REPO='kylemanson/manson-marine-designs',CPATH='public/tributary-playtest-k7m2/characters.json';
 let ADM=null;
 const SECT=[['Basics',[['n','Name','text'],['role','Role','select',[['guest','Guest'],['staff','Staff']]],['sex','Body type','select',[['f','Woman'],['m','Man']]],['persona','Personality (the AI plays them like this)','textarea']]],
- ['Body',[['body.height','Height','range',.88,1.12],['body.neck','Neck','range',.8,1.3],['body.shoulders','Shoulders','range',.85,1.25],['body.chest','Chest width','range',.5,1.7],['body.bust','Bust / pecs','range',.4,1.8],['body.bustWidth','Bust / pecs width','range',.7,1.4],['body.bustSpread','Bust / pecs spread','range',.8,1.3],['body.ribs','Ribcage','range',.85,1.2],['body.waist','Waist','range',.82,1.35],['body.belly','Belly','range',.8,1.5],['body.back','Upper back','range',.85,1.25],['body.hips','Hips','range',.85,1.25],['body.glutes','Rear size','range',.4,1.7],['body.gluteLift','Rear lift','range',.75,1.25],['body.gluteWidth','Glute width','range',.7,1.4],['body.gluteSpread','Glute spread','range',.8,1.3],['body.round','Torso roundness (top-down)','range',0,2],['body.hipRound','Hip roundness (top-down)','range',0,2],['body.arms','Arms overall','range',.75,1.35],['body.upperArm','Upper arms','range',.8,1.35],['body.forearm','Forearms','range',.8,1.3],['body.legs','Legs overall','range',.82,1.28],['body.thigh','Thighs','range',.8,1.3],['body.calf','Calves','range',.8,1.3]]],
+ ['Body',[['body.height','Height','range',.88,1.12],['body.neck','Neck','range',.8,1.3],['body.shoulders','Shoulders','range',.85,1.25],['body.chest','Chest width','range',.5,1.7],['body.bust','Bust / pecs','range',.4,1.8],['body.bustWidth','Bust / pecs width','range',.7,1.4],['body.bustSpread','Bust / pecs spread','range',.8,1.3],['body.bustLift','Bust height (women)','range',.7,1.3],['body.bustUpper','Bust upper fullness','range',.6,1.5],['body.bustLower','Bust lower roundness','range',.7,1.6],['body.bustAngle','Bust set (centred ↔ outward)','range',.6,1.6],['body.cleavage','Cleavage depth','range',0,2],['body.ribs','Ribcage','range',.85,1.2],['body.waist','Waist','range',.82,1.35],['body.belly','Belly','range',.8,1.5],['body.back','Upper back','range',.85,1.25],['body.hips','Hips','range',.85,1.25],['body.glutes','Rear size','range',.4,1.7],['body.gluteLift','Rear lift','range',.75,1.25],['body.gluteWidth','Glute width','range',.7,1.4],['body.gluteSpread','Glute spread','range',.8,1.3],['body.round','Torso roundness (top-down)','range',0,2],['body.hipRound','Hip roundness (top-down)','range',0,2],['body.arms','Arms overall','range',.75,1.35],['body.upperArm','Upper arms','range',.8,1.35],['body.forearm','Forearms','range',.8,1.3],['body.legs','Legs overall','range',.82,1.28],['body.thigh','Thighs','range',.8,1.3],['body.calf','Calves','range',.8,1.3]]],
  ['Head and face',[['head.size','Head size','range',.88,1.15],['head.jaw','Jaw: soft ↔ pointed','range',.3,1.7],['head.cheeks','Cheeks','range',0,2.2],['head.eyes','Eye size','range',.78,1.22],['head.eyeGap','Eye spacing','range',.9,1.1]]],
  ['Hair and colours',[['style','Hair style','select',STYLES],['hair','Hair colour','color'],['skin','Skin','color'],['eye','Eye colour','color'],['hat','Wears a sauna hat','check']]],
  ['Street clothes',[['street.0','Shirt colour','color'],['street.1','Pants colour','color']]]];
@@ -2011,9 +2014,23 @@ function wireSuit(el,sp){if(sp.role==='staff')return;wireSol(sp);
     const d={name:nm,sex:sp.sex,swim:sp.sex==='f'?sp.swim:'trunks',pat:sp.pat,suit:sp.suit,acc:sp.acc,cut:{...sp.cut}},j=ADM.suits.findIndex(x=>x.name===nm&&x.sex===sp.sex);if(j>=0)ADM.suits[j]=d;else ADM.suits.push(d);drawAdmin();admChanged();admStatus(`Design "${nm}" saved. Use Save to website to publish it.`)};
   const dl=document.getElementById('suitDel');if(dl)dl.onclick=()=>{suitDelMode=true;admStatus('Now tap the design to delete (twice to confirm).',1)}}
 // ---------- starting body types ----------
-const BTYPES={f:[['Petite',{height:.93,neck:.95,shoulders:.94,chest:.9,bust:.85,ribs:.95,waist:.95,belly:.95,hips:.96,glutes:.9,arms:.9,legs:.92,thigh:.92,calf:.92},.15],['Slim',{height:1.01,shoulders:.96,chest:.85,bust:.8,waist:.92,belly:.9,hips:.94,glutes:.8,arms:.88,legs:.9,thigh:.88,calf:.9},.15],['Average',{},.15],
-   ['Curvy',{chest:1.12,bust:1.25,waist:.96,hips:1.12,glutes:1.25,gluteLift:1.05,arms:1.02,thigh:1.1,calf:1.02},.15],['Athletic',{shoulders:1.06,bust:.9,waist:.95,belly:.9,glutes:1.15,gluteLift:1.1,arms:1.05,upperArm:1.05,thigh:1.08,calf:1.1},.55],['Pear',{shoulders:.94,chest:.9,bust:.9,waist:.97,hips:1.15,glutes:1.2,thigh:1.15},.15],
-   ['Plus-size',{shoulders:1.06,neck:1.08,chest:1.25,bust:1.35,ribs:1.12,waist:1.22,belly:1.25,back:1.08,hips:1.18,glutes:1.3,arms:1.2,upperArm:1.15,legs:1.15,thigh:1.2,calf:1.12},.05],['Older',{bust:1.05,waist:1.08,belly:1.1,back:1.04,glutes:.85,gluteLift:.9},.05]],
+const BTYPES={f:[['Petite',{height:.93,neck:.95,shoulders:.94,chest:.9,bust:.85,ribs:.95,waist:.95,belly:.95,hips:.96,glutes:.9,arms:.9,legs:.92,thigh:.92,calf:.92},.15],
+   ['Slim',{height:1.01,shoulders:.96,chest:.85,bust:.8,waist:.92,belly:.9,hips:.94,glutes:.8,arms:.88,legs:.9,thigh:.88,calf:.9},.15],
+   ['Tall & slim',{height:1.08,shoulders:.97,chest:.88,bust:.85,waist:.93,hips:.96,glutes:.85,arms:.9,legs:.92,thigh:.9,calf:.92},.2],
+   ['Average',{},.15],
+   ['Rectangle',{chest:.97,bust:.95,ribs:1.02,waist:1.06,hips:.97,glutes:.9,round:.9},.15],
+   ['Hourglass',{chest:1.08,bust:1.2,ribs:.96,waist:.88,hips:1.12,glutes:1.15,thigh:1.05},.15],
+   ['Curvy',{chest:1.12,bust:1.25,waist:.96,hips:1.12,glutes:1.25,gluteLift:1.05,arms:1.02,thigh:1.1,calf:1.02},.15],
+   ['Pear',{shoulders:.94,chest:.9,bust:.9,waist:.97,hips:1.15,glutes:1.2,thigh:1.15,gluteWidth:1.1},.15],
+   ['Apple',{chest:1.08,bust:1.15,ribs:1.08,waist:1.2,belly:1.3,glutes:.95,arms:1.08,legs:.98},.08],
+   ['Inverted triangle',{shoulders:1.12,chest:1.1,bust:1.05,back:1.05,waist:.98,hips:.93,glutes:.9,thigh:.95},.25],
+   ['Full bust',{chest:1.1,bust:1.45,bustWidth:1.1,bustLower:1.15,waist:.98},.12],
+   ['Small bust',{chest:.9,bust:.6,bustWidth:.9,cleavage:.5},.15],
+   ['Athletic',{shoulders:1.06,bust:.9,bustLift:1.05,waist:.95,belly:.9,glutes:1.15,gluteLift:1.1,arms:1.05,upperArm:1.05,thigh:1.08,calf:1.1},.55],
+   ['Muscular',{shoulders:1.12,neck:1.08,chest:1.05,bust:.85,back:1.08,waist:.98,arms:1.15,upperArm:1.15,forearm:1.1,thigh:1.15,calf:1.15,glutes:1.2,gluteLift:1.12},.8],
+   ['Plus-size',{shoulders:1.06,neck:1.08,chest:1.25,bust:1.35,ribs:1.12,waist:1.22,belly:1.25,back:1.08,hips:1.18,glutes:1.3,arms:1.2,upperArm:1.15,legs:1.15,thigh:1.2,calf:1.12},.05],
+   ['Plus curvy',{chest:1.2,bust:1.4,ribs:1.05,waist:1.08,belly:1.12,hips:1.25,glutes:1.4,gluteWidth:1.1,thigh:1.25,arms:1.12,upperArm:1.1,calf:1.1},.05],
+   ['Older',{bust:1.05,bustLift:.85,bustUpper:.85,waist:1.08,belly:1.1,back:1.04,glutes:.85,gluteLift:.9},.05]],
  m:[['Slim',{neck:.94,shoulders:.94,chest:.85,waist:.94,hips:.96,arms:.88,legs:.92,thigh:.9,calf:.92},.25],['Average',{},.3],['Athletic',{neck:1.05,shoulders:1.1,chest:1.15,bust:1.15,waist:.95,arms:1.1,upperArm:1.1,thigh:1.08,calf:1.06,glutes:1.1,gluteLift:1.05},.6],
    ['Muscular',{neck:1.15,shoulders:1.18,chest:1.3,bust:1.35,ribs:1.08,back:1.12,arms:1.25,upperArm:1.25,forearm:1.15,legs:1.15,thigh:1.18,calf:1.12,glutes:1.15},.85],['Lanky',{height:1.08,neck:.95,shoulders:.97,chest:.88,waist:.93,arms:.9,legs:.9,thigh:.88},.2],
    ['Stocky',{height:.93,neck:1.12,shoulders:1.1,chest:1.15,ribs:1.08,waist:1.12,belly:1.1,arms:1.12,legs:1.12,thigh:1.12,calf:1.1},.35],['Heavy-set',{neck:1.12,shoulders:1.08,chest:1.2,bust:1.2,ribs:1.12,waist:1.28,belly:1.35,back:1.08,hips:1.1,glutes:1.15,arms:1.18,legs:1.15,thigh:1.18,calf:1.08},.05],['Older',{chest:.95,bust:1.05,waist:1.08,belly:1.18,glutes:.85,gluteLift:.9,arms:.95},.1]]};
