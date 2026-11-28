@@ -118,6 +118,22 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 .legend b{color:var(--deep)}
 .small{font-size:12px;color:#5a6f7f}
 #snapc{font:800 40px Nunito,sans-serif;color:var(--deep)}
+body.editing #hud,body.editing #goal,body.editing #menu,body.editing #pad,body.editing #pausebtn,body.editing #fb,body.editing #toast,body.editing .toast{display:none!important}
+#creator,#adm{display:none;position:fixed;z-index:11;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#0F2A40;font:14px Nunito,sans-serif;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#creator.on,#adm.on{display:block}
+#creator{left:50%;transform:translateX(-50%);bottom:0;width:min(520px,100vw);max-height:52vh;border-radius:22px 22px 0 0;padding:12px 16px calc(14px + env(safe-area-inset-bottom))}
+#creator h2{margin:2px 0 8px;font:700 20px 'Josefin Sans',sans-serif}.crow{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.lab{margin:6px 0 0;font-weight:800;font-size:13px;color:#3D5A70}
+.chp{min-height:38px;padding:0 12px;border:2px solid #D7E7F2;border-radius:19px;background:#fff;color:#0F2A40;font:700 13px Nunito,sans-serif}.chp.on{border-color:#3B8FD0;background:#EAF4FB}
+.sw{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #c9d6e0}.sw.on{box-shadow:0 0 0 3px #3B8FD0}
+.sl{display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:8px;margin:6px 0;font-weight:700}.sl input{width:100%}.sl span,.sl output{font-size:11px;color:#5a6f7f;min-width:32px}
+#creator .btn{width:100%;margin-top:8px}
+#adm{right:0;top:0;bottom:0;width:min(400px,100vw);padding:12px 14px 24px;border-radius:0}
+@media (max-width:700px){#adm{top:auto;height:56vh;border-radius:20px 20px 0 0}}
+#adm .ah{display:flex;gap:10px;align-items:center;margin-bottom:8px}#adm .ah b{font:700 18px 'Josefin Sans',sans-serif}#adm select,#adm input[type=text],#adm input[type=password],#adm textarea{font:14px Nunito,sans-serif;border:1px solid #c9d6e0;border-radius:10px;padding:8px;background:#fff;width:100%;box-sizing:border-box}
+#adm .ah select{flex:1}#adm .arow,#adm .afoot{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#adm .arow button,#adm .afoot button,#adm details button{min-height:38px;padding:0 12px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:700 13px Nunito,sans-serif}
+#adm .afoot .btn{background:#1E5A8A;color:#fff;min-height:44px}#adm details{border-top:1px solid #E6F0F7;padding:6px 0}#adm summary{font-weight:800;cursor:pointer;padding:6px 0}
+#adm .fl{display:grid;gap:4px;margin:8px 0;font-weight:700}#adm .fl.ck{display:flex;align-items:center;gap:8px}#adm input[type=color]{width:56px;height:34px;border:0;background:none;padding:0}
+#admStat{font-weight:700;color:#1E5A8A;min-height:18px;margin:4px 0}#admStat.bad{color:#a23a28}#adm .small{font-size:12px;color:#3D5A70}
 </style>
 </head>
 <body>
@@ -133,7 +149,7 @@ body.fighting #fhud{display:flex}.fz{display:flex;flex-direction:column;align-it
 </div>
 <div id="toasts"></div>
 <div id="prompt"></div>
-<div id="menu"></div><div id="goal"></div>
+<div id="menu"></div><div id="creator" role="dialog" aria-label="Create your character"></div><div id="adm" role="dialog" aria-label="Character editor"></div><div id="goal"></div>
 <div id="fhud"><div class="fz"><span>YOU</span><b id="fyou">0%</b></div><div class="fvs">VS</div><div class="fz"><span id="fname">STAFF</span><b id="fthem">0%</b></div><button type="button" id="quiet">Go quietly</button></div>
 <div id="fx"></div>
 <div id="incoming" role="status" aria-live="polite"><p><b id="inname"></b> <span id="intext"></span></p><div id="inbtns"></div></div>
@@ -405,7 +421,7 @@ function getOptions(){
   if(a.k==='change')return[opt(P.dressed==='street'?'Change into swimwear':'Change into street clothes',()=>{P.face=faceTo(a.tx,a.ty);P.act={k:'change',t:0,d:2.6}},{b:'CHANGE'})];
   if(a.k==='wc')return[opt('Lock yourself in the washroom',()=>enterWC(a.room),{b:'HIDE'})];
   if(a.k==='tub'&&P.dressed==='street')return[opt('Change into swimwear first',()=>toast('You can\'t plunge in street clothes. Head to the change room.'))];
-  if(a.k==='change'&&a.room.sex!==looks.YOU.sex)return[opt('Wrong change room!',()=>toast("This isn't your change room. The men's room is just north of here.",'bad'))];
+  if(a.k==='change'&&a.room.sex!==looks.YOU.sex)return[opt('Wrong change room!',()=>toast(`This isn't your change room. The ${looks.YOU.sex==='f'?"women's room is just south":"men's room is just north"} of here.`,'bad'))];
   if(a.k==='tub'&&a.tub.by)return[opt('Someone is in this plunge',()=>toast('Wait for them to get out, or try another plunge.'))];
   if(a.k==='tub')return[opt('Climb into the plunge',()=>startTub('in',a.tub),{b:'IN'}),opt('Cannonball!',()=>startTub('cannon',a.tub),{risky:1})];
   if(a.k==='bucket'){const o=[];if(P.hold&&P.hold.k==='oil')o.push(opt('Add essential oil to the bucket',()=>{P.face=faceTo(812,612);P.act={k:'oil',t:0,d:.9}},{b:'OIL'}));
@@ -658,7 +674,7 @@ const randBetween=(a,b)=>a+Math.random()*(b-a),gameMin=m=>m*60/TF; // game minut
 function roomOf(g){return ROOMS.find(R0=>R0.sex===(g.def.sex))}
 function goTo(g,x,y){g.path=findPath(g,{x,y});g.dest={x,y}}
 function standG(g){if(!g.seat)return;g.x=g.seat.sx;g.y=g.seat.sy;g.seat.by=null;g.seat=null}
-function spawnGuest(def,inside){const g={n:def.n,def,hair:def.hair,suit:def.suit,skin:def.skin,hat:BANK.indexOf(def)%3===1,x:870+Math.random()*20,y:-70,r:11,st:inside?'routine':'arrive',dressed:inside?'swim':'street',rounds:1+Math.floor(Math.random()*3),phase:null,sub:'go',t:0};
+function spawnGuest(def,inside){const g={n:def.n,def,hair:def.hair,suit:def.suit,skin:def.skin,hat:CHARS[def.n]?!!CHARS[def.n].hat:BANK.indexOf(def)%3===1,x:870+Math.random()*20,y:-70,r:11,st:inside?'routine':'arrive',dressed:inside?'swim':'street',rounds:1+Math.floor(Math.random()*3),phase:null,sub:'go',t:0};
   guests.push(g);g.m=makeChar(g.suit,g.hair,g.skin,0,g.n);g.m.g.position.set(g.x*S,0,g.y*S);return g}
 function despawn(g){standG(g);if(g.tub){g.tub.by=null;g.tub=null}seats.forEach(s=>{if(s.claim===g)s.claim=null});if(chatC===g)closeChat();if(state.pm===g)state.pm=null;if(inc&&inc.c===g)hideIncoming();if(state.fightS===g)endFight();
   scene.remove(g.m.g);const i=guests.indexOf(g);if(i>=0)guests.splice(i,1)}
@@ -919,7 +935,7 @@ document.getElementById('again').onclick=()=>{endEl.classList.remove('on');docum
 const BOOK={h:18,fee:25};
 document.getElementById('start').addEventListener('click',e=>{const sl=e.target.closest('.slot'),ps=e.target.closest('.pass');
   if(sl||ps){const grp=sl?'.slot':'.pass';for(const b of document.querySelectorAll(grp)){b.classList.toggle('on',b===(sl||ps));b.setAttribute('aria-checked',b===(sl||ps))}if(sl)BOOK.h=+sl.dataset.h;else BOOK.fee=+ps.dataset.fee;return}
-  const v=e.target.dataset.entry;if(!v)return;document.getElementById('start').classList.remove('on');newGame(+v)});
+  const v=e.target.dataset.entry;if(!v)return;document.getElementById('start').classList.remove('on');newGame(+v);openCreator()});
 
 // ---------- update ----------
 function update(dt){
@@ -948,7 +964,7 @@ function update(dt){
   {const R0=ROOMS.find(R=>P.x<R.rect[0]+R.rect[2]&&P.y>R.rect[1]&&P.y<R.rect[1]+R.rect[3]);
    if(R0&&R0.sex!==looks.YOU.sex&&!P.hide){const occ=guests.filter(g=>roomOf(g)===R0&&g.x<385&&g.y>R0.y0&&g.y<R0.y0+140&&!g.cs);P.sus=Math.min(100,P.sus+(occ.length?14:5)*dt);
      if(!P.warn.room){P.warn.room=1;toast(`This is the ${R0.sex==='f'?"women's":"men's"} change room! Get out before someone sees you.`,'bad')}
-     for(const g of occ)if(!(g.roomYell>state.t)){g.roomYell=state.t+7;g.face=Math.atan2(P.x-g.x,P.y-g.y);setExpr(g,'a',4);say(g,["Excuse me! Wrong room!","Hey! This is the women's room!","Um, get out!"][Math.floor(Math.random()*3)]);remember(g,"the player walked into the women's change room")}
+     for(const g of occ)if(!(g.roomYell>state.t)){g.roomYell=state.t+7;g.face=Math.atan2(P.x-g.x,P.y-g.y);setExpr(g,'a',4);say(g,["Excuse me! Wrong room!",`Hey! This is the ${R0.sex==='f'?"women's":"men's"} room!`,"Um, get out!"][Math.floor(Math.random()*3)]);remember(g,"the player walked into the women's change room")}
      if(P.sus>=100)alarm()}else if(!R0)P.warn.room=0}
   if(inSauna(P)&&P.dressed==='street'&&guests.some(g=>g.seat&&g.seat.zone==='sauna')){P.sus=Math.min(100,P.sus+3*dt);SAU.anger+=4*dt;if(!P.warn.clothes){P.warn.clothes=1;toast('Guests stare: you\'re in the sauna in street clothes!','bad')}}
   if(chatC){const c=chatC;if(dist(P,c)>150||c.fight||c.chase||!(c.m&&c.m.g.parent)){closeChat()}else if(P.talkGo){if(m>.15)P.talkGo=null;else{const G0=P.talkGo;G0.t+=dt;const ox=P.x,oy=P.y;if(follow(P,105,dt)||dist(P,c)<40||G0.t>5){P.talkGo=null;faceAt(c)}else{P.dir=Math.atan2(P.x-ox,P.y-oy);P.mv=105}}}}
@@ -1010,7 +1026,7 @@ function update(dt){
 }
 let lastHud='';const bI=document.getElementById('brainInd');
 function goalNow(){if(state.ask)return{t:'Answer Mika at the desk',x:625,y:140};{const m=deskStaff();if(m&&m.tour)return{t:'Follow Mika for a quick tour',x:m.x,y:m.y}}if(!P.paid)return inLobby(P)?{t:'Go to the front desk and check in',x:625,y:140}:{t:'Head back to the front desk to check in',x:625,y:140};
-  const R0=ROOMS.find(R=>R.sex===looks.YOU.sex);if(P.dressed==='street'&&!P.leaving)return{t:"Go to the men's change room and get changed",x:R0.cx,y:R0.cy};
+  const R0=ROOMS.find(R=>R.sex===looks.YOU.sex);if(P.dressed==='street'&&!P.leaving)return{t:`Go to the ${looks.YOU.sex==='f'?"women's":"men's"} change room and get changed`,x:R0.cx,y:R0.cy};
   if(clockH()>state.end)return{t:`Session over: change and head out (or risk it)`,x:880,y:40};
   if(!P.cycles&&P.phase==='idle'&&!inSauna(P))return{t:'Start with the sauna: 10–15 min',x:740,y:640};return null}
 function hud(){
@@ -1298,13 +1314,13 @@ function bodyGeo(sex){const F=sex==='f',seg=48;
 const VCM=new T.MeshToonMaterial({vertexColors:true,gradientMap:gradSoft,toneMapped:false});
 function paint(geo,fn){const g=geo.clone(),p=g.attributes.position,c=new Float32Array(p.count*3),cc={};for(let i=0;i<p.count;i++){const hex=fn(p.getX(i),p.getY(i),p.getZ(i));const col=cc[hex]||(cc[hex]=lin(hex));c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b}g.setAttribute('color',new T.BufferAttribute(c,3));return g}
 // head with cheekbones, a narrower jaw and a rounded chin (the face decal is bent the same way)
-function headDeform(g,fem=true){const JW=fem?.4:.26,p=g.attributes.position,G2=(v,c,w)=>Math.exp(-(((v-c)/w)**2));for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const r=Math.hypot(x,y,z)||1;x/=r;y/=r;z/=r;
+function headDeform(g,fem=true,hd={}){const JW=(fem?.4:.26)*(hd.jaw||1),CK=.045*(hd.cheeks??1),p=g.attributes.position,G2=(v,c,w)=>Math.exp(-(((v-c)/w)**2));for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const r=Math.hypot(x,y,z)||1;x/=r;y/=r;z/=r;
     // wide, soft cranium; slightly flat top
     if(y>0){x*=1+.035*Math.sin(Math.min(1,y*1.6)*Math.PI);if(y>.62)y=.62+(y-.62)*.9}
     // flatter face plane like anime/cartoon faces
     if(z>0)z*=1-.08*Math.max(0,1-Math.abs(y+.05)*1.2);
     // full baby cheeks, then a gentle taper to a small rounded chin
-    if(y<.05&&z>-.2)x*=1+.045*G2(y,-.22,.16);
+    if(y<.05&&z>-.2)x*=1+CK*G2(y,-.22,.16);
     if(y<0){const k=Math.min(1,-y);x*=1-JW*Math.pow(k,1.8);if(z>0){z*=1-.06*k;y*=1+.05*k;if(k>.75)z+=.04*(k-.75)}else z*=1-.18*Math.max(0,k-.35)}
     // rounder back of the skull
     if(z<0&&y>-.3)z*=1.07;
@@ -1342,7 +1358,7 @@ function patCol(p,s,y,th,base,acc){const fr=v=>v-Math.floor(v);
     default:return base}}
 function paintSkinTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data;
   const sk=hx(o.sk),P=TPROF[o.fem?'f':'m'],sw=o.swim,base=hx(o.suit),acc=hx(sw.acc||'#ffffff'),sc=hx(o.sc),pc=hx(o.pc),SPc=hx('#24303c'),belt=[42,36,32];
-  for(let py=0;py<H;py++){const v=1-(py+.5)/H;let reg='fore';for(const k in UVREG){const r=UVREG[k];if(v>=r[0]&&v<r[1]){reg=k;break}}const R=UVREG[reg],y=R[2]+(v-R[0])/(R[1]-R[0])*(R[3]-R[2]);const w=reg==='torso'?profAt(P,y)[0]:.05;
+  for(let py=0;py<H;py++){const v=1-(py+.5)/H;let reg='fore';for(const k in UVREG){const r=UVREG[k];if(v>=r[0]&&v<r[1]){reg=k;break}}const R=UVREG[reg],y=R[2]+(v-R[0])/(R[1]-R[0])*(R[3]-R[2]);const w=reg==='torso'?profAt(P,y)[0]*shapeW(o.shape,y):.05;
     for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2,sn=Math.sin(th),cs=Math.cos(th),x=w*sn,s=th*(reg==='torso'?.15:.07);let c=sk;
       if(reg==='torso'){
         if(cs>.82&&x*x+((y-.995)*1.2)**2<.0055*.0055)c=shade(sk,.78);
@@ -1373,14 +1389,14 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
       const W=wfn(lx,lyy,v);let tot=0;for(const w of W)tot+=w[1];const W4=[...W,[0,0],[0,0],[0,0]].slice(0,4);for(const w of W4){si.push(w[0]);sw.push(w[1]/tot)}
       const R=UVREG[kind];uvs.push((k%(seg+1))/seg,R[0]+(lyy-R[2])/(R[3]-R[2])*(R[1]-R[0]))}
     for(const i of id)idx.push(i+base)};
-  const F=o.fem,P=TPROF[F?'f':'m'],B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
-  const torsoAt=(y,th)=>{const [w,f,b]=profAt(P,y),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
-    if(cz>0){let a=F?.036*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
-    else{const a=(F?.02:.02)*(F?(B(x,y,.06,.855,.085,.095)+B(x,y,-.06,.855,.085,.095)):(B(x,y,.064,.865,.056,.062)+B(x,y,-.064,.865,.056,.062)))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}return[x,y,z]};
+  const SHP=o.shape||{},F=o.fem,P=TPROF[F?'f':'m'],B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
+  const torsoAt=(y,th)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
+    if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
+    else{const a=(F?.02:.02)*(SHP.glutes||1)*(F?(B(x,y,.06,.855,.085,.095)+B(x,y,-.06,.855,.085,.095)):(B(x,y,.064,.865,.056,.062)+B(x,y,-.064,.865,.056,.062)))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}return[x,y,z]};
   const I=o.I;// bone indices
   add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]},o.fns.torso,'torso');
   const tube=(prof,fl)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{const r=profAt(A,y)[0];return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
-  const lw=F?.92:1,aw=F?.83:1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
+  const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
   const UP=sca([[.035,.004],[.031,.024],[.018,.042],[0,.051],[-.04,.054],[-.1,.05],[-.17,.045],[-.24,.04],[-.29,.036],[-.31,.03],[-.325,.004]]);
   const FO=sca([[.035,.004],[.03,.028],[.01,.037],[-.04,.042],[-.1,.038],[-.17,.031],[-.23,.026],[-.265,.024],[-.28,.004]]);
   const TH=F?[[.085,.004],[.08,.046],[.055,.086],[0,.095],[-.08,.091],[-.16,.081],[-.25,.069],[-.33,.057],[-.4,.048],[-.44,.045],[-.46,.004]]:sc([[.085,.004],[.08,.04],[.055,.075],[0,.084],[-.08,.082],[-.16,.074],[-.25,.064],[-.33,.054],[-.4,.048],[-.44,.046],[-.46,.004]]);
@@ -1388,8 +1404,8 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   for(const s of['L','R']){
     add(rowsFor(-.325,.04,.01,[-.13,-.15]),24,tube(UP,.9),o.M['sh'+s],(lx,ly)=>{const wB=.85*sstep(-.03,.065,ly),wE=.5*sstep(-.25,-.33,ly);return[[I['sh'+s],Math.max(.001,1-wB-wE)],[I.body,wB],[I['el'+s],wE]]},o.fns.up,'up');
     add(rowsFor(-.28,.035,.012,[]),20,tube(FO,.92),o.M['el'+s],(lx,ly)=>{const wS=.5*sstep(-.03,.04,ly);return[[I['el'+s],1-wS],[I['sh'+s],wS]]},o.fns.fore,'fore');
-    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH,.95),o.M['hip'+s],(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]},o.fns.thigh,'thigh');
-    add(rowsFor(-.43,.03,.012,[]),22,tube(SH,.96),o.M['knee'+s],(lx,ly)=>{const wH=.5*sstep(-.03,.03,ly);return[[I['knee'+s],1-wH],[I['hip'+s],wH]]},o.fns.shin,'shin')}
+    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH.map(([y,r])=>[y,r*LG]),.95),o.M['hip'+s],(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]},o.fns.thigh,'thigh');
+    add(rowsFor(-.43,.03,.012,[]),22,tube(SH.map(([y,r])=>[y,r*LG]),.96),o.M['knee'+s],(lx,ly)=>{const wH=.5*sstep(-.03,.03,ly);return[[I['knee'+s],1-wH],[I['hip'+s],wH]]},o.fns.shin,'shin')}
   const geo=new T.BufferGeometry(),siA=new T.Uint16BufferAttribute(si,4),swA=new T.Float32BufferAttribute(sw,4);
   geo.setAttribute('position',new T.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new T.Float32BufferAttribute(nor,3));geo.setAttribute('skinIndex',siA);geo.setAttribute('skinWeight',swA);
   geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(idx);
@@ -1412,13 +1428,13 @@ const G={
   face:headDeform(new T.SphereGeometry(1.012,36,18,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4),true),faceM:headDeform(new T.SphereGeometry(1.012,36,18,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4),false)
 };
 const faceCache={};const BODYM=bodyGeo('m'),BODYF=bodyGeo('f');
-function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex+'c2';if(faceCache[key])return faceCache[key];const c=document.createElement('canvas');c.width=256;c.height=200;const g=c.getContext('2d'),fem=L.sex==='f';g.lineCap='round';g.lineJoin='round';
+function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex+'c2'+(L.eyeS||1)+(L.eyeG||1);if(faceCache[key])return faceCache[key];const c=document.createElement('canvas');c.width=256;c.height=200;const g=c.getContext('2d'),fem=L.sex==='f';g.lineCap='round';g.lineJoin='round';
   // big round eyes set a little low and wide, with two sparkles
-  for(const s of[-1,1]){const x=128+s*50,y=114,rx=fem?22:20,ry=fem?22:19;
+  for(const s of[-1,1]){const ES=L.eyeS||1,x=128+s*50*(L.eyeG||1),y=114,rx=(fem?22:20)*ES,ry=(fem?22:19)*ES;
     if(ex==='h'){g.strokeStyle='#2a1c22';g.lineWidth=5;g.beginPath();g.arc(x,y+8,rx*.8,Math.PI*1.15,Math.PI*1.85);g.stroke()}
     else{g.save();g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fillStyle='#fffdf9';g.fill();g.clip();
-      const gr=g.createLinearGradient(0,y-ry,0,y+ry);gr.addColorStop(0,col(L.eye,-.6));gr.addColorStop(.5,L.eye);gr.addColorStop(1,col(L.eye,.5));g.fillStyle=gr;g.beginPath();g.ellipse(x+s*1.5,y+3,15,19,0,0,7);g.fill();
-      g.fillStyle='#140d14';g.beginPath();g.ellipse(x+s*1.5,y+4,6.5,9,0,0,7);g.fill();g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x-rx,y-ry,rx*2,8);g.restore();
+      const gr=g.createLinearGradient(0,y-ry,0,y+ry);gr.addColorStop(0,col(L.eye,-.6));gr.addColorStop(.5,L.eye);gr.addColorStop(1,col(L.eye,.5));g.fillStyle=gr;g.beginPath();g.ellipse(x+s*1.5,y+3,15*ES,19*ES,0,0,7);g.fill();
+      g.fillStyle='#140d14';g.beginPath();g.ellipse(x+s*1.5,y+4,6.5*ES,9*ES,0,0,7);g.fill();g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x-rx,y-ry,rx*2,8);g.restore();
       g.fillStyle='#ffffff';g.beginPath();g.ellipse(x-5,y-6,5.5,6.5,-.4,0,7);g.fill();g.beginPath();g.arc(x+6,y+9,2.6,0,7);g.fill();g.globalAlpha=.6;g.beginPath();g.arc(x+8,y-9,1.6,0,7);g.fill();g.globalAlpha=1;
       g.strokeStyle='#22161c';g.lineWidth=fem?5.5:4.5;g.beginPath();g.ellipse(x,y+1,rx+1,ry+2,0,Math.PI*1.08,Math.PI*1.92);g.stroke();
       if(fem){g.lineWidth=2.5;for(const k of[0,1]){g.beginPath();g.moveTo(x+s*(rx-2-k*6),y-ry+3+k);g.lineTo(x+s*(rx+5-k*6),y-ry-4+k);g.stroke()}}}
@@ -1430,6 +1446,27 @@ function faceTex(L,hair,ex='n'){const key=L.eye+hair+L.sex+ex+'c2';if(faceCache[
   else if(ex==='a'){g.moveTo(121,166);g.quadraticCurveTo(128,160,135,166);g.stroke()}
   else{g.moveTo(120,160);g.quadraticCurveTo(124,165,128,161);g.quadraticCurveTo(132,165,136,160);g.stroke()}
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=4;return faceCache[key]=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false})}
+// ---------- character specs: everything the editors can change ----------
+const BODY0={height:1,shoulders:1,chest:1,waist:1,hips:1,glutes:1,arms:1,legs:1},HEAD0={size:1,jaw:1,cheeks:1,eyes:1,eyeGap:1};
+const STAFFN=['Mika','Ren','Sora'],CHARS={};let CHARS_SRC='built-in';
+function baseSpec(n){const b=BANK.find(x=>x.n===n),lk=looks[n]||{},sw=SWIM[n]||{},B={...BODY0},H={...HEAD0};
+  if(n==='YOU')return{n,role:'player',sex:'m',style:'short',hair:'#3a2a1f',eye:'#6b4a2a',skin:'#f1c7a8',suit:'#e07a3c',acc:'#ffffff',swim:'trunks',pat:'sidestripe',street:['#3d5a80','#2b2b33'],hat:false,body:B,head:H,persona:''};
+  if(STAFFN.includes(n))return{n,role:'staff',sex:lk.sex||'f',style:lk.style||'bob',hair:'#2a1f1a',eye:lk.eye||'#4a3020',skin:'#e9b996',suit:'#1E5A8A',acc:'#ffffff',swim:'',pat:'solid',street:['#1E5A8A','#24303c'],hat:false,body:B,head:H,persona:PERSONA[n]||''};
+  if(!b)return{n,role:'guest',sex:'f',style:'bob',hair:'#2b211c',eye:'#3a2618',skin:'#f2d4bd',suit:'#3fb0b0',acc:'#ffffff',swim:'one',pat:'solid',street:['#c8d8e8','#3b3f58'],hat:false,body:B,head:H,persona:PERSONA[n]||''};
+  return{n,role:'guest',sex:b.sex,style:b.style,hair:b.hair,eye:b.eye,skin:b.skin,suit:b.suit,acc:sw.acc||'#ffffff',swim:b.sex==='f'?(sw.k||'one'):'trunks',pat:sw.pat||'solid',street:b.street.slice(),hat:BANK.indexOf(b)%3===1,body:B,head:H,persona:PERSONA[n]||''}}
+function defaultSpecs(){return[...BANK.map(b=>baseSpec(b.n)),...STAFFN.map(baseSpec)]}
+function fillSpec(s){const d=baseSpec(s.n);return{...d,...s,body:{...BODY0,...(s.body||{})},head:{...HEAD0,...(s.head||{})},street:(s.street||d.street).slice(0,2)}}
+function playerSpec(){try{const j=JSON.parse(localStorage.getItem('tributary.player')||'null');if(j)return fillSpec({...j,n:'YOU',role:'player'})}catch(e){}return baseSpec('YOU')}
+function specFor(n){return n==='YOU'?playerSpec():(CHARS[n]||baseSpec(n))}
+function applyChars(list,src){if(!Array.isArray(list)||!list.length)return;const gl=[],next={};
+  for(const raw of list){if(!raw||!raw.n||raw.n==='YOU')continue;const s=fillSpec(raw);next[s.n]=s;if(s.persona)PERSONA[s.n]=s.persona;if(s.role!=='staff')gl.push({n:s.n,sex:s.sex,style:s.style,eye:s.eye,hair:s.hair,suit:s.suit,skin:s.skin,street:s.street})}
+  for(const k in CHARS)delete CHARS[k];Object.assign(CHARS,next);if(gl.length){BANK.length=0;BANK.push(...gl)}CHARS_SRC=src||'file'}
+function shapeW(S,y){if(!S)return 1;const g=(c,s)=>Math.exp(-(((y-c)/s)**2));return 1+((S.hips||1)-1)*g(.86,.075)+((S.waist||1)-1)*g(1.05,.065)+((S.chest||1)-1)*.5*g(1.22,.07)+((S.shoulders||1)-1)*g(1.34,.05)}
+const HGC={};
+function headGeoFor(fem,hd){const k=(fem?'f':'m')+(+hd.jaw).toFixed(2)+(+hd.cheeks).toFixed(2);return HGC[k]||(HGC[k]=headDeform(new T.SphereGeometry(1,36,26),fem,hd))}
+function faceGeoFor(fem,hd){const k='F'+(fem?'f':'m')+(+hd.jaw).toFixed(2)+(+hd.cheeks).toFixed(2);return HGC[k]||(HGC[k]=headDeform(new T.SphereGeometry(1.012,36,18,Math.PI/2-.9,1.8,Math.PI/2-.7,1.4),fem,hd))}
+fetch('characters.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.characters)&&!location.hash.includes('admin'))applyChars(j.characters,'file');window.__charsFile=j}).catch(()=>{});
+
 let SWEATM=null;const RMATS={};
 const real=(c,r=.6)=>RMATS[c+r]||(RMATS[c+r]=new T.MeshStandardMaterial({color:lin(c).multiplyScalar(.82),roughness:r,metalness:0,envMapIntensity:.28}));
 const HAIRG={};
@@ -1461,9 +1498,10 @@ function makeHat(){const pts=[[.158,0],[.158,.012],[.152,.05],[.138,.1],[.112,.1
   g.strokeStyle='rgba(245,245,240,.9)';g.lineWidth=1.4;for(let k=0;k<4;k++){const x0=k*64+8;g.beginPath();for(let y=0;y<=128;y+=4)g.lineTo(x0+(y/4%2?2:-2),y);g.stroke()}
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;HATM=new T.MeshStandardMaterial({map:t,roughness:1,color:lin('#c4c4c0')})}
 
-function makeChar(suit,hair,sk,isStaff,name){
+function makeChar(suit,hair,sk,isStaff,name,spec){
+  const SP0=spec||specFor(name);if(!isStaff)suit=SP0.suit;hair=SP0.hair;sk=SP0.skin;const BD=SP0.body,HD=SP0.head;
   if(!HATG)makeHat();SWEATM??=new T.MeshStandardMaterial({color:lin('#d8f1ff'),emissive:lin('#6fb8e8'),emissiveIntensity:.35,transparent:true,opacity:.92,roughness:.03,metalness:.1,envMapIntensity:2.4});
-  const L=looks[name]||BANK.find(b=>b.n===name)||{sex:'f',style:'bob',eye:'#4a3020'},fem=L.sex==='f';
+  const L={sex:SP0.sex,style:SP0.style,eye:SP0.eye,street:SP0.street,eyeS:HD.eyes,eyeG:HD.eyeGap},fem=L.sex==='f';
   const g=new T.Group(),body=new T.Bone();g.add(body);
   const outs=[];const ol=(m,k=1.04)=>{const o=new T.Mesh(m.geometry,outlineM);o.scale.setScalar(k);m.add(o);outs.push(o);return m};
   const part=(par,geo,c,x,y,z,sx,sy,sz,out=true,mat)=>{const m=new T.Mesh(geo,mat||soft(c));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;par.add(m);if(out)ol(m);return m};
@@ -1479,30 +1517,30 @@ function makeChar(suit,hair,sk,isStaff,name){
   const leg=sx=>{const hip=new T.Bone();hip.position.set(sx,.86,0);body.add(hip);const knee=new T.Bone();knee.position.set(0,-.42,0);hip.add(knee);
     const ft=new T.Group();ft.position.set(0,-.418,0);knee.add(ft);const f1=part(ft,SPH,isStaff?shoe:sk,0,.0,.048,.034*lw,.022,.085),f2=part(ft,SPH,isStaff?shoe:sk,0,.006,-.006,.031*lw,.026,.04,false);
     return{hip,knee,feet:[f1,f2]}};
-  const LL=leg(fem?-.097:-.088),LR=leg(fem?.097:.088);
+  const hx2=(fem?.097:.088)*(1+(BD.hips-1)*.8);const LL=leg(-hx2),LR=leg(hx2);
   const arm=sx=>{const sh=new T.Bone();sh.position.set(sx,fem?1.335:1.345,0);body.add(sh);sh.rotation.z=sx>0?.1:-.1;
     const sl=part(sh,TAPER,isStaff?suit:'#fbfbf8',0,-.1,0,.066,.22,.066,true);sl.visible=false;sh.userData.sleeve=sl;
     const el=new T.Bone();el.position.set(0,-.29,0);sh.add(el);const hand=new T.Group();hand.position.set(0,-.268,0);el.add(hand);
     part(hand,BOX,sk,0,-.035,0,.052*(fem?.88:1),.058,.022);for(let k=0;k<4;k++)part(hand,CYL,sk,(-.018+k*.012)*lw,-.08,.002,.0056,.044-Math.abs(k-1.5)*.006,.006,false);{const th=part(hand,CYL,sk,(sx>0?-1:1)*.028*lw,-.04,.012,.007,.034,.007,false);th.rotation.z=(sx>0?-1:1)*.6}
     return{sh,el,hand}};
-  const AL=arm(fem?-.144:-.174),AR=arm(fem?.144:.174);
+  const ax2=(fem?.144:.174)*BD.shoulders;const AL=arm(-ax2),AR=arm(ax2);
   // one continuous skinned body with clothes painted on (crisp hems)
   g.updateMatrixWorld(true);const Mrel=b=>new T.Matrix4().copy(b.matrixWorld);
   const bones=[body,LL.hip,LL.knee,LR.hip,LR.knee,AL.sh,AL.el,AR.sh,AR.el],I={body:0,hipL:1,kneeL:2,hipR:3,kneeR:4,shL:5,elL:6,shR:7,elR:8};
-  const SB=makeSkinBody({fem,I,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
+  const SB=makeSkinBody({fem,shape:BD,I,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
     fns:{torso:[(x,y)=>torsoSwim(x,y),(x,y)=>torsoStreet(x,y)],up:[(x,y)=>upSwim(x,y),(x,y)=>upStreet(x,y)],fore:[()=>sk,()=>sk],thigh:[(x,y)=>thighSwim(x,y),()=>thighStreet()],shin:[()=>shinSwim(),()=>shinStreet()]}});
-  if(fem&&!isStaff){const P0=TPROF.f,o_=0,surf=(x,y,front)=>{const [w,f,b]=profAt(P0,y),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
-    const y0=(SWIM[name]&&SWIM[name].k==='bikini')?1.276:1.3;const straps=[];for(const sd of[-1,1]){const pts=[[.066,y0,1],[.072,1.33,1],[.086,1.362,1],[.096,1.378,1],[.096,1.378,0],[.086,1.362,0],[.072,1.33,0],[.066,y0==1.3?1.3:1.24,0]].map(([x,y,fr])=>new T.Vector3(sd*x,y,(y>1.37?(fr?.014:-.014):surf(x,y,fr))));
+  if(fem&&!isStaff){const P0=TPROF.f,o_=0,surf=(x,y,front)=>{const mm=shapeW(BD,y),[w0,f0,b0]=profAt(P0,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*(BD.chest||1)*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
+    const y0=SP0.swim==='bikini'?1.276:1.3;const straps=[];for(const sd of[-1,1]){const pts=[[.066,y0,1],[.072,1.33,1],[.086,1.362,1],[.096,1.378,1],[.096,1.378,0],[.086,1.362,0],[.072,1.33,0],[.066,y0==1.3?1.3:1.24,0]].map(([x,y,fr])=>new T.Vector3(sd*x,y,(y>1.37?(fr?.014:-.014):surf(x,y,fr))));
       const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,.0075,6,false),soft(suit));tb.scale.z=1;body.add(tb);straps.push(tb)}o_straps.push(...straps)}
-  const swimSpec=SWIM[name]||{k:fem?'one':'',pat:'solid',acc:'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,swim:swimSpec,stripeShirt:(name||'').length%3===0};
+  const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,stripeShirt:(name||'').length%3===0};
   const texSwim=paintSkinTex({...tsp,street:false}),texStreet=isStaff?texSwim:paintSkinTex({...tsp,street:true});
   const bodyMat=new T.MeshToonMaterial({map:texSwim,gradientMap:gradSoft,toneMapped:false,skinning:true});
   if(!fem&&!isStaff){const f=profAt(TPROF.m,.955)[1]+.004;for(const sd of[-1,1]){const d=part(body,CYL,swimSpec.acc||'#ffffff',sd*.011,.93,f,.0035,.05,.0035,false);d.rotation.z=sd*.12;o_straps.push(d)}}
   const skel=new T.Skeleton(bones);const bm=new T.SkinnedMesh(SB.geo,bodyMat);bm.castShadow=true;bm.receiveShadow=true;bm.frustumCulled=false;g.add(bm);
-  const bo=new T.SkinnedMesh(SB.geoO,SKINO);bo.frustumCulled=false;g.add(bo);g.updateMatrixWorld(true);bm.bind(skel);bo.bind(skel,bm.bindMatrix);outs.push(bo);
-  const head=new T.Group();head.position.set(0,1.61,0);head.scale.setScalar(1.04);body.add(head);
-  part(head,fem?HEADG:HEADGM,sk,0,0,0,.115,.13,.12,true,headMat(sk));
-  const fc=new T.Mesh(fem?G.face:G.faceM,faceTex(L,hair));fc.scale.set(.115,.13,.12);fc.renderOrder=2;head.add(fc);
+  const bo=new T.SkinnedMesh(SB.geoO,SKINO);bo.frustumCulled=false;g.add(bo);g.updateMatrixWorld(true);bm.bind(skel);bo.bind(skel,bm.bindMatrix);outs.push(bo);body.scale.setScalar(BD.height||1);
+  const head=new T.Group();head.position.set(0,1.61,0);head.scale.setScalar(1.04*(HD.size||1));body.add(head);
+  part(head,headGeoFor(fem,HD),sk,0,0,0,.115,.13,.12,true,headMat(sk));
+  const fc=new T.Mesh(faceGeoFor(fem,HD),faceTex(L,hair));fc.scale.set(.115,.13,.12);fc.renderOrder=2;head.add(fc);
   for(const s of[-1,1]){const e=part(head,SPH,sk,s*.111,-.012,-.004,.016,.03,.022,false);part(head,SPH,col(sk,-.12),s*.118,-.012,-.002,.007,.016,.012,false)}
   const hairM=part(head,hairGeo(L.style,fem),hair,0,0,0,1,1,1,false,hairMat(hair));
   if(L.style==='ponytail')part(head,SPH,'#1E5A8A',0,.045,-.135,.026,.026,.026,false);
@@ -1513,7 +1551,7 @@ function makeChar(suit,hair,sk,isStaff,name){
   const cup=new T.Mesh(CYL,cupM);cup.scale.set(.035,.1,.035);cup.position.set(0,-.05,.04);AR.hand.add(cup);cup.visible=false;
   const oil=new T.Mesh(CYL,oilM);oil.scale.set(.022,.11,.022);oil.position.set(0,-.05,.04);AR.hand.add(oil);oil.visible=false;
   const ladle=new T.Group();AR.hand.add(ladle);{const h=new T.Mesh(CYL,woodM);h.scale.set(.012,.45,.012);h.position.set(0,-.05,.2);h.rotation.x=Math.PI/2;ladle.add(h);const b=new T.Mesh(SPH,woodM);b.scale.set(.05,.03,.05);b.position.set(0,-.07,.43);ladle.add(b)}ladle.visible=false;
-  const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15;g.add(tag);
+  const tag=isStaff?label('STAFF · '+name,.8,'#ffffff','rgba(30,90,138,.97)',true):label(name,.7,'#ffffff','rgba(15,42,64,.7)');tag.position.y=2.15*(BD.height||1);g.add(tag);
   const o={g,body,head,robe,towel,LL,LR,AL,AR,cup,oil,ladle,fc,L,hair,outs,tag,hat,hairM,ph:Math.random()*6};
   o.setStreet=on=>{if(isStaff)return;bodyMat.map=on?texStreet:texSwim;for(const t of o_straps)t.visible=!on;for(const Lg of[LL,LR])for(const f of Lg.feet)f.material=soft(on?shoeSt:sk)};o.street=true;
   o.band=part(AL.hand,CYL,'#3B8FD0',0,.03,0,.04,.03,.04,false);o.band.visible=false;
@@ -1524,11 +1562,106 @@ function makeChar(suit,hair,sk,isStaff,name){
     o.ring=new T.Mesh(new T.CircleGeometry(350*S,48),new T.MeshBasicMaterial({color:'#f0a830',transparent:true,opacity:.12,depthWrite:false,toneMapped:false}));o.ring.rotation.x=-Math.PI/2;scene.add(o.ring);spawned.push(o.ring)}
   scene.add(g);spawned.push(g);return o;
 }
-function spawn3D(){spawned.forEach(o=>scene.remove(o));spawned=[];
+function spawn3D(){spawned.forEach(o=>scene.remove(o));spawned=[];looks.YOU.sex=playerSpec().sex;
   P.m=makeChar('#e07a3c','#3a2a1f','#f1c7a8',0,'YOU');
   staff.forEach(s=>s.m=makeChar('#1E5A8A','#2a1f1a','#e9b996',1,s.n));
   guests.forEach(g=>g.m=makeChar(g.suit,g.hair,g.skin,0,g.n));
   [P,...staff,...guests].forEach(c=>c.m.g.position.set(c.x*S,0,c.y*S));}
+
+// ---------- shared preview stage for the editors (turntable camera on one character) ----------
+const PREVIEW={on:false,c:null,d:2.8,look:1.0,yaw:Math.PI};
+function editorShow(on){document.body.classList.toggle('editing',on);PREVIEW.on=on;exl.visible=!on;stationTags.forEach(l=>l.visible=!on);markers.forEach(l=>l.visible=!on)}
+function rebuildChar(c,spec,isStaff){if(c.m){scene.remove(c.m.g);const i=spawned.indexOf(c.m.g);if(i>=0)spawned.splice(i,1);if(c.m.ring)scene.remove(c.m.ring)}
+  c.m=makeChar(spec.suit,spec.hair,spec.skin,isStaff,spec.n,spec);c.m.g.position.set(c.x*S,0,c.y*S);c.m.streetOn=null;if(c.m.tag)c.m.tag.visible=false;return c.m}
+const PAL={skin:['#f8e1d3','#f4d9c4','#f2d4bd','#efcbb5','#e9c4a6','#d9a888','#c48d68','#8d5a3b'],hair:['#141018','#2b211c','#3a2a1f','#6b4a2b','#8a5a32','#b5651d','#c9a15a','#d9c27a','#9a9892'],
+  eye:['#2e1e14','#5a3a22','#3c7aa8','#3f8a52','#6a6a7a'],suit:['#e07a3c','#e2557a','#2f7fb8','#3aa37a','#8a5cc7','#d64545','#2fa0a0','#24303c','#f0a830']};
+const PATS=[['solid','Solid'],['stripes','Stripes'],['dots','Dots'],['checks','Checks'],['chevron','Chevron'],['sidestripe','Side stripe'],['block','Side panels'],['hawaii','Hawaiian'],['floral','Floral'],['trim','Trim']];
+const STYLES=[['short','Short'],['spiky','Textured'],['bob','Bob'],['long','Long'],['ponytail','Ponytail']];
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- player character creator (after booking) ----------
+let CR=null;
+function openCreator(){const sp=playerSpec();CR={sp,build:.5};state.paused=true;editorShow(true);P.x=880;P.y=175;P.dressed='swim';PREVIEW.c=P;PREVIEW.d=2.4;PREVIEW.look=vh>vw?.62:.95;camYaw=0;camPitch=.12;
+  rebuildChar(P,sp,false);drawCreator()}
+function crRebuild(){const sp=CR.sp;looks.YOU.sex=sp.sex;rebuildChar(P,sp,false);P.m.streetOn=null}
+function drawCreator(){const sp=CR.sp,el=document.getElementById('creator');el.classList.add('on');const sw=(k,list)=>list.map(c=>`<button type="button" class="sw${sp[k]===c?' on':''}" data-k="${k}" data-v="${c}" style="background:${c}" aria-label="${k} ${c}"></button>`).join('');
+  const chip=(k,v,l)=>`<button type="button" class="chp${sp[k]===v?' on':''}" data-k="${k}" data-v="${v}">${l}</button>`;
+  const pats=PATS.filter(([v])=>sp.sex==='f'?v!=='hawaii'&&v!=='sidestripe'&&v!=='block':v!=='floral'&&v!=='trim');
+  el.innerHTML=`<h2>Create your character</h2>
+   <div class="crow">${chip('sex','m','Man')}${chip('sex','f','Woman')}</div>
+   <label class="sl">Build <input type="range" id="crBuild" min="0" max="1" step=".01" value="${CR.build}"><span>slim · strong</span></label>
+   <label class="sl">Height <input type="range" id="crHeight" min=".92" max="1.08" step=".005" value="${sp.body.height}"></label>
+   <p class="lab">Skin</p><div class="crow">${sw('skin',PAL.skin)}</div>
+   <p class="lab">Hair</p><div class="crow">${STYLES.map(([v,l])=>chip('style',v,l)).join('')}</div><div class="crow">${sw('hair',PAL.hair)}</div>
+   <p class="lab">Eyes</p><div class="crow">${sw('eye',PAL.eye)}</div>
+   <p class="lab">Swimwear</p>${sp.sex==='f'?`<div class="crow">${chip('swim','one','One-piece')}${chip('swim','bikini','Bikini')}</div>`:''}
+   <div class="crow">${pats.map(([v,l])=>chip('pat',v,l)).join('')}</div><div class="crow">${sw('suit',PAL.suit)}</div>
+   <button type="button" class="btn" id="crGo">Let's go</button>`;
+  for(const b of el.querySelectorAll('[data-k]'))b.onclick=()=>{const k=b.dataset.k,v=b.dataset.v;sp[k]=v;if(k==='sex'){sp.style=v==='f'?'bob':'short';sp.swim=v==='f'?'one':'trunks';sp.pat='solid';applyBuild()}crRebuild();drawCreator()};
+  document.getElementById('crBuild').oninput=e=>{CR.build=+e.target.value;applyBuild();crRebuild()};
+  document.getElementById('crHeight').oninput=e=>{sp.body.height=+e.target.value;crRebuild()};
+  document.getElementById('crGo').onclick=closeCreator}
+function applyBuild(){const t=CR.build,b=CR.sp.body,f=CR.sp.sex==='f';Object.assign(b,{shoulders:.95+.1*t,arms:.9+.25*t,legs:.92+.2*t,chest:f?.85+.3*t:.85+.35*t,waist:.96+.1*t,hips:f?.97+.08*t:1,glutes:.9+.2*t})}
+function closeCreator(){try{localStorage.setItem('tributary.player',JSON.stringify(CR.sp))}catch(e){}document.getElementById('creator').classList.remove('on');editorShow(false);PREVIEW.c=null;camPitch=.36;camYaw=Math.PI;P.x=880;P.y=92;P.dressed='street';P.m.g.position.set(P.x*S,0,P.y*S);state.paused=false;P.m.streetOn=null;CR=null}
+
+// ---------- admin character editor (open the page with #admin) ----------
+const REPO='kylemanson/manson-marine-designs',CPATH='public/tributary-playtest-k7m2/characters.json';
+let ADM=null;
+const SECT=[['Basics',[['n','Name','text'],['role','Role','select',[['guest','Guest'],['staff','Staff']]],['sex','Body type','select',[['f','Woman'],['m','Man']]],['persona','Personality (the AI plays them like this)','textarea']]],
+ ['Body',[['body.height','Height','range',.88,1.12],['body.shoulders','Shoulders','range',.85,1.2],['body.chest','Chest / bust','range',.5,1.7],['body.waist','Waist','range',.85,1.25],['body.hips','Hips','range',.85,1.22],['body.glutes','Rear','range',.4,1.7],['body.arms','Arms','range',.75,1.35],['body.legs','Legs','range',.82,1.28]]],
+ ['Head and face',[['head.size','Head size','range',.88,1.15],['head.jaw','Jaw: soft ↔ pointed','range',.3,1.7],['head.cheeks','Cheeks','range',0,2.2],['head.eyes','Eye size','range',.78,1.22],['head.eyeGap','Eye spacing','range',.9,1.1]]],
+ ['Hair and colours',[['style','Hair style','select',STYLES],['hair','Hair colour','color'],['skin','Skin','color'],['eye','Eye colour','color'],['hat','Wears a sauna hat','check']]],
+ ['Clothes',[['swim','Swimwear','select',[['trunks','Shorts'],['one','One-piece'],['bikini','Bikini']]],['pat','Pattern','select',PATS],['suit','Swimwear colour','color'],['acc','Accent colour','color'],['street.0','Shirt colour','color'],['street.1','Pants colour','color']]]];
+const gp=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o),spth=(o,p,v)=>{const ks=p.split('.');let a=o;for(let i=0;i<ks.length-1;i++)a=a[ks[i]];a[ks[ks.length-1]]=v};
+async function openAdmin(){document.getElementById('start').classList.remove('on');newGame(0);state.paused=true;P.hide={room:ROOMS[0]};for(const c of[P,...staff,...guests])if(c.m)c.m.g.visible=false;
+  editorShow(true);document.body.classList.add('admin');let list=null,src='built-in';
+  try{const d=JSON.parse(localStorage.getItem('tributary.adminDraft')||'null');if(d&&d.length){list=d;src='draft on this device'}}catch(e){}
+  if(!list){try{const r=await fetch('characters.json',{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&j.characters){list=j.characters;src='website'}}}catch(e){}}
+  if(!list)list=defaultSpecs();ADM={list:list.map(fillSpec),i:0,out:'swim',src,dirty:src==='draft on this device',c:{x:880,y:175,n:'preview',dressed:'swim',hat:false}};
+  PREVIEW.c=ADM.c;PREVIEW.d=2.5;PREVIEW.look=vh>vw?.55:.95;camYaw=0;camPitch=.1;drawAdmin();admPreview()}
+let admT=0;function admPreview(){clearTimeout(admT);admT=setTimeout(()=>{const sp=ADM.list[ADM.i];rebuildChar(ADM.c,sp,sp.role==='staff');ADM.c.dressed=ADM.out},60)}
+function admChanged(){ADM.dirty=true;try{localStorage.setItem('tributary.adminDraft',JSON.stringify(ADM.list))}catch(e){}admStatus('Unsaved changes (kept on this device)');admPreview()}
+function admStatus(t,bad){const e=document.getElementById('admStat');if(e){e.textContent=t;e.className=bad?'bad':''}}
+function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];el.classList.add('on');
+  const field=([p,l,k,a,b])=>{const v=gp(sp,p);if(k==='range')return`<label class="sl">${l}<input type="range" data-p="${p}" min="${a}" max="${b}" step=".01" value="${v}"><output>${(+v).toFixed(2)}</output></label>`;
+    if(k==='select')return`<label class="fl">${l}<select data-p="${p}">${a.map(([o,t])=>`<option value="${o}"${o===v?' selected':''}>${t}</option>`).join('')}</select></label>`;
+    if(k==='color')return`<label class="fl">${l}<input type="color" data-p="${p}" value="${v}"></label>`;
+    if(k==='check')return`<label class="fl ck"><input type="checkbox" data-p="${p}"${v?' checked':''}> ${l}</label>`;
+    if(k==='textarea')return`<label class="fl">${l}<textarea data-p="${p}" rows="4">${esc(v||'')}</textarea></label>`;
+    return`<label class="fl">${l}<input type="text" data-p="${p}" value="${esc(v)}"></label>`};
+  el.innerHTML=`<div class="ah"><b>Character editor</b><select id="admSel">${ADM.list.map((c,i)=>`<option value="${i}"${i===ADM.i?' selected':''}>${esc(c.n)}${c.role==='staff'?' (staff)':''}</option>`).join('')}</select></div>
+   <div class="arow"><button type="button" id="admNew">New</button><button type="button" id="admDup">Duplicate</button><button type="button" id="admDel">Delete</button><button type="button" id="admOut">Show ${ADM.out==='swim'?'street clothes':'swimwear'}</button></div>
+   ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${fs.map(field).join('')}</details>`).join('')}
+   <div class="afoot"><button type="button" class="btn" id="admSave">Save to website</button><button type="button" id="admDl">Download file</button><button type="button" id="admRev">Discard draft</button></div>
+   <p id="admStat"></p>
+   <details><summary>GitHub key (needed once per device)</summary><p class="small">Create a fine-grained token on GitHub for the repository <b>${REPO}</b> with <b>Contents: Read and write</b>. It is stored only in this browser.</p>
+    <input type="password" id="admTok" placeholder="github_pat_…" autocomplete="off"><button type="button" id="admTokSave">Remember on this device</button><button type="button" id="admTokClr">Forget</button></details>`;
+  admStatus(ADM.dirty?'Unsaved changes (kept on this device)':`Loaded from the ${ADM.src}`);
+  document.getElementById('admSel').onchange=e=>{ADM.i=+e.target.value;drawAdmin();admPreview()};
+  for(const inp of el.querySelectorAll('[data-p]')){const p=inp.dataset.p;inp.addEventListener(inp.type==='range'||inp.tagName==='TEXTAREA'||inp.type==='text'||inp.type==='color'?'input':'change',()=>{let v=inp.type==='checkbox'?inp.checked:inp.type==='range'?+inp.value:inp.value;
+    if(p==='n'){v=v.replace(/[^\w \-']/g,'').slice(0,20)||'Guest';if(ADM.list.some((c,j)=>j!==ADM.i&&c.n===v))return}
+    spth(sp,p,v);if(inp.type==='range')inp.nextElementSibling.textContent=(+v).toFixed(2);if(p==='n'||p==='role')document.getElementById('admSel').options[ADM.i].textContent=sp.n+(sp.role==='staff'?' (staff)':'');
+    if(p==='sex'){sp.swim=v==='f'?'one':'trunks';drawAdmin()}admChanged()})}
+  document.getElementById('admNew').onclick=()=>{let k=1;while(ADM.list.some(c=>c.n==='New guest '+k))k++;ADM.list.push(fillSpec({n:'New guest '+k,role:'guest'}));ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
+  document.getElementById('admDup').onclick=()=>{const c=JSON.parse(JSON.stringify(sp));let k=2;while(ADM.list.some(x=>x.n===sp.n+' '+k))k++;c.n=sp.n+' '+k;c.role=sp.role==='staff'?'guest':sp.role;ADM.list.push(c);ADM.i=ADM.list.length-1;drawAdmin();admChanged()};
+  document.getElementById('admDel').onclick=()=>{if(ADM.list.length<2||sp.role==='staff'){admStatus('Staff and the last guest can\'t be deleted.',1);return}if(!confirmDel(sp.n))return;ADM.list.splice(ADM.i,1);ADM.i=Math.max(0,ADM.i-1);drawAdmin();admChanged()};
+  document.getElementById('admOut').onclick=()=>{ADM.out=ADM.out==='swim'?'street':'swim';ADM.c.dressed=ADM.out;drawAdmin()};
+  document.getElementById('admDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([admJSON()],{type:'application/json'}));a.download='characters.json';a.click()};
+  document.getElementById('admRev').onclick=()=>{try{localStorage.removeItem('tributary.adminDraft')}catch(e){}location.reload()};
+  document.getElementById('admSave').onclick=admSave;
+  const tk=document.getElementById('admTok');try{tk.value=localStorage.getItem('tributary.gh')||''}catch(e){}
+  document.getElementById('admTokSave').onclick=()=>{try{localStorage.setItem('tributary.gh',tk.value.trim());admStatus('Key saved on this device.')}catch(e){admStatus('Could not save the key in this browser.',1)}};
+  document.getElementById('admTokClr').onclick=()=>{try{localStorage.removeItem('tributary.gh')}catch(e){}tk.value='';admStatus('Key removed from this device.')}}
+let delArm='';function confirmDel(n){if(delArm===n){delArm='';return true}delArm=n;admStatus(`Tap Delete again to remove ${n}.`,1);setTimeout(()=>{if(delArm===n)delArm=''},4000);return false}
+function admJSON(){return JSON.stringify({version:1,updated:new Date().toISOString(),characters:ADM.list},null,1)}
+async function admSave(){let tok='';try{tok=localStorage.getItem('tributary.gh')||document.getElementById('admTok').value.trim()}catch(e){tok=document.getElementById('admTok').value.trim()}
+  if(!tok){admStatus('Add your GitHub key first (see below), or use Download file.',1);return}
+  const api=`https://api.github.com/repos/${REPO}/contents/${CPATH}`,h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};admStatus('Saving…');
+  try{let sha;const g=await fetch(api+'?ref=main',{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error(g.status===401?'GitHub rejected the key (401). Check it or make a new one.':'GitHub said '+g.status);
+    const body={message:'Update Tributary characters from the admin editor',content:btoa(unescape(encodeURIComponent(admJSON()))),branch:'main'};if(sha)body.sha=sha;
+    const r=await fetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const t=await r.text();throw new Error(r.status===403||r.status===404?'The key can\'t write to this repository. Give it Contents: Read and write.':'GitHub said '+r.status+': '+t.slice(0,100))}
+    ADM.dirty=false;try{localStorage.removeItem('tributary.adminDraft')}catch(e){}admStatus('Saved! Everyone sees the changes after the site rebuilds (about 1–2 minutes).')}
+  catch(e){admStatus(String(e.message||e),1)}}
 
 // ---- render loop ----
 const VIEWS=[{n:'Follow cam',d:4.3,look:1.35},{n:'Close cam',d:2.3,look:1.5},{n:'Overhead',d:15,p:1.12,look:0,fixed:1}];let view=0,camYaw=Math.PI,camPitch=.36,lastDrag=-9,zoom=1;
@@ -1542,7 +1675,7 @@ function handleTap(x,y){if(!P||!state||!state.on||state.paused)return;ndc.set(x/
   const st=picker.intersectObjects(stationTags,false)[0];if(st){const a=st.object.userData.act;standUp();P.auto={c:{x:a.x,y:a.y},act:a,path:findPath(P,{x:a.x,y:a.y}),t:0};P.path=P.auto.path;return}
   if(menu.classList.contains('fade')&&PERF.ops&&PERF.ops.length){menu.classList.remove('fade');menuT=performance.now();return}
   jump()}
-{let drag=null;cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX<innerWidth*.45&&state&&state.on)return;drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),id:e.pointerId};cv.setPointerCapture(e.pointerId)});
+{let drag=null;cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX<innerWidth*.45&&state&&state.on&&!PREVIEW.on)return;drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),id:e.pointerId};cv.setPointerCapture(e.pointerId)});
  cv.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;if(VIEWS[view].fixed)return;camYaw-=dx*.0065;camPitch=Math.max(.08,Math.min(1.1,camPitch+dy*.004));lastDrag=performance.now()/1000});
  const end=e=>{if(drag&&e.pointerId===drag.id){if(e.type==='pointerup'&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<9&&performance.now()-drag.t<350)handleTap(e.clientX,e.clientY);drag=null}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
  cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.6,Math.min(1.8,zoom*(1+Math.sign(e.deltaY)*.08)))},{passive:false})}
@@ -1654,6 +1787,8 @@ function render(dt,now){
     tmp.set(P.x*S+Math.sin(yaw)*ahead,V.look,P.y*S+Math.cos(yaw)*ahead);ct.lerp(tmp,1-Math.exp(-dt*10));
     tmp2.set(ct.x-Math.sin(yaw)*Math.cos(pit)*dd,ct.y+Math.sin(pit)*dd,ct.z-Math.cos(yaw)*Math.cos(pit)*dd);if(tmp2.y<.4)tmp2.y=.4;cp.lerp(tmp2,1-Math.exp(-dt*9));
   }else{cp.set(12+Math.sin(t*.15)*28,20,10+Math.cos(t*.15)*28);ct.set(12,0,10)}
+  if(PREVIEW.on&&PREVIEW.c&&PREVIEW.c.m){const c=PREVIEW.c;c.m.yaw=PREVIEW.yaw;if(c.m.tag)c.m.tag.visible=false;if(c!==P)pose(c,c.m,dt);c.m.g.position.set(c.x*S,c.m.g.position.y,c.y*S);const k2=(vh>vw?1.3:1)*zoom;ct.set(c.x*S,PREVIEW.look,c.y*S);
+    cp.set(ct.x-Math.sin(camYaw)*Math.cos(camPitch)*PREVIEW.d*k2,ct.y+.35+Math.sin(camPitch)*PREVIEW.d*k2,ct.z-Math.cos(camYaw)*Math.cos(camPitch)*PREVIEW.d*k2)}
   sun.position.set(ct.x-LT.sx,LT.sy,ct.z+LT.sz);sun.target.position.copy(ct);
   cam.position.copy(cp);if(shake>0){cam.position.x+=(Math.random()-.5)*shake;cam.position.y+=(Math.random()-.5)*shake;shake=Math.max(0,shake-dt*1.4)}cam.lookAt(ct);
   if(P&&P.m&&PERF.frame%3===0){tmp.set(P.x*S,1.2,P.y*S);ray.set(cam.position,tmp2.copy(tmp).sub(cam.position).normalize());ray.far=cam.position.distanceTo(tmp);const hits=new Set(ray.intersectObjects(wallMeshes,false).map(h=>h.object));
@@ -1677,7 +1812,9 @@ function perfTick(dt){fpsT+=dt;fpsN++;lodT+=dt;
   if(lodT>.5&&P&&P.m){lodT=0;const near=PERF.fast?7:16;for(const c of [P,...staff,...guests]){if(!c.m)continue;const show=c===P||cam.position.distanceTo(c.m.g.position)<near;if(c.m.outsOn!==show){c.m.outsOn=show;for(const o of c.m.outs)o.visible=show}}}}
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.1,(now-last)/1000);if(dt<1/PERF.fps-.004)return;const step=Math.min(.05,dt);last=now;PERF.frame++;update(step);render(step,now);perfTick(dt)}
 requestAnimationFrame(loop);
+if(location.hash==='#admin')setTimeout(openAdmin,300);
 }
+
 </script>
 </body>
 </html>

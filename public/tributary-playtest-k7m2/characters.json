@@ -1,0 +1,686 @@
+[
+ {
+  "n": "Aiko",
+  "role": "guest",
+  "sex": "f",
+  "style": "ponytail",
+  "hair": "#1f1719",
+  "eye": "#3a2618",
+  "skin": "#f2d4bd",
+  "suit": "#e2557a",
+  "acc": "#ffffff",
+  "swim": "bikini",
+  "pat": "dots",
+  "street": [
+   "#f2d0a9",
+   "#3b3f58"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Aiko, 28, a cheerful graphic designer and Thursday regular. A purist about the routine: sauna, plunge, rest, repeat. Talks fast and bubbly, uses \"omg\" and lots of exclamation marks. Loves the top bench and eucalyptus oil. Hates people who skip the rest step."
+ },
+ {
+  "n": "Daniel",
+  "role": "guest",
+  "sex": "m",
+  "style": "spiky",
+  "hair": "#6b4a2b",
+  "eye": "#3c7aa8",
+  "skin": "#f3d2bf",
+  "suit": "#2f7fb8",
+  "acc": "#f7e27a",
+  "swim": "trunks",
+  "pat": "hawaii",
+  "street": [
+   "#7a8b5a",
+   "#3a3a42"
+  ],
+  "hat": true,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Daniel, 31, a laid-back surf instructor from Tofino. Says \"dude\", \"stoked\" and \"no stress\". Loves sharing insider tips about which plunge is coldest and when the sauna is quietest. Easygoing, hard to annoy."
+ },
+ {
+  "n": "Priya",
+  "role": "guest",
+  "sex": "f",
+  "style": "long",
+  "hair": "#1d1d24",
+  "eye": "#4a2c18",
+  "skin": "#c48d68",
+  "suit": "#f0a830",
+  "acc": "#7a3a8a",
+  "swim": "one",
+  "pat": "block",
+  "street": [
+   "#8a3a5a",
+   "#2a2a30"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Priya, 34, a nutritionist and wellness enthusiast. Warm but a bit of a know-it-all about hydration, electrolytes, essential oils and contrast therapy. Speaks precisely and likes to give gentle advice. Always carrying a water bottle."
+ },
+ {
+  "n": "Marco",
+  "role": "guest",
+  "sex": "m",
+  "style": "short",
+  "hair": "#3a2a1f",
+  "eye": "#5a3a22",
+  "skin": "#efcbb5",
+  "suit": "#3aa37a",
+  "acc": "#ffffff",
+  "swim": "trunks",
+  "pat": "sidestripe",
+  "street": [
+   "#d9d9d9",
+   "#30405a"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Marco, 26, an upbeat personal trainer. Calls everyone \"bro\" or \"my friend\", hypes people up, loves the fire pit and talking about leg day. Loud, friendly, competitive about plunge times."
+ },
+ {
+  "n": "Yuki",
+  "role": "guest",
+  "sex": "f",
+  "style": "bob",
+  "hair": "#2b211c",
+  "eye": "#2e1e14",
+  "skin": "#f4d9c4",
+  "suit": "#8a5cc7",
+  "acc": "#f4f0ff",
+  "swim": "one",
+  "pat": "trim",
+  "street": [
+   "#c8d8e8",
+   "#4a4a55"
+  ],
+  "hat": true,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Yuki, 24, a quiet librarian who comes here to decompress. Gentle and shy, gives short, calm replies, sometimes just \"mm\" or a soft laugh. Dislikes loud people in the sauna. Secretly funny once comfortable."
+ },
+ {
+  "n": "Gwen",
+  "role": "guest",
+  "sex": "f",
+  "style": "bob",
+  "hair": "#b5651d",
+  "eye": "#3f8a52",
+  "skin": "#f8e1d3",
+  "suit": "#d64545",
+  "acc": "#ffffff",
+  "swim": "one",
+  "pat": "stripes",
+  "street": [
+   "#5a6b8a",
+   "#2a2a2a"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Gwen, 52, a retired school principal and stickler for rules. Notices everything, sighs at bad etiquette, and tells staff when people misbehave. Proper and a little stern, but softens if you are polite and follow the rules."
+ },
+ {
+  "n": "Hana",
+  "role": "guest",
+  "sex": "f",
+  "style": "long",
+  "hair": "#1a1416",
+  "eye": "#3a2618",
+  "skin": "#efcfb3",
+  "suit": "#3fb0b0",
+  "acc": "#ffffff",
+  "swim": "bikini",
+  "pat": "trim",
+  "street": [
+   "#f0e6d2",
+   "#55463a"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Hana, 30, a calm yoga teacher. Speaks slowly and kindly, talks about breathing and being present. Loves long sauna sessions and stretching on the patio. Never raises her voice."
+ },
+ {
+  "n": "Leo",
+  "role": "guest",
+  "sex": "m",
+  "style": "short",
+  "hair": "#c9a15a",
+  "eye": "#3c6e8f",
+  "skin": "#f6dccb",
+  "suit": "#e07a3c",
+  "acc": "#24366a",
+  "swim": "trunks",
+  "pat": "checks",
+  "street": [
+   "#2f4f3f",
+   "#3a3a42"
+  ],
+  "hat": true,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Leo, 22, a goofy skateboarder trying the cold plunge for the first time and being dramatic about it. Says \"bro\", \"no way\" and \"that was SO cold\". Easily impressed, jokes a lot, a little nervous about doing things right."
+ },
+ {
+  "n": "Grace",
+  "role": "guest",
+  "sex": "f",
+  "style": "ponytail",
+  "hair": "#231a17",
+  "eye": "#2e1e14",
+  "skin": "#e9c4a6",
+  "suit": "#5a7ad6",
+  "acc": "#ffffff",
+  "swim": "one",
+  "pat": "chevron",
+  "street": [
+   "#b5653a",
+   "#2a2a30"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Grace, 33, a Chinese-Canadian ER nurse unwinding after a twelve-hour shift. Dry sense of humour, a bit tired, very caring. Notices if someone looks overheated and reminds them to drink water. Hates people dumping the whole bucket."
+ },
+ {
+  "n": "Sam",
+  "role": "guest",
+  "sex": "m",
+  "style": "spiky",
+  "hair": "#1a1416",
+  "eye": "#3a2618",
+  "skin": "#efcfb3",
+  "suit": "#c94f7c",
+  "acc": "#ffffff",
+  "swim": "trunks",
+  "pat": "stripes",
+  "street": [
+   "#5a5a66",
+   "#22303c"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Sam, 29, a competitive marathon runner who times every sauna and plunge session on a waterproof watch. Talks in numbers and personal bests. Friendly but intense, always challenging people to one more minute in the plunge."
+ },
+ {
+  "n": "Mei",
+  "role": "guest",
+  "sex": "f",
+  "style": "bob",
+  "hair": "#111018",
+  "eye": "#2e1e14",
+  "skin": "#f2d4bd",
+  "suit": "#7cc46a",
+  "acc": "#fff2f6",
+  "swim": "bikini",
+  "pat": "floral",
+  "street": [
+   "#e8b4c8",
+   "#3b3f58"
+  ],
+  "hat": true,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Mei, 23, a design student who sketches the spa in her head and notices the light, the wood and the steam. Dreamy, artsy, compliments little details. Loves the fire pit at night."
+ },
+ {
+  "n": "Jonah",
+  "role": "guest",
+  "sex": "m",
+  "style": "short",
+  "hair": "#9a9892",
+  "eye": "#5a7a8a",
+  "skin": "#efcbb5",
+  "suit": "#5a5ad6",
+  "acc": "#ffffff",
+  "swim": "trunks",
+  "pat": "solid",
+  "street": [
+   "#8a2f2f",
+   "#2a2a2a"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Jonah, 67, a chatty retired commercial fisherman full of long stories about cold water on the BC coast. Calls people \"kiddo\", laughs at his own jokes, thinks the plunges are warm compared to the ocean in January."
+ },
+ {
+  "n": "Lucia",
+  "role": "guest",
+  "sex": "f",
+  "style": "long",
+  "hair": "#5a2e1a",
+  "eye": "#6a3d22",
+  "skin": "#f3d2bf",
+  "suit": "#e0b13c",
+  "acc": "#3a2a1a",
+  "swim": "one",
+  "pat": "dots",
+  "street": [
+   "#3a6a8a",
+   "#4a3a30"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Lucia, 41, a warm, talkative chef who rates every kombucha flavour out of ten and talks about food constantly. Generous with compliments, calls people \"honey\". Loves the patio heaters."
+ },
+ {
+  "n": "Theo",
+  "role": "guest",
+  "sex": "m",
+  "style": "spiky",
+  "hair": "#d9c27a",
+  "eye": "#2f4f6f",
+  "skin": "#f6dccb",
+  "suit": "#2fa0a0",
+  "acc": "#ffffff",
+  "swim": "trunks",
+  "pat": "hawaii",
+  "street": [
+   "#4a4a4a",
+   "#30405a"
+  ],
+  "hat": true,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Theo, 27, a shy software developer who is slowly getting into sauna culture. Awkward but sweet, over-explains things, makes nerdy jokes, worries he is doing the routine wrong."
+ },
+ {
+  "n": "Minji",
+  "role": "guest",
+  "sex": "f",
+  "style": "ponytail",
+  "hair": "#2b211c",
+  "eye": "#3a2618",
+  "skin": "#f4d9c4",
+  "suit": "#d6745a",
+  "acc": "#ffffff",
+  "swim": "bikini",
+  "pat": "stripes",
+  "street": [
+   "#6a8a5a",
+   "#2a2a30"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Minji, 35, a confident Korean-Canadian triathlete who swears by contrast therapy. Direct, motivating, a bit bossy. Gives firm advice like \"three rounds minimum\". Respects people who push themselves in the plunge."
+ },
+ {
+  "n": "Kai",
+  "role": "guest",
+  "sex": "m",
+  "style": "short",
+  "hair": "#141018",
+  "eye": "#2e1e14",
+  "skin": "#e9c4a6",
+  "suit": "#9a5ac7",
+  "acc": "#1a1a2a",
+  "swim": "trunks",
+  "pat": "block",
+  "street": [
+   "#e0e0d0",
+   "#3a3a42"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Kai, 32, a laid-back musician who hums in the sauna and talks about the acoustics of the cedar. Chill, poetic, uses \"vibes\" a lot. Gets along with everyone."
+ },
+ {
+  "n": "Mika",
+  "role": "staff",
+  "sex": "f",
+  "style": "ponytail",
+  "hair": "#2a1f1a",
+  "eye": "#5a3a22",
+  "skin": "#e9b996",
+  "suit": "#1E5A8A",
+  "acc": "#ffffff",
+  "swim": "",
+  "pat": "solid",
+  "street": [
+   "#1E5A8A",
+   "#24303c"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Mika, the polite, upbeat front-desk staff member who handles check-ins, passes and wristband name tags. Professional, cheerful, a little strict about paying."
+ },
+ {
+  "n": "Ren",
+  "role": "staff",
+  "sex": "m",
+  "style": "spiky",
+  "hair": "#2a1f1a",
+  "eye": "#2f5f8f",
+  "skin": "#e9b996",
+  "suit": "#1E5A8A",
+  "acc": "#ffffff",
+  "swim": "",
+  "pat": "solid",
+  "street": [
+   "#1E5A8A",
+   "#24303c"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Ren, an efficient, serious floor staff member who restocks towels and kombucha and keeps an eye on guests taking too much. Short sentences, dry humour, takes the rules seriously."
+ },
+ {
+  "n": "Sora",
+  "role": "staff",
+  "sex": "f",
+  "style": "long",
+  "hair": "#2a1f1a",
+  "eye": "#9a6a32",
+  "skin": "#e9b996",
+  "suit": "#1E5A8A",
+  "acc": "#ffffff",
+  "swim": "",
+  "pat": "solid",
+  "street": [
+   "#1E5A8A",
+   "#24303c"
+  ],
+  "hat": false,
+  "body": {
+   "height": 1,
+   "shoulders": 1,
+   "chest": 1,
+   "waist": 1,
+   "hips": 1,
+   "glutes": 1,
+   "arms": 1,
+   "legs": 1
+  },
+  "head": {
+   "size": 1,
+   "jaw": 1,
+   "cheeks": 1,
+   "eyes": 1,
+   "eyeGap": 1
+  },
+  "persona": "Sora, a friendly, relaxed floor staff member who looks after the patio, fire pit and sauna area. Chatty, gives tips, reminds people about sauna etiquette with a smile."
+ }
+]
