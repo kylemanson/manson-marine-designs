@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-11-28T18:25:47.854Z",
+ "updated": "2026-11-28T20:14:27.636Z",
  "characters": [
   {
    "n": "Aiko",
@@ -22,28 +22,33 @@
    "body": {
     "height": 1.01,
     "neck": 1,
-    "shoulders": 1.06,
-    "chest": 0.96,
-    "bust": 0.87,
-    "ribs": 0.89,
-    "waist": 0.89,
-    "belly": 1.16,
+    "shoulders": 1,
+    "chest": 1.1,
+    "bust": 1.45,
+    "ribs": 1,
+    "waist": 0.98,
+    "belly": 1,
     "back": 1,
     "hips": 1,
-    "glutes": 0.73,
-    "gluteLift": 1.24,
-    "arms": 1.05,
-    "upperArm": 1.05,
+    "glutes": 1,
+    "gluteLift": 1,
+    "arms": 1,
+    "upperArm": 1,
     "forearm": 1,
     "legs": 1,
-    "thigh": 1.08,
-    "calf": 1.1,
-    "round": 0.2,
-    "hipRound": 1.75,
-    "bustWidth": 1,
-    "bustSpread": 1.25,
-    "gluteWidth": 1.33,
-    "gluteSpread": 0.99
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1.1,
+    "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1.32,
+    "bustAngle": 1,
+    "cleavage": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -53,7 +58,7 @@
     "eyeGap": 1
    },
    "persona": "Aiko, 28, a cheerful graphic designer and Thursday regular. A purist about the routine: sauna, plunge, rest, repeat. Talks fast and bubbly, uses \"omg\" and lots of exclamation marks. Loves the top bench and eucalyptus oil. Hates people who skip the rest step.",
-   "def": 0.55,
+   "def": 0.12,
    "defg": {
     "abs": true,
     "chest": 1,
@@ -247,6 +252,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -327,6 +337,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -500,6 +515,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -558,30 +578,35 @@
    ],
    "hat": true,
    "body": {
-    "height": 1,
+    "height": 0.93,
     "neck": 1,
-    "shoulders": 1,
+    "shoulders": 1.06,
     "chest": 1,
-    "bust": 1,
+    "bust": 0.9,
     "ribs": 1,
-    "waist": 1,
-    "belly": 1,
+    "waist": 0.95,
+    "belly": 0.9,
     "back": 1,
     "hips": 1,
-    "glutes": 1,
-    "gluteLift": 1,
-    "arms": 1,
-    "upperArm": 1,
+    "glutes": 0.68,
+    "gluteLift": 1.1,
+    "arms": 1.05,
+    "upperArm": 1.05,
     "forearm": 1,
     "legs": 1,
-    "thigh": 1,
-    "calf": 1,
+    "thigh": 1.08,
+    "calf": 1.1,
     "round": 1,
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1.05,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
-    "gluteSpread": 1
+    "gluteSpread": 1.16
    },
    "head": {
     "size": 1,
@@ -591,7 +616,7 @@
     "eyeGap": 1
    },
    "persona": "Yuki, 24, a quiet librarian who comes here to decompress. Gentle and shy, gives short, calm replies, sometimes just \"mm\" or a soft laugh. Dislikes loud people in the sauna. Secretly funny once comfortable.",
-   "def": 0.15,
+   "def": 0.55,
    "defg": {
     "abs": 1,
     "chest": 1,
@@ -599,18 +624,139 @@
     "legs": 1,
     "back": 1
    },
-   "prof": {},
+   "prof": {
+    "torso": [
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      0.9945907683985712
+     ],
+     [
+      1,
+      1,
+      0.9851246130960707
+     ],
+     [
+      1,
+      1,
+      0.9459076839857115
+     ],
+     [
+      1,
+      1,
+      0.9851246130960707
+     ],
+     [
+      1,
+      1,
+      0.9945907683985712
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ]
+    ]
+   },
    "nodes": [],
    "cut": {
     "thk": 0.006,
-    "edges": {},
+    "edges": {
+     "tl": [
+      0.041287848002337514,
+      0.011354158200642818,
+      0.004128784800233748,
+      -1.0842021724855044e-19,
+      0,
+      0,
+      0
+     ],
+     "bl": [
+      -0.07566779827707991,
+      0.05951008476307192,
+      0.11419067772870144,
+      0.11157048527780612,
+      0.11295997813549595,
+      0.0836616067768615,
+      -0.018936819172113224
+     ],
+     "bh": [
+      -0.02858387799564267,
+      -0.007860566448801735,
+      -0.002858387799564267,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
     "topHi": 1.31,
     "topLo": 1.16,
     "neck": "straight",
     "strap": "thin",
-    "back": 1.31,
+    "back": 1.3,
     "rise": 0.905,
-    "leg": 0.055,
+    "leg": 0.11,
     "len": 0,
     "loose": 0,
     "flare": 0.4,
@@ -660,6 +806,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -740,6 +891,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -820,6 +976,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -900,6 +1061,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -980,6 +1146,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1060,6 +1231,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1140,6 +1316,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1220,6 +1401,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1300,6 +1486,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1380,6 +1571,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1460,6 +1656,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1540,6 +1741,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1602,6 +1808,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
@@ -1664,6 +1875,11 @@
     "hipRound": 1,
     "bustWidth": 1,
     "bustSpread": 1,
+    "bustLift": 1,
+    "bustUpper": 1,
+    "bustLower": 1,
+    "bustAngle": 1,
+    "cleavage": 1,
     "gluteWidth": 1,
     "gluteSpread": 1
    },
