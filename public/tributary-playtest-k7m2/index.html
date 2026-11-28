@@ -129,7 +129,7 @@ body.editing #hud,body.editing #goal,body.editing #menu,body.editing #pad,body.e
 #creator .btn{width:100%;margin-top:8px}
 #adm{right:0;top:0;bottom:0;width:min(400px,100vw);padding:12px 14px 24px;border-radius:0}
 @media (max-width:700px){#adm{top:auto;height:56vh;border-radius:20px 20px 0 0}}
-#crv{display:block;width:100%;max-width:340px;margin:6px auto;border-radius:12px;touch-action:none;background:#eef5fb}
+#crv,#sol{display:block;width:100%;max-width:340px;margin:6px auto;border-radius:12px;touch-action:none;background:#eef5fb}
 #adm .ah{display:flex;gap:10px;align-items:center;margin-bottom:8px}#adm .ah b{font:700 18px 'Josefin Sans',sans-serif}#adm select,#adm input[type=text],#adm input[type=password],#adm textarea{font:14px Nunito,sans-serif;border:1px solid #c9d6e0;border-radius:10px;padding:8px;background:#fff;width:100%;box-sizing:border-box}
 #adm .ah select{flex:1}#adm .arow,#adm .afoot{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#adm .arow button,#adm .afoot button,#adm details button{min-height:38px;padding:0 12px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:700 13px Nunito,sans-serif}
 #adm .afoot .btn{background:#1E5A8A;color:#fff;min-height:44px}#adm details{border-top:1px solid #E6F0F7;padding:6px 0}#adm summary{font-weight:800;cursor:pointer;padding:6px 0}
@@ -1379,6 +1379,18 @@ function patCol(p,s,y,th,base,acc){const fr=v=>v-Math.floor(v);
     case'hawaii':case'floral':{const c=.056,gi=Math.floor(s/c),gj=Math.floor(y/c);let col=base;for(let di=-1;di<=1;di++)for(let dj=-1;dj<=1;dj++){const i=gi+di,j=gj+dj,cx=(i+.25+.5*hash2(i,j))*c,cy=(j+.25+.5*hash2(j,i))*c,dx=s-cx,dy=y-cy,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),R=(p==='floral'?.013:.017)*(.62+.38*Math.cos(5*a+hash2(i,j)*6));
         if(d<.0045)col=p==='floral'?[255,214,90]:[255,255,255];else if(d<R)col=acc;else if(p==='hawaii'&&d<R*1.9&&Math.abs(Math.sin(a*2+hash2(j,i)*6))<.18)col=shade(base,.72)}return col}
     default:return base}}
+// outline points: 7 offsets per edge from front centre (0) to back centre (π), mirrored left/right
+function edgeAt(arr,th){if(!arr||!arr.length)return 0;const n=arr.length-1,a=Math.min(n-1e-6,Math.abs(angW(th))/Math.PI*n),i=Math.floor(a),t=a-i,g=k=>+arr[k<0?-k:k>n?2*n-k:k]||0;return cr(g(i-1),g(i),g(i+1),g(i+2),t)}
+const EDGEN={th:'Top edge',tl:'Top bottom edge',bh:'Waistline',bl:'Leg opening',lg:'Leg hem'};
+function suitBands(fem,C,k){const E=C.edges||{},e=(n,th)=>edgeAt(E[n],th),T=[],L=[];
+  if(fem){const botLo=th=>C.len>0?.745:.8+C.leg*Math.abs(Math.sin(th))+e('bl',th);
+    if(k==='bikini'){T.push({key:'bot',lo:botLo,hi:th=>C.rise-.012*Math.max(0,Math.cos(th))+e('bh',th)});
+      T.push({key:'top',lo:th=>{const t=sstep(-.35,.25,Math.cos(th)),bLo=C.back-.045;return(C.topLo<1.12?C.topLo:bLo+(C.topLo-bLo)*t)+e('tl',th)},hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)})}
+    else T.push({key:'one',lo:botLo,hi:(th,x)=>topEdge(C,x,Math.cos(th))+e('th',th)});
+    L.push({key:'leg',lo:th=>(C.len>0?-C.len:.83+Math.max(0,C.leg-.04)*.7-.86)+e('lg',th),hi:()=>.062})}
+  else{T.push({key:'men',band:!!C.band,lo:()=>.745,hi:th=>C.rise+e('bh',th)});if(!(C.loose&&C.len>.02))L.push({key:'leg',lo:th=>-C.len+e('lg',th),hi:()=>.062})}
+  return{T,L}}
+function suitEdges(fem,C,k){const legs=C.len>0?['lg']:['bl'];return fem?(k==='bikini'?['th','tl','bh',...legs]:['th',...legs]):(C.loose&&C.len>.02?['bh']:['bh','lg'])}
 function topEdge(C,x,cs){let f=C.topHi;const ax=Math.abs(x);
   if(C.neck==='v')f-=Math.max(0,.085-ax*1.15);else if(C.neck==='scoop')f-=.045*Math.max(0,1-(ax/.09)**2);else if(C.neck==='sweet')f-=.02*Math.exp(-((ax/.02)**2))-.008*Math.exp(-(((ax-.065)/.03)**2));
   return C.back+(f-C.back)*sstep(-.35,.25,cs)}
@@ -1391,14 +1403,9 @@ function paintSkinTex(o){const W=PERF.fast?128:256,H=PERF.fast?256:512,cv=docume
         const ax=Math.abs(x);if(cs>.4&&ax>.02&&ax<.09){const dd=Math.abs(y-(1.405+.35*(ax-.02)-6*(ax-.05)**2));if(dd<.003)c=shade(sk,.955+.015*dd/.003)}
         if(o.isStaff){if(y>=.912){c=base;if(cs>.9&&Math.abs(x)<.011&&y>1.3)c=shade(base,.82)}else if(y>=.9)c=belt;else c=SPc}
         else if(o.street){if(y>=.912&&y<1.44-.035*Math.max(0,cs)**2)c=o.stripeShirt&&Math.floor(y/.03)%2?shade(sc,.85):sc;else if(y>=.9&&y<.912)c=belt;else if(y<.9)c=pc}
-        else if(o.fem){const C=o.cut,a=Math.abs(sn),bik=sw.k==='bikini',tr=C.trim||sw.pat==='trim',hi=topEdge(C,x,cs),botLo=C.len>0?.7:.8+C.leg*a,pc_=yy=>patCol(sw.pat==='trim'?'solid':sw.pat,s/C.ps,yy/C.ps,th,base,acc);
-          if(bik){const bHi=C.rise-.012*Math.max(0,cs),t=sstep(-.35,.25,cs),bLo=C.back-.045,lo=C.topLo<1.12?C.topLo:bLo+(C.topLo-bLo)*t;
-            if(y>botLo&&y<bHi){c=pc_(y);if(tr&&(y>bHi-.009||C.len<=0&&y<botLo+.008))c=acc}
-            else if(y>lo&&y<hi){c=pc_(y);if(tr&&(y>hi-.009||y<lo+.008))c=acc}}
-          else if(y>botLo&&y<hi){c=pc_(y);if(tr&&(y>hi-.009||C.len<=0&&y<botLo+.008))c=acc}}
-        else{const C=o.cut;if(y<C.rise){c=C.band&&y>C.rise-.02?shade(base,.78):patCol(sw.pat,s/C.ps,y/C.ps,th,base,acc)}}}
-      else if(reg==='thigh'){const by=y+.86,C=o.cut;if(o.isStaff)c=SPc;else if(o.street)c=pc;else if(!o.fem){if(y>-C.len)c=y<-C.len+.01?(C.trim?acc:shade(base,.85)):patCol(sw.pat,s/C.ps,by/C.ps,th,base,acc)}
-        else{const tr=C.trim||sw.pat==='trim',lo=C.len>0?-C.len+.86:.83+Math.max(0,C.leg-.04)*.7;if(by>lo&&(sw.k!=='bikini'||by<C.rise+.03)){c=patCol(sw.pat==='trim'?'solid':sw.pat,s/C.ps,by/C.ps,th,base,acc);if(tr&&by<lo+.008)c=acc}}}
+        else{const C=o.cut;for(const b of o.bands.T){const lo=b.lo(th),hi=b.hi(th,x);if(y>lo+.004&&y<hi-.004){c=b.band&&y>hi-.024?shade(base,.78):patCol(sw.pat==='trim'?'solid':sw.pat,s/C.ps,y/C.ps,th,base,acc);break}}}}
+      else if(reg==='thigh'){const by=y+.86,C=o.cut;if(o.isStaff)c=SPc;else if(o.street)c=pc;else{for(const b of o.bands.L)if(y>b.lo(th)+.004){c=patCol(sw.pat==='trim'?'solid':sw.pat,s/C.ps,by/C.ps,th,base,acc);break}
+        if(!o.fem&&C.loose&&C.len>.02&&y>-C.len+.01)c=patCol(sw.pat,s/C.ps,by/C.ps,th,base,acc)}}
       else if(reg==='shin'){if(o.isStaff)c=SPc;else if(o.street)c=pc;else if(Math.abs(y+.01)<.012&&cs>.6)c=shade(sk,.94)}
       else if(reg==='up'){if(o.isStaff&&y>-.15)c=base;else if(o.street&&y>-.13)c=sc}
       const i=(py*W+px)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=255}}
@@ -1441,19 +1448,42 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   const SHP=o.shape||{},F=o.fem,P=o.P||TPROF[F?'f':'m'],NODES=o.nodes||[],PF=o.prof||{},B=(x,y,cx,cy,sx,sy)=>Math.exp(-(((x-cx)/sx)**2+((y-cy)/sy)**2));
   const torsoAt=(y,th)=>{const mm=shapeW(SHP,y),[w0,f0,b0]=profAt(P,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),sx=Math.sin(th),cz=Math.cos(th);let x=w*sx,z=(cz>0?f:b)*cz;
     if(cz>0){let a=F?.036*(SHP.chest||1)*(B(x,y,.066,1.215,.05,.048)+B(x,y,-.066,1.215,.05,.048)):.012*(SHP.chest||1)*(B(x,y,.078,1.255,.06,.04)+B(x,y,-.078,1.255,.06,.04));a+=.005*(B(x,y,.06,1.4,.06,.014)+B(x,y,-.06,1.4,.06,.014));z+=a*cz}
-    else{const a=(F?.02:.02)*(SHP.glutes||1)*(F?(B(x,y,.06,.855,.085,.095)+B(x,y,-.06,.855,.085,.095)):(B(x,y,.064,.865,.056,.062)+B(x,y,-.064,.865,.056,.062)))+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
+    else{const ax=Math.abs(x),cy=F?.858:.868,sy=y>cy?(F?.105:.08):(F?.048:.04),gl=Math.exp(-(((ax-(F?.062:.062))/(F?.075:.058))**2)-((y-cy)/sy)**2)*(1-.3*Math.exp(-((x/.011)**2))*sstep(.95,.9,y)),dimp=.004*Math.exp(-(((ax-.115)/.03)**2)-((y-.9)/.04)**2);
+      const a=(F?.023:.02)*(SHP.glutes||1)*gl-dimp*(F?1:.6)+.009*(B(x,y,.075,1.3,.05,.06)+B(x,y,-.075,1.3,.05,.06));z-=a*-cz}
     if(NODES.length){const dp=cz>0?f:b,dd=nodeDisp(NODES,'torso','',y,th,(w+dp)/2);if(dd){const nx=sx/w,nz=cz/dp,l=Math.hypot(nx,nz)||1;x+=dd*nx/l;z+=dd*nz/l}}return[x,y,z]};
   const I=o.I;// bone indices
-  add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]},o.fns.torso,'torso');
-  const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
+  const torsoW=(lx,ly,wv)=>{const s=lx>0?'R':'L',ax=Math.abs(lx);const wS=.7*sstep(.1,.19,ax)*sstep(1.22,1.35,ly),wH=.5*sstep(.85,.77,ly)*sstep(.02,.1,ax);return[[I.body,Math.max(.001,1-wS-wH)],[I['sh'+s],wS],[I['hip'+s],wH]]};
+  const thighW=s=>(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]};
+  add(rowsFor(.755,1.545,.011,[.8,.9,.975,1.31]),48,torsoAt,new T.Matrix4(),torsoW,o.fns.torso,'torso');
+  const tube=(prof,fl,part,side)=>{const A=prof.slice().reverse().map(([y,r])=>[y,r,r,r]);return(y,th)=>{let r=profAt(A,y)[0];if(part==='thigh'){const dB=Math.abs(angW(th-Math.PI)),wb=Math.exp(-dB*dB/.7);r+=wb*(F?(-.0065*Math.exp(-(((y+.058)/.013)**2))+.0035*Math.exp(-(((y+.115)/.035)**2))):(-.0045*Math.exp(-(((y+.062)/.012)**2))))*(SHP.glutes||1)}
+    if(part)r=Math.max(.003,r+nodeDisp(NODES,part,side,y,th,r));return[r*Math.sin(th),y,r*Math.cos(th)*fl]}};
   const lw=F?.92:1,aw=(F?.83:1)*(SHP.arms||1),LG=SHP.legs||1,sc=p=>p.map(([y,r])=>[y,r*lw]),sca=p=>p.map(([y,r])=>[y,r*aw]);
   const UP=sca(effL(LIMB0.up,PF.up)),FO=sca(effL(LIMB0.fore,PF.fore));
   const TH=F?effL(LIMB0.thighF,PF.thigh):sc(effL(LIMB0.thighM,PF.thigh)),SH=F?effL(LIMB0.shinF,PF.shin):sc(effL(LIMB0.shinM,PF.shin));
   for(const s of['L','R']){
     add(rowsFor(-.325,.04,.01,[-.13,-.15]),24,tube(UP,.9,'up',s),o.M['sh'+s],(lx,ly)=>{const wB=.85*sstep(-.03,.065,ly),wE=.5*sstep(-.25,-.33,ly);return[[I['sh'+s],Math.max(.001,1-wB-wE)],[I.body,wB],[I['el'+s],wE]]},o.fns.up,'up',s);
     add(rowsFor(-.28,.035,.012,[]),20,tube(FO,.92,'fore',s),o.M['el'+s],(lx,ly)=>{const wS=.5*sstep(-.03,.04,ly);return[[I['el'+s],1-wS],[I['sh'+s],wS]]},o.fns.fore,'fore',s);
-    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH.map(([y,r])=>[y,r*LG]),.95,'thigh',s),o.M['hip'+s],(lx,ly)=>{const wB=.8*sstep(-.02,.08,ly),wK=.5*sstep(-.38,-.46,ly);return[[I['hip'+s],Math.max(.001,1-wB-wK)],[I.body,wB],[I['knee'+s],wK]]},o.fns.thigh,'thigh',s);
+    add(rowsFor(-.46,.085,.012,[-.11]),24,tube(TH.map(([y,r])=>[y,r*LG]),.95,'thigh',s),o.M['hip'+s],thighW(s),o.fns.thigh,'thigh',s);
     add(rowsFor(-.43,.03,.012,[]),22,tube(SH.map(([y,r])=>[y,r*LG]),.96,'shin',s),o.M['knee'+s],(lx,ly)=>{const wH=.5*sstep(-.03,.03,ly);return[[I['knee'+s],1-wH],[I['hip'+s],wH]]},o.fns.shin,'shin',s)}
+  let gar=null;
+  if(o.gar){const GA=o.gar,thk=GA.thk,GP=[],GN=[],GSI=[],GSW=[],GUV=[],GIM=[],GIT=[],NR=10;
+    const piece=(at,M,wfn,lo,hi,seg,reg,band)=>{const rL=[0,.0025,.006],rH=band?[0,.005,.02]:rL,fs=[.2,.85,1,...Array(NR).fill(1),1,.85,.2],R=fs.length,lp=[],lw=[],uvl=[],base=GP.length/3;
+      const xr=th=>profAt(P,1.28)[0]*shapeW(SHP,1.28)*Math.sin(th);
+      for(let r=0;r<R;r++)for(let i=0;i<=seg;i++){const th=i/seg*Math.PI*2,l0=lo(th);let h0=hi(th,xr(th));if(h0<l0)h0=l0;const L=h0-l0,k=Math.min(1,L/.03),a=l0+rL[2]*k,b=h0-rH[2]*k;
+        const y=r<3?l0+rL[r]*k:r>=R-3?h0-rH[R-1-r]*k:a+(b-a)*(r-2)/(NR+1),p=at(y,th),e=.002,p1=at(y+e,th),p2=at(y-e,th),q1=at(y,th+e),q2=at(y,th-e);
+        const dy=[p1[0]-p2[0],p1[1]-p2[1],p1[2]-p2[2]],dt=[q1[0]-q2[0],q1[1]-q2[1],q1[2]-q2[2]];let nx=dt[1]*dy[2]-dt[2]*dy[1],ny=dt[2]*dy[0]-dt[0]*dy[2],nz=dt[0]*dy[1]-dt[1]*dy[0];const nl=Math.hypot(nx,ny,nz)||1;
+        const f=thk*fs[r];lp.push(p[0]+nx/nl*f,p[1]+ny/nl*f,p[2]+nz/nl*f);lw.push(p);uvl.push(i/seg,reg==='torso'?.3+.7*Math.max(0,Math.min(1,(y-.72)/.7)):.28*Math.max(0,Math.min(1,(y+.47)/.56)))}
+      const g=new T.BufferGeometry(),im=[],it=[];for(let r=0;r<R-1;r++)for(let i=0;i<seg;i++){const a=r*(seg+1)+i,b=a+seg+1,q=(r<2||r>=R-3)?it:im;q.push(a,a+1,b,a+1,b+1,b)}
+      g.setAttribute('position',new T.Float32BufferAttribute(lp,3));g.setIndex([...im,...it]);g.computeVertexNormals();const na=g.attributes.normal;
+      for(let r=0;r<R;r++){const a=r*(seg+1),b=a+seg;const x=na.getX(a)+na.getX(b),y=na.getY(a)+na.getY(b),z=na.getZ(a)+na.getZ(b),l=Math.hypot(x,y,z)||1;na.setXYZ(a,x/l,y/l,z/l);na.setXYZ(b,x/l,y/l,z/l)}
+      N3.getNormalMatrix(M);for(let k=0;k<lp.length/3;k++){v.set(lp[k*3],lp[k*3+1],lp[k*3+2]).applyMatrix4(M);GP.push(v.x,v.y,v.z);n.set(na.getX(k),na.getY(k),na.getZ(k)).applyMatrix3(N3).normalize();GN.push(n.x,n.y,n.z);
+        const W=wfn(lw[k][0],lw[k][1],v);let tot=0;for(const w of W)tot+=w[1];const W4=[...W,[0,0],[0,0],[0,0]].slice(0,4);for(const w of W4){GSI.push(w[0]);GSW.push(w[1]/tot)}GUV.push(uvl[k*2],uvl[k*2+1])}
+      for(const i of im)GIM.push(i+base);for(const i of it)GIT.push(i+base)};
+    for(const b of GA.bands.T)piece(torsoAt,new T.Matrix4(),torsoW,b.lo,b.hi,64,'torso',b.band);
+    for(const b of GA.bands.L)for(const s of['L','R'])piece(tube(TH.map(([y,r])=>[y,r*LG]),.95,'thigh',s),o.M['hip'+s],thighW(s),b.lo,b.hi,32,'thigh',false);
+    if(GP.length){const mk=off=>{const gg=new T.BufferGeometry(),pp=off?GP.map((q,k)=>q+GN[k]*off):GP;gg.setAttribute('position',new T.Float32BufferAttribute(pp,3));gg.setAttribute('normal',new T.Float32BufferAttribute(GN,3));
+        gg.setAttribute('skinIndex',new T.Uint16BufferAttribute(GSI,4));gg.setAttribute('skinWeight',new T.Float32BufferAttribute(GSW,4));gg.setAttribute('uv',new T.Float32BufferAttribute(GUV,2));gg.setIndex(off?GIM:[...GIM,...GIT]);
+        if(!off){gg.addGroup(0,GIM.length,0);gg.addGroup(GIM.length,GIT.length,1)}return gg};gar={geo:mk(0),geoO:mk(.005)}}}
   let shell=null;
   if(o.shorts){const Ls=o.shorts.len,FL=o.shorts.flare||0,top=.03,seg=24,A=TH.slice().reverse().map(([y,r])=>[y,r*LG,r*LG,r*LG]),r0=profAt(A,0)[0];
     const P2=[],N2=[],SI=[],SW2=[],UV=[],ID=[],YY=[];
@@ -1475,7 +1505,15 @@ function makeSkinBody(o){// o:{fem,bones,M:{...matrices},fns:{torso,up,fore,thig
   geo.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geo.setIndex(idx);
   const op=new Float32Array(pos.length);for(let k=0;k<pos.length;k++)op[k]=pos[k]+nor[k]*.0075;const geoO=new T.BufferGeometry();geoO.setAttribute('position',new T.BufferAttribute(op,3));geoO.setAttribute('skinIndex',siA);geoO.setAttribute('skinWeight',swA);
   const oidx=[];for(let k=0;k<idx.length;k+=3){if(hideArr[idx[k]]&&hideArr[idx[k+1]]&&hideArr[idx[k+2]])continue;oidx.push(idx[k],idx[k+1],idx[k+2])}geoO.setIndex(oidx);
-  return{geo,geoO,shell,meta:{k:MK,s:MS,y:MY,t:MT}}}
+  return{geo,geoO,shell,gar,meta:{k:MK,s:MS,y:MY,t:MT}}}
+const shadeHex=(h,k)=>{const c=hx(h);return'#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v*k))).toString(16).padStart(2,'0')).join('')};
+let knitT=null;function KNIT(){if(knitT)return knitT;const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d'),im=g.createImageData(64,64);
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++){const v=128+40*Math.sin(x/64*Math.PI*2*16)*(.7+.3*Math.sin(y/64*Math.PI*2*32)),i=(y*64+x)*4;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}
+  g.putImageData(im,0,0);knitT=new T.CanvasTexture(cv);knitT.wrapS=knitT.wrapT=T.RepeatWrapping;knitT.repeat.set(6,6);return knitT}
+function garTex(sw,C,suit){const W=PERF.fast?128:256,H=PERF.fast?128:256,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data,base=hx(suit),acc=hx(sw.acc||'#ffffff'),pat=sw.pat==='trim'?'solid':sw.pat;
+  for(let py=0;py<H;py++){const v=1-(py+.5)/H,tor=v>=.3,y=tor?.72+(v-.3)/.7*.7:-.47+v/.28*.56;for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2,s=th*(tor?.15:.07);let c=patCol(pat,s/C.ps,(tor?y:y+.86)/C.ps,th,base,acc);
+    const i=(py*W+px)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=255}}
+  g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;t.wrapS=T.RepeatWrapping;return t}
 function shortsTex(sw,C,suit){const W=PERF.fast?64:128,H=PERF.fast?32:64,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),img=g.createImageData(W,H),D=img.data,base=hx(suit),acc=hx(sw.acc||'#ffffff'),Ls=C.len,top=.03;
   for(let py=0;py<H;py++){const v=1-(py+.5)/H,y=-Ls+v*(top+Ls);for(let px=0;px<W;px++){const th=(px+.5)/W*Math.PI*2;let c=patCol(sw.pat,th*.15/C.ps,(y+.86)/C.ps,th,base,acc);if(y<-Ls+.012)c=C.trim?acc:shade(base,.85);const i=(py*W+px)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=255}}
   g.putImageData(img,0,0);const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;t.wrapS=T.RepeatWrapping;return t}
@@ -1535,7 +1573,7 @@ const CUTP={
   racer:['Sporty racer',{topHi:1.36,neck:'scoop',strap:'wide',back:1.2,leg:.045,len:0,loose:0}],boyleg:['Boyleg',{topHi:1.32,neck:'scoop',strap:'wide',back:1.3,leg:0,len:.08,loose:0}]},
  men:{square:['Square-cut',{rise:.96,len:.05,loose:0,band:1,string:1}],trunks:['Trunks',{rise:.975,len:.11,loose:0,band:1,string:1}],
   swim:['Swim shorts',{rise:.98,len:.17,loose:1,flare:.35,band:1,string:1}],board:['Board shorts',{rise:.985,len:.3,loose:1,flare:.55,band:1,string:1}],jammer:['Jammers',{rise:.975,len:.36,loose:0,band:1,string:0}]}};
-const CUT0={topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25,rise:.905,leg:.04,len:0,loose:0,flare:.4,band:1,string:1,ps:1,trim:0};
+const CUT0={thk:.006,edges:{},topHi:1.282,topLo:1.16,neck:'straight',strap:'thin',back:1.25,rise:.905,leg:.04,len:0,loose:0,flare:.4,band:1,string:1,ps:1,trim:0};
 // the approved cast, with a spread of cuts
 const CASTCUT={Aiko:['tri','classic'],Hana:['bandeau','high'],Mei:['halter','cut'],Minji:['sport','boy'],Priya:['scoopb'],Yuki:['classic'],Gwen:['racer'],Grace:['vneck'],Lucia:['boyleg'],
  Daniel:['board'],Theo:['swim'],Leo:['trunks'],Sam:['jammer'],Marco:['square'],Kai:['board'],Jonah:['trunks'],YOU:['trunks']};
@@ -1598,7 +1636,7 @@ function makeHat(){const pts=[[.158,0],[.158,.012],[.152,.05],[.138,.1],[.112,.1
   const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;HATM=new T.MeshStandardMaterial({map:t,roughness:1,color:lin('#c4c4c0')})}
 
 function makeChar(suit,hair,sk,isStaff,name,spec){
-  const SP0=spec||specFor(name);if(!isStaff)suit=SP0.suit;hair=SP0.hair;sk=SP0.skin;const BD=SP0.body,HD=SP0.head,CUT=fullCut(SP0),PT=effT(SP0.sex==='f',SP0.prof);
+  const SP0=spec||specFor(name);if(!isStaff)suit=SP0.suit;hair=SP0.hair;sk=SP0.skin;const BD=SP0.body,HD=SP0.head,CUT=fullCut(SP0),PT=effT(SP0.sex==='f',SP0.prof),BANDS=suitBands(SP0.sex==='f',CUT,SP0.swim);
   if(!HATG)makeHat();SWEATM??=new T.MeshStandardMaterial({color:lin('#d8f1ff'),emissive:lin('#6fb8e8'),emissiveIntensity:.35,transparent:true,opacity:.92,roughness:.03,metalness:.1,envMapIntensity:2.4});
   const L={sex:SP0.sex,style:SP0.style,eye:SP0.eye,street:SP0.street,eyeS:HD.eyes,eyeG:HD.eyeGap},fem=L.sex==='f';
   const g=new T.Group(),body=new T.Bone();g.add(body);
@@ -1626,10 +1664,10 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
   // one continuous skinned body with clothes painted on (crisp hems)
   g.updateMatrixWorld(true);const Mrel=b=>new T.Matrix4().copy(b.matrixWorld);
   const bones=[body,LL.hip,LL.knee,LR.hip,LR.knee,AL.sh,AL.el,AR.sh,AR.el],I={body:0,hipL:1,kneeL:2,hipR:3,kneeR:4,shL:5,elL:6,shR:7,elR:8};
-  const SB=makeSkinBody({fem,shape:BD,I,P:PT,prof:SP0.prof,nodes:SP0.nodes,shorts:!isStaff&&CUT.loose&&CUT.len>.02?{len:CUT.len,flare:CUT.flare}:null,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
+  const SB=makeSkinBody({fem,shape:BD,I,P:PT,prof:SP0.prof,nodes:SP0.nodes,gar:isStaff?null:{bands:BANDS,thk:CUT.thk},shorts:!isStaff&&CUT.loose&&CUT.len>.02?{len:CUT.len,flare:CUT.flare}:null,M:{shL:Mrel(AL.sh),shR:Mrel(AR.sh),elL:Mrel(AL.el),elR:Mrel(AR.el),hipL:Mrel(LL.hip),hipR:Mrel(LR.hip),kneeL:Mrel(LL.knee),kneeR:Mrel(LR.knee)},
     fns:{torso:[(x,y)=>torsoSwim(x,y),(x,y)=>torsoStreet(x,y)],up:[(x,y)=>upSwim(x,y),(x,y)=>upStreet(x,y)],fore:[()=>sk,()=>sk],thigh:[(x,y)=>thighSwim(x,y),()=>thighStreet()],shin:[()=>shinSwim(),()=>shinStreet()]}});
   if(fem&&!isStaff){const P0=PT,o_=0,surf=(x,y,front)=>{const mm=shapeW(BD,y),[w0,f0,b0]=profAt(P0,y),w=w0*mm,f=f0*(1+(mm-1)*.5),b=b0*(1+(mm-1)*.5),th=Math.asin(Math.max(-1,Math.min(1,x/w)));const cz=Math.cos(th);let z=(front?f:b)*cz;if(front)z+=.036*(BD.chest||1)*Math.exp(-(((x-.066)/.05)**2+((y-1.215)/.048)**2));return front?z+.004:-z-.004};
-    const straps=[],C=CUT,R=C.strap==='wide'?.012:.0075,bik=SP0.swim==='bikini';
+    const straps=[],C=CUT,R=(C.strap==='wide'?.012:.0075)+C.thk*.55,bik=SP0.swim==='bikini';
     if(C.strap==='halter'){for(const sd of[-1,1]){const x0=.05,pts=[[x0,topEdge(C,x0,1)-.004,1],[.046,1.36,1]].map(([x,y,fr])=>new T.Vector3(sd*x,y,surf(x,y,fr)));
         for(const [y,ph] of[[1.42,.95],[1.455,1.45],[1.47,2.1],[1.47,2.65],[1.468,Math.PI]]){const [w,f,b]=profAt(P0,y);pts.push(new T.Vector3(sd*(w+.006)*Math.sin(ph),y,(Math.cos(ph)>0?f:b)*Math.cos(ph)*1.08))}
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
@@ -1638,13 +1676,16 @@ function makeChar(suit,hair,sk,isStaff,name,spec){
         if(yb<1.22)bk.push([.07,(1.33+yb)/2]);bk.push([.066,yb]);const pts=[...fr.map(([x,y])=>[x,y,1]),...bk.map(([x,y])=>[x,y,0])].map(([x,y,f])=>new T.Vector3(sd*x,y,(y>1.37?(f?.014:-.014):surf(x,y,f))));
         const tb=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),24,R,6,false),soft(suit));body.add(tb);straps.push(tb)}}
     o_straps.push(...straps)}
-  const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,cut:CUT,P:PT,stripeShirt:(name||'').length%3===0};
+  const swimSpec={k:SP0.swim==='bikini'?'bikini':SP0.swim==='one'?'one':'',pat:SP0.pat||'solid',acc:SP0.acc||'#ffffff'},tsp={fem,sk,isStaff,suit,sc,pc,shape:BD,swim:swimSpec,cut:CUT,P:PT,bands:BANDS,stripeShirt:(name||'').length%3===0};
   const texSwim=paintSkinTex({...tsp,street:false}),texStreet=isStaff?texSwim:paintSkinTex({...tsp,street:true});
   const bodyMat=new T.MeshToonMaterial({map:texSwim,gradientMap:gradSoft,toneMapped:false,skinning:true});
   const DEF=isStaff?0:Math.max(0,Math.min(1,+SP0.def||0)),DG=SP0.defg||{};if(DEF>.01&&Object.values({abs:1,chest:1,arms:1,legs:1,back:1,...DG}).some(Boolean)){bodyMat.bumpMap=defTex({...tsp,defg:DG});bodyMat.bumpScale=DEF*DEFK}
-  if(!fem&&!isStaff&&CUT.string){const yd=CUT.rise-.02,f=profAt(PT,yd)[1]*(1+(shapeW(BD,yd)-1)*.5)+.004;for(const sd of[-1,1]){const d=part(body,CYL,swimSpec.acc||'#ffffff',sd*.011,yd-.025,f,.0035,.05,.0035,false);d.rotation.z=sd*.12;o_straps.push(d)}}
+  if(!fem&&!isStaff&&CUT.string){const yd=CUT.rise-.02,f=profAt(PT,yd)[1]*(1+(shapeW(BD,yd)-1)*.5)+.004+CUT.thk;for(const sd of[-1,1]){const d=part(body,CYL,swimSpec.acc||'#ffffff',sd*.011,yd-.025,f,.0035,.05,.0035,false);d.rotation.z=sd*.12;o_straps.push(d)}}
   const skel=new T.Skeleton(bones);const bm=new T.SkinnedMesh(SB.geo,bodyMat);bm.castShadow=true;bm.receiveShadow=true;bm.frustumCulled=false;g.add(bm);
   const bo=new T.SkinnedMesh(SB.geoO,SKINO);bo.frustumCulled=false;g.add(bo);g.updateMatrixWorld(true);bm.bind(skel);bo.bind(skel,bm.bindMatrix);outs.push(bo);
+  if(SB.gar){const trimC=CUT.trim||swimSpec.pat==='trim'?swimSpec.acc:shadeHex(suit,fem?.8:CUT.band?.74:.84);
+    const gm=new T.SkinnedMesh(SB.gar.geo,[new T.MeshToonMaterial({map:garTex(swimSpec,CUT,suit),bumpMap:KNIT(),bumpScale:.012,gradientMap:gradSoft,toneMapped:false,skinning:true,side:T.DoubleSide}),new T.MeshToonMaterial({color:trimC,bumpMap:KNIT(),bumpScale:.01,gradientMap:gradSoft,toneMapped:false,skinning:true,side:T.DoubleSide})]);
+    gm.castShadow=true;gm.frustumCulled=false;g.add(gm);const go=new T.SkinnedMesh(SB.gar.geoO,SKINO);go.frustumCulled=false;g.add(go);g.updateMatrixWorld(true);gm.bind(skel,bm.bindMatrix);go.bind(skel,bm.bindMatrix);outs.push(go);o_straps.push(gm,go)}
   if(SB.shell){const sm=new T.SkinnedMesh(SB.shell.geo,new T.MeshToonMaterial({map:shortsTex(swimSpec,CUT,suit),gradientMap:gradSoft,toneMapped:false,skinning:true,side:T.DoubleSide}));sm.castShadow=true;sm.frustumCulled=false;g.add(sm);
     const so=new T.SkinnedMesh(SB.shell.geoO,SKINO);so.frustumCulled=false;g.add(so);g.updateMatrixWorld(true);sm.bind(skel,bm.bindMatrix);so.bind(skel,bm.bindMatrix);outs.push(so);o_straps.push(sm,so)}body.scale.setScalar(BD.height||1);
   const head=new T.Group();head.position.set(0,1.61,0);head.scale.setScalar(1.04*(HD.size||1));body.add(head);
@@ -1751,7 +1792,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
    <div class="afoot"><button type="button" class="btn" id="admSave">Save to website</button><button type="button" id="admDl">Download file</button><button type="button" id="admRev">Discard draft</button></div>
    <p id="admStat"></p>
    <details><summary>GitHub key (needed once per device)</summary><p class="small">Create a fine-grained token on GitHub for the repository <b>${REPO}</b> with <b>Contents: Read and write</b>. It is stored only in this browser.</p>
-    <input type="password" id="admTok" placeholder="github_pat_…" autocomplete="off"><button type="button" id="admTokSave">Remember on this device</button><button type="button" id="admTokClr">Forget</button></details>`;
+    <input type="password" id="admTok" placeholder="github_pat_…" autocomplete="off"><button type="button" id="admTokSave">Remember on this device</button><button type="button" id="admTokClr">Forget</button><button type="button" id="admTokTest">Test my key</button></details>`;
   admStatus(ADM.dirty?'Unsaved changes (kept on this device)':`Loaded from the ${ADM.src}`);
   document.getElementById('admSel').onchange=e=>{ADM.i=+e.target.value;ADM.ni=-1;ADM.nodeMode=false;drawAdmin();admPreview()};
   for(const inp of el.querySelectorAll('[data-p]')){const p=inp.dataset.p;inp.addEventListener(inp.type==='range'||inp.tagName==='TEXTAREA'||inp.type==='text'||inp.type==='color'?'input':'change',()=>{let v=inp.type==='checkbox'?inp.checked:inp.type==='range'?+inp.value:inp.value;
@@ -1765,17 +1806,18 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
   document.getElementById('admOut').onclick=()=>{ADM.out=ADM.out==='swim'?'street':'swim';ADM.c.dressed=ADM.out;drawAdmin()};
   document.getElementById('admDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([admJSON()],{type:'application/json'}));a.download='characters.json';a.click()};
   document.getElementById('admRev').onclick=()=>{try{localStorage.removeItem('tributary.adminDraft')}catch(e){}location.reload()};
-  document.getElementById('admSave').onclick=admSave;
+  document.getElementById('admSave').onclick=admSave;document.getElementById('admTokTest').onclick=admTest;
   const tk=document.getElementById('admTok');try{tk.value=localStorage.getItem('tributary.gh')||''}catch(e){}
-  document.getElementById('admTokSave').onclick=()=>{try{localStorage.setItem('tributary.gh',tk.value.trim());admStatus('Key saved on this device.')}catch(e){admStatus('Could not save the key in this browser.',1)}};
+  document.getElementById('admTokSave').onclick=()=>{try{localStorage.setItem('tributary.gh',cleanTok(tk.value));admStatus('Key saved on this device.')}catch(e){admStatus('Could not save the key in this browser.',1)}};
   document.getElementById('admTokClr').onclick=()=>{try{localStorage.removeItem('tributary.gh')}catch(e){}tk.value='';admStatus('Key removed from this device.')}}
 // ---------- shaping: curve nodes, push/pull nodes, muscle definition ----------
 const PARTN={torso:'Body',up:'Upper arm',fore:'Forearm',thigh:'Thigh',shin:'Lower leg'},PARTY={torso:[.76,1.54],up:[-.32,.03],fore:[-.27,.03],thigh:[-.45,.08],shin:[-.42,.02]};
-const CVIEWS=[['front','Front (width)'],['side','Side (front / back)'],['arms','Arms'],['legs','Legs']];
+const CVIEWS=[['front','Front (width)'],['side','Side (front / back)'],['top','Top-down slice'],['arms','Arms'],['legs','Legs']];
 function shapeHTML(sp){if(!ADM.cv)ADM.cv={view:'front',soft:.5};if(ADM.ni==null)ADM.ni=-1;const N=sp.nodes||(sp.nodes=[]),n=N[ADM.ni];
   const sl=(p,l,a,b,st,dv)=>`<label class="sl">${l}<input type="range" data-p="${p}" min="${a}" max="${b}" step="${st}" value="${gp(sp,p)}"><output>${(+gp(sp,p)).toFixed(dv)}</output></label>`;
   return`<details open><summary>Shape: curve nodes</summary>
    <div class="crow">${CVIEWS.map(([v,l])=>`<button type="button" class="chp${ADM.cv.view===v?' on':''}" data-cvv="${v}">${l}</button>`).join('')}</div>
+   ${ADM.cv.view==='top'?(()=>{const T0=TPROF[sp.sex==='f'?'f':'m'];if(ADM.cv.slice==null)ADM.cv.slice=T0.findIndex(p=>p[0]>1.0);return`<label class="sl">Slice height<input type="range" id="crvSlice" min="1" max="${T0.length-2}" step="1" value="${ADM.cv.slice}"><output>${T0[ADM.cv.slice][0].toFixed(2)} m</output></label>`})():''}
    <canvas id="crv" width="320" height="380"></canvas>
    <label class="sl">Soft ↔ tight<input type="range" id="crvSoft" min="0" max="1" step=".01" value="${1-ADM.cv.soft}"><output>${ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'}</output></label>
    <p class="small">Drag a dot sideways. Soft also moves the neighbouring dots a little; tight keeps the change local. Left and right always match.</p>
@@ -1785,10 +1827,21 @@ function shapeHTML(sp){if(!ADM.cv)ADM.cv={view:'front',soft:.5};if(ADM.ni==null)
    ${N.length?`<div class="crow">${N.map((q,i)=>`<button type="button" class="chp${i===ADM.ni?' on':''}" data-nd="${i}">${i+1}. ${PARTN[q.p]||q.p}</button>`).join('')}</div>`:'<p class="small">No nodes yet. Turn on "Add a node", then tap where you want to push or pull.</p>'}
    ${n?`${sl(`nodes.${ADM.ni}.d`,'Pull in ↔ push out',-.03,.03,.0005,3)}${sl(`nodes.${ADM.ni}.r`,'Size (how far it spreads)',.015,.12,.001,3)}${sl(`nodes.${ADM.ni}.y`,'Move up / down',PARTY[n.p][0],PARTY[n.p][1],.002,3)}${sl(`nodes.${ADM.ni}.th`,'Move around',0,6.283,.01,2)}
      <label class="fl ck"><input type="checkbox" data-p="nodes.${ADM.ni}.m"${n.m!==false?' checked':''}> Mirror on the other side</label><div class="arow"><button type="button" id="ndDel">Delete this node</button></div>`:''}
-   <p class="small">Push is strongest in the middle and fades to nothing at the edge. Strength is limited by size, so a small node can't make a spike.</p></details>
+   <p class="small">In the 3D view: drag a dot to slide it over the body, and drag the orange arrow up to push out or down to pull in. Push fades to nothing at the edge, and strength is limited by size, so nothing spikes.</p></details>
   <details><summary>Muscle definition</summary>${sl('def','Smooth ↔ very toned',0,1,.01,2)}
    ${[['abs','Abs and waist'],['chest','Chest and collarbones'],['arms','Arms'],['legs','Legs'],['back','Back']].map(([k,l])=>`<label class="fl ck"><input type="checkbox" data-p="defg.${k}"${sp.defg&&sp.defg[k]===0||sp.defg&&sp.defg[k]===false?'':' checked'}> ${l}</label>`).join('')}
    <p class="small">Soft cartoon shading that follows the light. Shows less under street clothes.</p></details>`}
+// top-down slice: the body's cross-section at one control height, with width / front / back handles
+function drawSlice(c){const g=c.getContext('2d'),sp=ADM.list[ADM.i],f=sp.sex==='f',T0=TPROF[f?'f':'m'],i=ADM.cv.slice,pf=sp.prof||(sp.prof={}),W=c.width,H=c.height,cx=W/2,cy=H/2,sc=(W/2-30)/.2,y=T0[i][0],mm=shapeW(sp.body,y);
+  const fac=k=>((pf.torso||[])[i]||[1,1,1])[k],setF=(j,k,v)=>{pf.torso=pf.torso||T0.map(()=>[1,1,1]);pf.torso[j]=(pf.torso[j]||[1,1,1]).slice();pf.torso[j][k]=v},getF=(j,k)=>((pf.torso||[])[j]||[1,1,1])[k];
+  const base=[T0[i][1]*mm,T0[i][2]*(1+(mm-1)*.5),T0[i][3]*(1+(mm-1)*.5)],w=base[0]*fac(0),fr=base[1]*fac(1),bk=base[2]*fac(2);
+  g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.moveTo(0,cy);g.lineTo(W,cy);g.stroke();
+  g.fillStyle='rgba(242,212,189,.85)';g.strokeStyle='#2a2230';g.lineWidth=2;g.beginPath();for(let k=0;k<=72;k++){const t=k/72*Math.PI*2,x=w*Math.sin(t),z=(Math.cos(t)>0?fr:bk)*Math.cos(t);g.lineTo(cx+x*sc,cy+z*sc)}g.closePath();g.fill();g.stroke();
+  g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('front',cx-14,H-8);g.fillText('back',cx-12,14);g.fillText('seen from above, '+y.toFixed(2)+' m up',8,H-8>0?28:0);
+  const nb=(k)=>[[i-1,.55],[i+1,.55],[i-2,.2],[i+2,.2]].filter(([j])=>j>0&&j<T0.length-1).map(([j,wt])=>({get:()=>getF(j,k),set:v=>setF(j,k,v),wt}));
+  const dot=(x,yy,axis,sd,k,b)=>({x,y:yy,axis,sd,ox:cx,oy:cy,base:b,get:()=>fac(k),set:v=>setF(i,k,v),nb:nb(k)});
+  ADM.cvDots=[dot(cx+w*sc,cy,'x',1,0,base[0]),dot(cx-w*sc,cy,'x',-1,0,base[0]),dot(cx,cy+fr*sc,'y',1,1,base[1]),dot(cx,cy-bk*sc,'y',-1,2,base[2])];
+  for(const d of ADM.cvDots){g.fillStyle=Math.abs(d.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(d.x,d.y,8,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}ADM.cvMap={sc}}
 // curve editor geometry: which control points each view shows, and how to read/write their factors
 function cvModel(sp,view){const f=sp.sex==='f',B=sp.body,pf=sp.prof||(sp.prof={}),ws=y=>shapeW(B,y);
   if(view==='front'||view==='side'){const T0=TPROF[f?'f':'m'],k0=view==='front'?[0]:[1,2];
@@ -1796,25 +1849,26 @@ function cvModel(sp,view){const f=sp.sex==='f',B=sp.body,pf=sp.prof||(sp.prof={}
   const parts=view==='arms'?[['up',LIMB0.up,(f?.83:1)*B.arms],['fore',LIMB0.fore,(f?.83:1)*B.arms]]:[['thigh',f?LIMB0.thighF:LIMB0.thighM,(f?1:.92)*B.legs],['shin',f?LIMB0.shinF:LIMB0.shinM,(f?1:.92)*B.legs]];
   let off=0;const curves=[];for(const [key,arr,sc] of parts){const top=arr[0][0],o=off-top;curves.push({sgn:0,pts:arr.map(([y,r],i)=>({y:y+o,base:r*sc,get:()=>((pf[key]||[])[i]||1),set:v=>{pf[key]=pf[key]||arr.map(()=>1);pf[key][i]=v},edit:i>0&&i<arr.length-1}))});off+=arr[arr.length-1][0]-top-.02}
   return{y0:off,y1:0,curves}}
-function drawCurve(){const c=document.getElementById('crv');if(!c)return;const g=c.getContext('2d'),sp=ADM.list[ADM.i],M=cvModel(sp,ADM.cv.view),W=c.width,H=c.height,sc=(H-30)/(M.y1-M.y0),xs=ADM.cv.view==='arms'||ADM.cv.view==='legs'?2.4:1,X=sc*xs,cx=W/2,Y=y=>15+(M.y1-y)*sc;
+function drawCurve(){const c=document.getElementById('crv');if(!c)return;if(ADM.cv.view==='top')return drawSlice(c);const g=c.getContext('2d'),sp=ADM.list[ADM.i],M=cvModel(sp,ADM.cv.view),W=c.width,H=c.height,sc=(H-30)/(M.y1-M.y0),xs=ADM.cv.view==='arms'||ADM.cv.view==='legs'?2.4:1,X=sc*xs,cx=W/2,Y=y=>15+(M.y1-y)*sc;
   g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.strokeStyle='#c9d9e6';g.beginPath();g.moveTo(cx,0);g.lineTo(cx,H);g.stroke();
   ADM.cvDots=[];for(const cu of M.curves){const P2=cu.pts.map(p=>[p.y,p.base*p.get()]),A=P2.slice().sort((a,b)=>a[0]-b[0]).map(([y,r])=>[y,r,r,r]);
     const sides=cu.sgn?[cu.sgn]:[-1,1];g.fillStyle='rgba(242,212,189,.85)';g.strokeStyle='#2a2230';g.lineWidth=2;
     g.beginPath();const ys=[];for(let y=A[0][0];y<=A[A.length-1][0]+1e-9;y+=.004)ys.push(y);
     ys.forEach((y,j)=>{const x=cx+sides[sides.length-1]*profAt(A,y)[0]*X;j?g.lineTo(x,Y(y)):g.moveTo(x,Y(y))});
     ys.slice().reverse().forEach(y=>{const x=sides.length>1?cx-profAt(A,y)[0]*X:cx;g.lineTo(x,Y(y))});g.closePath();g.fill();g.stroke();
-    cu.pts.forEach((p,i)=>{if(!p.edit)return;for(const sd of sides){const x=cx+sd*p.base*p.get()*X,y=Y(p.y);g.fillStyle=Math.abs(p.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(x,y,7,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();ADM.cvDots.push({x,y,sd,p,cu,i})}})}
+    cu.pts.forEach((p,i)=>{if(!p.edit)return;for(const sd of sides){const x=cx+sd*p.base*p.get()*X,y=Y(p.y);g.fillStyle=Math.abs(p.get()-1)>.005?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(x,y,7,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();ADM.cvDots.push({x,y,sd,axis:'x',ox:cx,base:p.base,get:p.get,set:p.set,nb:[[i-1,.55],[i+1,.55],[i-2,.2],[i+2,.2]].map(([j,wt])=>cu.pts[j]&&cu.pts[j].edit?{get:cu.pts[j].get,set:cu.pts[j].set,wt}:null).filter(Boolean)})}})}
   if(ADM.cv.view==='side'){g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('back',8,H-8);g.fillText('front',W-40,H-8)}
   if(xs>1){g.fillStyle='#5a6b7a';g.font='12px Nunito,sans-serif';g.fillText('width shown ×2.4',8,H-8)}
   ADM.cvMap={sc:X,cx}}
 function wireShape(el,sp){drawCurve();const c=document.getElementById('crv');
   for(const b of el.querySelectorAll('[data-cvv]'))b.onclick=()=>{ADM.cv.view=b.dataset.cvv;drawAdmin()};
   const so=document.getElementById('crvSoft');if(so)so.oninput=e=>{ADM.cv.soft=1-(+e.target.value);so.nextElementSibling.textContent=ADM.cv.soft>.66?'soft':ADM.cv.soft>.33?'medium':'tight'};
-  const rs=document.getElementById('crvReset');if(rs)rs.onclick=()=>{const v=ADM.cv.view,pf=sp.prof||{};if(v==='front'||v==='side'){if(pf.torso)pf.torso=pf.torso.map(t=>v==='front'?[1,t[1],t[2]]:[t[0],1,1])}else if(v==='arms'){delete pf.up;delete pf.fore}else{delete pf.thigh;delete pf.shin}drawCurve();admChanged()};
+  const slc=document.getElementById('crvSlice');if(slc)slc.oninput=e=>{ADM.cv.slice=+e.target.value;slc.nextElementSibling.textContent=TPROF[sp.sex==='f'?'f':'m'][ADM.cv.slice][0].toFixed(2)+' m';drawCurve()};
+  const rs=document.getElementById('crvReset');if(rs)rs.onclick=()=>{const v=ADM.cv.view,pf=sp.prof||{};if(v==='top'){if(pf.torso)pf.torso[ADM.cv.slice]=[1,1,1]}else if(v==='front'||v==='side'){if(pf.torso)pf.torso=pf.torso.map(t=>v==='front'?[1,t[1],t[2]]:[t[0],1,1])}else if(v==='arms'){delete pf.up;delete pf.fore}else{delete pf.thigh;delete pf.shin}drawCurve();admChanged()};
   if(c){let dr=null;const at=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
     c.onpointerdown=e=>{const [x,y]=at(e);let best=null,bd=22;for(const d of ADM.cvDots){const q=Math.hypot(d.x-x,d.y-y);if(q<bd){bd=q;best=d}}if(!best)return;dr=best;c.setPointerCapture(e.pointerId);e.preventDefault()};
-    c.onpointermove=e=>{if(!dr)return;const [x]=at(e),{sc,cx}=ADM.cvMap,r=Math.max(.004,(x-cx)*dr.sd/sc),old=dr.p.get(),nv=Math.max(.5,Math.min(1.7,r/dr.p.base)),ratio=nv/old;dr.p.set(nv);
-      const s=ADM.cv.soft;for(const [k,wt] of[[1,.55],[2,.2]])for(const j of[dr.i-k,dr.i+k]){const q=dr.cu.pts[j];if(q&&q.edit)q.set(Math.max(.5,Math.min(1.7,q.get()*(1+(ratio-1)*wt*s))))}
+    c.onpointermove=e=>{if(!dr)return;const [x,y]=at(e),{sc}=ADM.cvMap,r=Math.max(.004,(dr.axis==='x'?(x-dr.ox):(y-dr.oy))*dr.sd/sc),old=dr.get(),nv=Math.max(.5,Math.min(1.7,r/dr.base)),ratio=nv/old;dr.set(nv);
+      const s=ADM.cv.soft;for(const q of dr.nb)q.set(Math.max(.5,Math.min(1.7,q.get()*(1+(ratio-1)*q.wt*s))));
       drawCurve();admPreview()};
     c.onpointerup=c.onpointercancel=()=>{if(dr){dr=null;admChanged()}}}
   const na=document.getElementById('ndAdd');if(na)na.onclick=()=>{ADM.nodeMode=!ADM.nodeMode;drawAdmin()};
@@ -1827,7 +1881,16 @@ function admPick(x,y){const sp=ADM.list[ADM.i],pm=pickMesh(ADM.c);if(!pm||sp.rol
   sp.nodes.push({p,s:p==='torso'?'':M.s[a],y:+M.y[a].toFixed(3),th:+M.t[a].toFixed(3),r:.04,d:.008,m:true});ADM.ni=sp.nodes.length-1;ADM.nodeMode=false;drawAdmin();admChanged()}
 let admMk=[];function admMarkers(){for(const m of admMk)m.parent&&m.parent.remove(m);admMk=[];if(!ADM)return;const sp=ADM.list[ADM.i],pm=pickMesh(ADM.c);if(!pm||!sp.nodes)return;const M=ADM.c.m.pick.meta,pos=ADM.c.m.pick.geo.attributes.position;
   sp.nodes.forEach((n,i)=>{let best=-1,bd=1e9;for(let k=0;k<M.k.length;k++){if(M.k[k]!==n.p||(n.p!=='torso'&&M.s[k]!==n.s))continue;const q=(M.y[k]-n.y)**2+(angW(M.t[k]-n.th)*.12)**2;if(q<bd){bd=q;best=k}}if(best<0)return;
-    const mk=new T.Mesh(SPH,new T.MeshBasicMaterial({color:i===ADM.ni?'#e07a3c':'#3B8FD0',depthTest:false,transparent:true,opacity:.95,toneMapped:false}));mk.renderOrder=10;mk.scale.setScalar(i===ADM.ni?.018:.012);mk.position.set(pos.getX(best),pos.getY(best),pos.getZ(best));pm.add(mk);admMk.push(mk)})}
+    const mk=new T.Mesh(SPH,new T.MeshBasicMaterial({color:i===ADM.ni?'#e07a3c':'#3B8FD0',depthTest:false,transparent:true,opacity:.95,toneMapped:false}));mk.renderOrder=10;mk.scale.setScalar(i===ADM.ni?.02:.015);mk.position.set(pos.getX(best),pos.getY(best),pos.getZ(best));mk.userData={i};pm.add(mk);admMk.push(mk);
+    if(i===ADM.ni){const nm=ADM.c.m.pick.geo.attributes.normal,nv=new T.Vector3(nm.getX(best),nm.getY(best),nm.getZ(best)).normalize(),ar=new T.Group(),am=new T.MeshBasicMaterial({color:'#e07a3c',depthTest:false,transparent:true,opacity:.95,toneMapped:false});
+      const sh=new T.Mesh(CYL,am);sh.scale.set(.004,.05,.004);sh.position.y=.025;const tip=new T.Mesh(CONE,am);tip.scale.set(.014,.024,.014);tip.position.y=.06;const hit=new T.Mesh(CYL,new T.MeshBasicMaterial({visible:false}));hit.scale.set(.025,.08,.025);hit.position.y=.04;
+      for(const q of[sh,tip,hit]){q.renderOrder=11;q.userData={i,arrow:1};ar.add(q)}ar.position.copy(mk.position).addScaledVector(nv,.012);ar.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),nv);pm.add(ar);admMk.push(ar)}})}
+function admGizmoDown(x,y){if(!ADM||!admMk.length||ADM.nodeMode)return null;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);const h=picker.intersectObjects(admMk,true)[0];if(!h)return null;const u=h.object.userData;
+  if(u.i!==ADM.ni&&!u.arrow){ADM.ni=u.i;drawAdmin();admMarkers()}return{i:u.i,arrow:!!u.arrow}}
+function admGizmoMove(gd,x,y){const sp=ADM.list[ADM.i],n=sp.nodes[gd.i];if(!n)return;
+  if(gd.arrow){n.d=Math.max(-.03,Math.min(.03,gd.d0+(gd.y0-y)*.00012));const s=document.querySelector(`#adm input[data-p="nodes.${gd.i}.d"]`);if(s){s.value=n.d;s.nextElementSibling.textContent=n.d.toFixed(3)}admPreview();return}
+  const pm=pickMesh(ADM.c);if(!pm)return;ndc.set(x/vw*2-1,-(y/vh)*2+1);picker.setFromCamera(ndc,cam);const h=picker.intersectObject(pm)[0];if(!h)return;const M=ADM.c.m.pick.meta,a=h.face.a;
+  n.p=M.k[a];n.s=n.p==='torso'?'':M.s[a];n.y=+M.y[a].toFixed(3);n.th=+M.t[a].toFixed(3);admPreview()}
 // ---------- swimsuit designer (inside the admin editor) ----------
 const NECKS=[['straight','Straight'],['sweet','Sweetheart'],['v','V'],['scoop','Scoop']],STRAPS=[['thin','Thin straps'],['wide','Wide straps'],['halter','Halter (ties behind neck)'],['none','Strapless']];
 function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit designer</summary><p class="small">Staff always wear the Tributary uniform.</p></details>`;
@@ -1845,6 +1908,10 @@ function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit des
    ${f?`<p class="lab">Top</p>${sl('topHi','Neckline height',1.2,1.37)}${sel('neck','Neckline shape',NECKS)}${bik?sl('topLo','Top length (low = tankini)',.92,1.2):''}${sel('strap','Straps',STRAPS)}${sl('back','Back height (low = open back)',bik?1.18:.98,1.34)}`:''}
    <p class="lab">${f?'Bottom':'Shorts'}</p>${f&&!bik?'':sl('rise','Waist height',f?.86:.92,f?1.0:1.0)}${f?sl('leg','Leg cut (higher on the hip)',0,.12):''}${sl('len','Leg length (0 = brief, up = shorts)',f?0:.03,.38)}
    ${ck('loose','Loose, board-short style')}${C.loose?sl('flare','Looseness',0,1):''}${f?'':ck('band','Waistband')+ck('string','Drawstring')}
+   <p class="lab">Fabric</p>${sl('thk','Thickness (doll-like when thick)',.002,.014)}
+   <p class="lab">Outline points</p><canvas id="sol" width="320" height="360"></canvas>
+   <p class="small">The swimsuit unrolled flat: front centre on the left, back centre on the right (the other side always matches). Drag a dot up or down to reshape that edge. Uses the Soft ↔ tight setting from the curve nodes.</p>
+   <div class="arow"><button type="button" id="solReset">Reset outline</button></div>
    <p class="lab">Colour and pattern</p>
    <label class="fl">Pattern<select data-p="pat">${PATS.map(([v,t])=>`<option value="${v}"${sp.pat===v?' selected':''}>${t}</option>`).join('')}</select></label>
    ${sl('ps','Pattern size',.5,2)}<label class="fl">Main colour<input type="color" data-p="suit" value="${sp.suit}"></label><label class="fl">Accent colour<input type="color" data-p="acc" value="${sp.acc}"></label>${ck('trim','Contrast trim on the edges')}
@@ -1853,7 +1920,25 @@ function suitHTML(sp){if(sp.role==='staff')return`<details><summary>Swimsuit des
    <div class="arow"><input type="text" id="suitName" maxlength="24" placeholder="Design name"><button type="button" id="suitSave">Save as design</button>${mine.length?'<button type="button" id="suitDel">Delete a design…</button>':''}</div>
   </details>`}
 let suitDelMode=false;
-function wireSuit(el,sp){if(sp.role==='staff')return;
+function solModel(sp){const C=sp.cut,f=sp.sex==='f',B=suitBands(f,C,sp.swim),P=effT(f,sp.prof),wx=profAt(P,1.28)[0]*shapeW(sp.body,1.28),bt=k=>B.T.find(b=>b.key===k);
+  const top=bt('top')||bt('one'),bot=bt('bot')||bt('one')||bt('men'),leg=B.L[0],F={th:top&&(t=>top.hi(t,wx*Math.sin(t))),tl:bt('top')&&(t=>bt('top').lo(t)),bh:(bt('bot')||bt('men'))&&(t=>(bt('bot')||bt('men')).hi(t)),bl:bot&&(t=>bot.lo(t)),lg:leg&&(t=>leg.lo(t)+.86)};
+  return{B,keys:suitEdges(f,C,sp.swim).filter(k=>F[k]),F,y0:f?.6:.55,y1:1.42}}
+function drawSol(){const c=document.getElementById('sol');if(!c)return;const sp=ADM.list[ADM.i];if(sp.role==='staff')return;const g=c.getContext('2d'),W=c.width,H=c.height,M=solModel(sp),X=t=>24+t/Math.PI*(W-48),Y=y=>12+(M.y1-y)/(M.y1-M.y0)*(H-36);
+  g.clearRect(0,0,W,H);g.fillStyle='#eef5fb';g.fillRect(0,0,W,H);g.font='11px Nunito,sans-serif';
+  for(const [y,l] of[[1.25,'chest'],[1.02,'waist'],[.86,'hips'],[.76,'crotch'],[.66,'thigh']]){if(y<M.y0)continue;g.strokeStyle='#d3e0ea';g.beginPath();g.moveTo(0,Y(y));g.lineTo(W,Y(y));g.stroke();g.fillStyle='#8aa0b2';g.fillText(l,W-44,Y(y)-3)}
+  g.fillStyle='#5a6b7a';g.fillText('front',4,H-6);g.fillText('side',W/2-10,H-6);g.fillText('back',W-30,H-6);
+  const col=sp.suit;const band=(lo,hi,a)=>{g.fillStyle=col;g.globalAlpha=a;g.beginPath();for(let i=0;i<=40;i++){const t=i/40*Math.PI;g.lineTo(X(t),Y(hi(t)))}for(let i=40;i>=0;i--){const t=i/40*Math.PI;g.lineTo(X(t),Y(lo(t)))}g.closePath();g.fill();g.globalAlpha=1};
+  const wx=profAt(effT(sp.sex==='f',sp.prof),1.28)[0]*shapeW(sp.body,1.28);for(const b of M.B.T)band(t=>b.lo(t),t=>b.hi(t,wx*Math.sin(t)),.8);for(const b of M.B.L)band(t=>b.lo(t)+.86,()=>.9,.35);
+  ADM.solDots=[];const E=sp.cut.edges||{};for(const k of M.keys){g.strokeStyle='#2a2230';g.lineWidth=1.5;g.beginPath();for(let i=0;i<=40;i++){const t=i/40*Math.PI;g.lineTo(X(t),Y(M.F[k](t)))}g.stroke();
+    for(let j=0;j<7;j++){const t=j/6*Math.PI,x=X(t),y=Y(M.F[k](t)),on=Math.abs((E[k]||[])[j]||0)>.001;g.fillStyle=on?'#e07a3c':'#1E5A8A';g.beginPath();g.arc(x,y,6.5,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();ADM.solDots.push({x,y,k,j})}}
+  ADM.solMap={sy:(H-36)/(M.y1-M.y0)}}
+function wireSol(sp){const c=document.getElementById('sol');if(!c)return;drawSol();let dr=null;const at=e=>{const r=c.getBoundingClientRect();return[(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+  c.onpointerdown=e=>{const [x,y]=at(e);let b=null,bd=20;for(const d of ADM.solDots){const q=Math.hypot(d.x-x,d.y-y);if(q<bd){bd=q;b=d}}if(!b)return;dr={...b,y0:y};c.setPointerCapture(e.pointerId);e.preventDefault()};
+  c.onpointermove=e=>{if(!dr)return;const [,y]=at(e),dy=-(y-dr.y0)/ADM.solMap.sy;dr.y0=y;const C=sp.cut;C.edges=C.edges||{};const A=C.edges[dr.k]=(C.edges[dr.k]||[0,0,0,0,0,0,0]).slice();const so=ADM.cv?ADM.cv.soft:.5;
+    for(const [o,wt] of[[0,1],[1,.55*so],[-1,.55*so],[2,.2*so],[-2,.2*so]]){const j=dr.j+o;if(j>=0&&j<7)A[j]=Math.max(-.15,Math.min(.15,(A[j]||0)+dy*wt))}drawSol();admPreview()};
+  c.onpointerup=c.onpointercancel=()=>{if(dr){dr=null;admChanged()}};
+  const rs=document.getElementById('solReset');if(rs)rs.onclick=()=>{sp.cut.edges={};drawSol();admChanged()}}
+function wireSuit(el,sp){if(sp.role==='staff')return;wireSol(sp);
   for(const b of el.querySelectorAll('[data-swim]'))b.onclick=()=>{sp.swim=b.dataset.swim;sp.cut=cutDefault({...sp,n:''});drawAdmin();admChanged()};
   for(const b of el.querySelectorAll('[data-cut]'))b.onclick=()=>{const [g,k]=b.dataset.cut.split(':');sp.cut={...fullCut(sp),...CUTP[g][k][1]};drawAdmin();admChanged()};
   for(const b of el.querySelectorAll('[data-design]'))b.onclick=()=>{const i=+b.dataset.design,d=ADM.suits[i];
@@ -1864,12 +1949,25 @@ function wireSuit(el,sp){if(sp.role==='staff')return;
   const dl=document.getElementById('suitDel');if(dl)dl.onclick=()=>{suitDelMode=true;admStatus('Now tap the design to delete (twice to confirm).',1)}}
 let delArm='';function confirmDel(n){if(delArm===n){delArm='';return true}delArm=n;admStatus(`Tap Delete again to remove ${n}.`,1);setTimeout(()=>{if(delArm===n)delArm=''},4000);return false}
 function admJSON(){return JSON.stringify({version:2,updated:new Date().toISOString(),characters:ADM.list,suits:ADM.suits},null,1)}
-async function admSave(){let tok='';try{tok=localStorage.getItem('tributary.gh')||document.getElementById('admTok').value.trim()}catch(e){tok=document.getElementById('admTok').value.trim()}
+// pasted keys on phones can carry invisible characters, which make the browser refuse the request
+const cleanTok=t=>String(t||'').replace(/[^\x21-\x7e]/g,'');
+function admTok(){let t='';try{t=document.getElementById('admTok').value||localStorage.getItem('tributary.gh')||''}catch(e){t=document.getElementById('admTok').value||''}return cleanTok(t)}
+async function ghFetch(url,opt){try{return await fetch(url,opt)}catch(e){throw new Error('Could not reach GitHub ('+(e.message||e)+'). Check your connection, or try another browser. Content blockers and some privacy modes block api.github.com.')}}
+async function admTest(){const tok=admTok();if(!tok){admStatus('Paste your key in the box first.',1);return}if(!/^(github_pat_|ghp_)/.test(tok)){admStatus('That doesn\'t look like a GitHub key. It should start with github_pat_.',1);return}
+  admStatus('Checking your key…');const h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};
+  try{const r=await ghFetch(`https://api.github.com/repos/${REPO}`,{headers:h,cache:'no-store'});
+    if(r.status===401){admStatus('GitHub rejected the key (401): it\'s mistyped, expired or deleted. Make a new one.',1);return}
+    if(!r.ok){admStatus('GitHub said '+r.status+' when looking up the repository. Make sure the key includes manson-marine-designs.',1);return}
+    const j=await r.json(),pm=j.permissions||{};
+    if(!pm.push){admStatus('The key works but can\'t write. On GitHub, edit the key: Repository access → Only select repositories → manson-marine-designs, and Permissions → Contents → Read and write.',1);return}
+    admStatus('Key is good: it can write to the repository. Tap Remember, then Save to website.')}catch(e){admStatus(String(e.message||e),1)}}
+async function admSave(){const tok=admTok();
   if(!tok){admStatus('Add your GitHub key first (see below), or use Download file.',1);return}
   const api=`https://api.github.com/repos/${REPO}/contents/${CPATH}`,h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};admStatus('Saving…');
-  try{let sha;const g=await fetch(api+'?ref=main',{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error(g.status===401?'GitHub rejected the key (401). Check it or make a new one.':'GitHub said '+g.status);
+  try{let sha;const g=await ghFetch(api+'?ref=main',{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error(g.status===401?'GitHub rejected the key (401): mistyped, expired or deleted. Make a new one.':'GitHub said '+g.status+' reading the file.');
     const body={message:'Update Tributary characters from the admin editor',content:btoa(unescape(encodeURIComponent(admJSON()))),branch:'main'};if(sha)body.sha=sha;
-    const r=await fetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const t=await r.text();throw new Error(r.status===403||r.status===404?'The key can\'t write to this repository. Give it Contents: Read and write.':'GitHub said '+r.status+': '+t.slice(0,100))}
+    const r=await ghFetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){let m='';try{m=(await r.json()).message||''}catch(e){}
+      throw new Error(r.status===403||r.status===404?'GitHub refused the save ('+r.status+(m?': '+m:'')+'). Tap Test my key to see what the key is missing.':r.status===409?'The file changed on GitHub while you were editing. Tap Save again.':'GitHub said '+r.status+(m?': '+m:''))}
     ADM.dirty=false;try{localStorage.removeItem('tributary.adminDraft')}catch(e){}admStatus('Saved! Everyone sees the changes after the site rebuilds (about 1–2 minutes).')}
   catch(e){admStatus(String(e.message||e),1)}}
 
@@ -1885,9 +1983,9 @@ function handleTap(x,y){if(PREVIEW.on&&ADM&&ADM.nodeMode){admPick(x,y);return}if
   const st=picker.intersectObjects(stationTags,false)[0];if(st){const a=st.object.userData.act;standUp();P.auto={c:{x:a.x,y:a.y},act:a,path:findPath(P,{x:a.x,y:a.y}),t:0};P.path=P.auto.path;return}
   if(menu.classList.contains('fade')&&PERF.ops&&PERF.ops.length){menu.classList.remove('fade');menuT=performance.now();return}
   jump()}
-{let drag=null;cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX<innerWidth*.45&&state&&state.on&&!PREVIEW.on)return;drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),id:e.pointerId};cv.setPointerCapture(e.pointerId)});
- cv.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;if(VIEWS[view].fixed)return;camYaw-=dx*.0065;camPitch=Math.max(.08,Math.min(1.1,camPitch+dy*.004));lastDrag=performance.now()/1000});
- const end=e=>{if(drag&&e.pointerId===drag.id){if(e.type==='pointerup'&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<9&&performance.now()-drag.t<350)handleTap(e.clientX,e.clientY);drag=null}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+{let drag=null,gdrag=null;cv.addEventListener('pointerdown',e=>{if(PREVIEW.on&&ADM){const gh=admGizmoDown(e.clientX,e.clientY);if(gh){const n=ADM.list[ADM.i].nodes[gh.i];gdrag={...gh,id:e.pointerId,y0:e.clientY,d0:n?n.d:0};cv.setPointerCapture(e.pointerId);return}}if(e.pointerType==='touch'&&e.clientX<innerWidth*.45&&state&&state.on&&!PREVIEW.on)return;drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),id:e.pointerId};cv.setPointerCapture(e.pointerId)});
+ cv.addEventListener('pointermove',e=>{if(gdrag&&e.pointerId===gdrag.id){admGizmoMove(gdrag,e.clientX,e.clientY);return}if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;if(VIEWS[view].fixed)return;camYaw-=dx*.0065;camPitch=Math.max(.08,Math.min(1.1,camPitch+dy*.004));lastDrag=performance.now()/1000});
+ const end=e=>{if(gdrag&&e.pointerId===gdrag.id){gdrag=null;drawAdmin();admChanged();return}if(drag&&e.pointerId===drag.id){if(e.type==='pointerup'&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<9&&performance.now()-drag.t<350)handleTap(e.clientX,e.clientY);drag=null}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
  cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.6,Math.min(1.8,zoom*(1+Math.sign(e.deltaY)*.08)))},{passive:false})}
 const pr=document.getElementById('prompt'),menu=document.getElementById('menu');let doorA=0,frontA=0,menuKey='',menuT=0;const ray=new T.Raycaster();
 const angDiff=(a,b)=>{let d=(b-a)%(2*Math.PI);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;return d};
