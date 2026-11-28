@@ -129,6 +129,14 @@ body.editing #hud,body.editing #goal,body.editing #menu,body.editing #pad,body.e
 #creator .btn{width:100%;margin-top:8px}
 #adm{right:0;top:0;bottom:0;width:min(400px,100vw);padding:12px 14px 24px;border-radius:0}
 @media (max-width:700px){#adm{top:auto;height:56vh;border-radius:20px 20px 0 0}}
+#mapEd{position:fixed;inset:0;z-index:60;background:#eef5fb;display:none;flex-direction:column;font-family:Nunito,sans-serif}#mapEd.on{display:flex}
+#mapEd .mtop,#mapEd .madd,#mapEd .mprops{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 10px;background:rgba(255,255,255,.92);border-bottom:1px solid #d3e0ea}
+#mapEd .sp{flex:1}#mapEd button{border:0;border-radius:10px;padding:7px 11px;background:#e3eef7;color:#0F2A40;font:600 13px Nunito,sans-serif}#mapEd button.btn{background:#1E5A8A;color:#fff}#mapEd button.bad{background:#fde3e0;color:#a33}
+#mapEd .mmore{display:none;gap:6px;padding:6px 10px;background:#fff;border-bottom:1px solid #d3e0ea;flex-wrap:wrap}#mapEd .mmore.on{display:flex}
+#mapEd canvas{flex:1;min-height:0;width:100%;touch-action:none;display:block}#mapEd .mprops{border-top:1px solid #d3e0ea;border-bottom:0;min-height:44px}
+#mapEd .mn{display:flex;align-items:center;gap:3px;font-size:12px}#mapEd .mn input{width:62px;padding:4px;border:1px solid #c9d9e6;border-radius:8px}#mapEd select,#mapEd input[type=text]{padding:5px;border:1px solid #c9d9e6;border-radius:8px}
+#mapEd .mstat{padding:4px 10px 8px;font-size:12.5px;color:#1E5A8A;background:rgba(255,255,255,.92)}#mapEd .mstat.bad{color:#b0392e}#mapEd .small{font-size:12px;color:#5a6b7a}
+#mapBan{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:70;background:#1E5A8A;color:#fff;padding:8px 12px;border-radius:14px;font:600 13px Nunito,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.2)}#mapBan button{margin-left:8px;border:0;border-radius:9px;padding:5px 9px;font:700 12px Nunito,sans-serif}
 #crv,#sol{display:block;width:100%;max-width:340px;margin:6px auto;border-radius:12px;touch-action:none;background:#eef5fb}
 #adm .ah{display:flex;gap:10px;align-items:center;margin-bottom:8px}#adm .ah b{font:700 18px 'Josefin Sans',sans-serif}#adm select,#adm input[type=text],#adm input[type=password],#adm textarea{font:14px Nunito,sans-serif;border:1px solid #c9d6e0;border-radius:10px;padding:8px;background:#fff;width:100%;box-sizing:border-box}
 #adm .ah select{flex:1}#adm .arow,#adm .afoot{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#adm .arow button,#adm .afoot button,#adm details button{min-height:38px;padding:0 12px;border:0;border-radius:10px;background:#E6F0F7;color:#0F2A40;font:700 13px Nunito,sans-serif}
@@ -245,6 +253,12 @@ const inSauna=c=>c.x>SAUNA.x0&&c.x<SAUNA.x1&&c.y>SAUNA.y0&&c.y<SAUNA.y1;
 const TF=20; // game seconds per real second (6 PM to 10 PM in 12 real minutes)
 const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 // walls: [x,y,w,h,kind]
+// ---- map data: map.json on the website (or your draft while previewing) overrides the built-in layout ----
+const MAPD=(()=>{try{if(/mappreview/.test(location.hash)){const d=JSON.parse(localStorage.getItem('tributary.mapDraft')||'null');if(d)return d}}catch(e){}
+  try{const x=new XMLHttpRequest();x.open('GET','map.json?t='+Date.now(),false);x.send();if(x.status===200){const j=JSON.parse(x.responseText);if(j&&typeof j==='object')return j}}catch(e){}return null})();
+const MAP0={},edSeat=s=>!s.zone&&!s.bench;
+function mkSeat(q){const t=q.t==='chair'?'chair':'lounge',rot=+q.rot||0,deck=t==='lounge'&&Math.abs(Math.sin(rot))>.5;
+  return{x:q.x,y:q.y,t,rot,h:t==='lounge'?.3:.4,deck:deck?1:0,sx:t==='lounge'?q.x+40*Math.abs(Math.cos(rot)):q.x-38*Math.sin(rot),sy:t==='lounge'?q.y+40*Math.abs(Math.sin(rot)):q.y-38*Math.cos(rot)}}
 const ROOMS=[{sex:'m',y0:165,door:{x:390,y:255}},{sex:'f',y0:315,door:{x:390,y:422}}];
 for(const R0 of ROOMS){const y=R0.y0;R0.cx=290;R0.cy=y+112;R0.wc={x:168,y:y+82,ix:168,iy:y+28};R0.rect=[0,y,385,140]}
 const roomWalls=ROOMS.flatMap(({y0:y})=>[[70,y,6,55,'tile'],[130,y,6,58,'tile'],[200,y,6,58,'tile'],[136,y+52,64,6,'tile']]);
@@ -259,7 +273,9 @@ const walls=[
 [0,745,580,10,'glass'],[680,745,350,10,'glass'],
 ...roomWalls
 ];
-const tubs=[[100,600],[220,600],[340,600],[460,600]].map(([x,y],i)=>({i,x,y,w:90,h:90,ax:x+45,ay:y-30}));
+MAP0.walls=JSON.parse(JSON.stringify(walls));if(MAPD&&Array.isArray(MAPD.walls)){walls.length=0;walls.push(...MAPD.walls.filter(w=>Array.isArray(w)&&w.length>=4))}
+MAP0.tubs=[[100,600],[220,600],[340,600],[460,600]];
+const tubs=((MAPD&&Array.isArray(MAPD.tubs))?MAPD.tubs:MAP0.tubs).map(([x,y],i)=>({i,x,y,w:90,h:90,ax:x+45,ay:y-30}));
 const SW=-Math.PI/2,SE=Math.PI/2,SN=Math.PI,SS=0,TIERH=[0,.45,.85,1.25];
 const seats=[];
 // sauna: three tiers along the north wall (the top leg of the L) and the east wall
@@ -274,6 +290,7 @@ seats.push(
  {x:1035,y:190,t:'chair',rot:SW,h:.4,sx:995,sy:190},{x:1035,y:250,t:'chair',rot:SW,h:.4,sx:995,sy:250});
 [420,520,620].forEach(y=>seats.push({x:1130,y,t:'lounge',rot:SE,h:.3,sx:1130,sy:y+40,deck:1}));
 ROOMS.forEach(R0=>[255,300,325].forEach(x=>seats.push({x,y:R0.y0+81,t:'chair',rot:SS,h:.45,sx:x,sy:R0.y0+112,bench:1})));
+MAP0.seats=seats.filter(edSeat).map(s=>({x:s.x,y:s.y,t:s.t,rot:s.rot}));if(MAPD&&Array.isArray(MAPD.seats)){for(let i=seats.length-1;i>=0;i--)if(edSeat(seats[i]))seats.splice(i,1);for(const q of MAPD.seats)seats.push(mkSeat(q))}
 seats.forEach(s=>{if(s.bench){s.r=null;return}s.r=s.t==='lounge'?(s.deck?[s.x-35,s.y-16,70,32]:[s.x-16,s.y-35,32,70]):s.t==='chair'?[s.x-17,s.y-17,34,34]:null});
 // furniture solids
 const furn=[
@@ -289,6 +306,7 @@ const furn=[
 const solids=[...walls.map(w=>w.slice(0,4)),...furn];
 const plants=[[39,715],[201,715],[331,715],[471,715],[1055,345],[1060,60],[1130,95]];
 const labels=[[190,80,'STAFF ONLY'],[290,215,"MEN'S"],[290,365,"WOMEN'S"],[625,150,'FRONT DESK'],[880,60,'ENTRANCE'],[560,360,'HALLWAY'],[850,520,'SAUNA'],[1110,520,'BALCONY'],[300,560,'COLD PLUNGES'],[670,445,'KOMBUCHA'],[300,935,'FIRE PIT'],[760,975,'PATIO']];
+MAP0.plants=JSON.parse(JSON.stringify(plants));MAP0.labels=JSON.parse(JSON.stringify(labels));if(MAPD&&Array.isArray(MAPD.plants)){plants.length=0;plants.push(...MAPD.plants)}if(MAPD&&Array.isArray(MAPD.labels)){labels.length=0;labels.push(...MAPD.labels)}
 const RES={towA:{n:'towels',stock:8,max:8,low:2,stand:[672,300],shelf:[711,300]},towB:{n:'towels',stock:8,max:8,low:2,stand:[680,688],shelf:[714,688]},komb:{n:'kombucha',stock:10,max:10,low:2,stand:[660,515]}};
 const LINEN={x:300,y:70};
 const acts=[
@@ -303,6 +321,9 @@ const acts=[
  {k:'hooks',n:'Hooks for robes',x:624,y:645,tx:600,ty:645},
  ...tubs.map(t=>({k:'tub',n:'Cold plunge',x:t.ax,y:t.ay,tx:t.ax,ty:t.y+45,tub:t}))
 ];
+{const c={};for(const a of acts){const b=a.k+':'+a.n;c[b]=(c[b]||0)+1;a.id=b+':'+c[b]}}
+MAP0.spots={};for(const a of acts)if(a.k!=='tub')MAP0.spots[a.id]=[a.x,a.y,a.tx,a.ty];
+if(MAPD&&MAPD.spots)for(const a of acts){const v=MAPD.spots[a.id];if(v&&a.k!=='tub'&&v.length===4)[a.x,a.y,a.tx,a.ty]=v}
 const exitZ={x:765,y:6,w:230,h:40};
 const DOOR={x:735,y:640};
 const STOVES=[[770,470],[770,560]];
@@ -1802,7 +1823,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
     if(k==='check')return`<label class="fl ck"><input type="checkbox" data-p="${p}"${v?' checked':''}> ${l}</label>`;
     if(k==='textarea')return`<label class="fl">${l}<textarea data-p="${p}" rows="4">${esc(v||'')}</textarea></label>`;
     return`<label class="fl">${l}<input type="text" data-p="${p}" value="${esc(v)}"></label>`};
-  el.innerHTML=`<div class="ah"><b>Character editor</b><select id="admSel">${ADM.list.map((c,i)=>`<option value="${i}"${i===ADM.i?' selected':''}>${esc(c.n)}${c.role==='staff'?' (staff)':''}</option>`).join('')}</select></div>
+  el.innerHTML=`<div class="arow"><button type="button" id="mapOpen" class="btn">Edit the spa map</button></div><div class="ah"><b>Character editor</b><select id="admSel">${ADM.list.map((c,i)=>`<option value="${i}"${i===ADM.i?' selected':''}>${esc(c.n)}${c.role==='staff'?' (staff)':''}</option>`).join('')}</select></div>
    <div class="arow"><button type="button" id="admNew">New</button><button type="button" id="admDup">Duplicate</button><button type="button" id="admDel">Delete</button><button type="button" id="admOut">Show ${ADM.out==='swim'?'street clothes':'swimwear'}</button></div>
    ${SECT.map(([t,fs],i)=>`<details${i<2?' open':''}><summary>${t}</summary>${t==='Body'?btypeHTML(sp):''}${fs.map(field).join('')}</details>`+(i===1?shapeHTML(sp):'')+(i===3?suitHTML(sp):'')).join('')}
    <div class="afoot"><button type="button" class="btn" id="admSave">Save to website</button><button type="button" id="admDl">Download file</button><button type="button" id="admRev">Discard draft</button></div>
@@ -1822,7 +1843,7 @@ function drawAdmin(){const el=document.getElementById('adm'),sp=ADM.list[ADM.i];
   document.getElementById('admOut').onclick=()=>{ADM.out=ADM.out==='swim'?'street':'swim';ADM.c.dressed=ADM.out;drawAdmin()};
   document.getElementById('admDl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([admJSON()],{type:'application/json'}));a.download='characters.json';a.click()};
   document.getElementById('admRev').onclick=()=>{try{localStorage.removeItem('tributary.adminDraft')}catch(e){}location.reload()};
-  document.getElementById('admSave').onclick=admSave;document.getElementById('admTokTest').onclick=admTest;
+  document.getElementById('admSave').onclick=admSave;document.getElementById('mapOpen').onclick=openMapEd;document.getElementById('admTokTest').onclick=admTest;
   const tk=document.getElementById('admTok');try{tk.value=localStorage.getItem('tributary.gh')||''}catch(e){}
   document.getElementById('admTokSave').onclick=()=>{try{localStorage.setItem('tributary.gh',cleanTok(tk.value));admStatus('Key saved on this device.')}catch(e){admStatus('Could not save the key in this browser.',1)}};
   document.getElementById('admTokClr').onclick=()=>{try{localStorage.removeItem('tributary.gh')}catch(e){}tk.value='';admStatus('Key removed from this device.')}}
@@ -2062,6 +2083,126 @@ async function admSave(){const tok=admTok();
     ADM.dirty=false;try{localStorage.removeItem('tributary.adminDraft')}catch(e){}admStatus('Saved! Everyone sees the changes after the site rebuilds (about 1–2 minutes).')}
   catch(e){admStatus(String(e.message||e),1)}}
 
+// ================= spa map editor (admin) =================
+const MPATH='public/tributary-playtest-k7m2/map.json',MATS=[['plaster','Plaster wall'],['cedar','Cedar wall'],['tile','Tile wall'],['glass','Glass wall'],['saunaglass','Sauna glass'],['fence','Low fence'],['desk','Desk counter']];
+const MATC={plaster:'#e2dbd0',cedar:'#b07a4a',tile:'#c9d4d8',glass:'rgba(110,190,230,.75)',saunaglass:'rgba(120,200,190,.8)',fence:'#8a6440',desk:'#a0703f',gym:'#a7aeb2'};
+let ME=null;
+function mapLive(){return{walls:JSON.parse(JSON.stringify(walls)),tubs:tubs.map(t=>[t.x,t.y]),seats:seats.filter(edSeat).map(q=>({x:q.x,y:q.y,t:q.t,rot:+q.rot.toFixed(4)})),plants:JSON.parse(JSON.stringify(plants)),labels:JSON.parse(JSON.stringify(labels)),
+  spots:Object.fromEntries(acts.filter(a=>a.k!=='tub').map(a=>[a.id,[a.x,a.y,a.tx,a.ty]]))}}
+function openMapEd(){let d=null;try{d=JSON.parse(localStorage.getItem('tributary.mapDraft')||'null')}catch(e){}
+  const live=mapLive();ME={d:d&&d.walls?{...live,...d}:live,src:d&&d.walls?'your draft on this device':MAPD?'the website':'the built-in layout',sel:null,undo:[],view:null,fixed:furn.slice(0,furn.length-tubs.length-seats.filter(q=>q.r).length),
+    names:Object.fromEntries(acts.filter(a=>a.k!=='tub').map(a=>[a.id,a.n]))};
+  let el=document.getElementById('mapEd');if(!el){el=document.createElement('div');el.id='mapEd';document.body.appendChild(el)}el.classList.add('on');
+  el.innerHTML=`<div class="mtop"><b>Spa map</b><span class="small" id="meSrc"></span><span class="sp"></span>
+     <button type="button" id="meUndo">Undo</button><button type="button" id="mePrev">Walk it in 3D</button><button type="button" id="meSave" class="btn">Save to website</button><button type="button" id="meMore">⋯</button><button type="button" id="meClose">Close</button></div>
+   <div class="mmore" id="meMoreBox"><button type="button" id="meDl">Download map file</button><button type="button" id="meReset">Reset to the original layout</button><button type="button" id="meWeb">Load the website version</button></div>
+   <div class="madd"><span class="small">Add:</span><button type="button" data-add="wall">Wall</button><button type="button" data-add="lounge">Lounger</button><button type="button" data-add="chair">Chair</button><button type="button" data-add="tub">Cold plunge</button><button type="button" data-add="plant">Plant</button><button type="button" data-add="sign">Sign</button></div>
+   <canvas id="meC"></canvas><div class="mprops" id="meProps"></div><div class="mstat" id="meStat"></div>`;
+  document.getElementById('meSrc').textContent=' · editing '+ME.src;
+  const c=document.getElementById('meC');const fit=()=>{const r=c.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);c.width=r.width*dpr;c.height=r.height*dpr;if(!ME.view){const k=Math.min(r.width/1240,r.height/1040);ME.view={k,ox:(r.width-1200*k)/2,oy:(r.height-1000*k)/2}}meDraw()};
+  ME.fit=fit;addEventListener('resize',fit);setTimeout(fit,30);wireMapEd(c);meProps();meCheck()}
+function meSnap(){ME.undo.push(JSON.stringify(ME.d));if(ME.undo.length>60)ME.undo.shift()}
+function meChanged(){try{localStorage.setItem('tributary.mapDraft',JSON.stringify(ME.d))}catch(e){}ME.src='your draft on this device';const e=document.getElementById('meSrc');if(e)e.textContent=' · editing '+ME.src+' (not saved to the website yet)';meDraw();meCheck()}
+function meStat(t,bad){const e=document.getElementById('meStat');if(e){e.textContent=t;e.className='mstat'+(bad?' bad':'')}}
+// what each item looks like as a rectangle in map units (pixels, 1 px = 2 cm)
+function seatRect(q){if(q.t==='chair')return[q.x-17,q.y-17,34,34];return Math.abs(Math.sin(q.rot))>.5?[q.x-35,q.y-16,70,32]:[q.x-16,q.y-35,32,70]}
+function meItems(){const D=ME.d,L=[];
+  for(const [id,v] of Object.entries(D.spots))L.push({ty:'spot',id,r:[v[0]-9,v[1]-9,18,18]});
+  D.plants.forEach((p,i)=>L.push({ty:'plant',i,r:[p[0]-15,p[1]-15,30,30]}));
+  D.labels.forEach((p,i)=>L.push({ty:'sign',i,r:[p[0]-40,p[1]-10,80,20]}));
+  D.seats.forEach((q,i)=>L.push({ty:'seat',i,r:seatRect(q)}));
+  D.tubs.forEach((t,i)=>L.push({ty:'tub',i,r:[t[0]-8,t[1]-8,106,106]}));
+  D.walls.forEach((w,i)=>L.push({ty:'wall',i,r:[w[0]-3,w[1]-3,w[2]+6,w[3]+6]}));return L}
+function meDraw(){const c=document.getElementById('meC');if(!c||!ME||!ME.view)return;const g=c.getContext('2d'),dpr=c.width/c.getBoundingClientRect().width,V=ME.view,D=ME.d;
+  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,c.width,c.height);g.fillStyle='#dfe9f1';g.fillRect(0,0,c.width,c.height);g.save();g.translate(V.ox,V.oy);g.scale(V.k,V.k);
+  g.fillStyle='#f6f3ee';g.fillRect(0,0,1200,1000);g.fillStyle='#e9e2d6';g.fillRect(0,745,1200,255);g.fillStyle='#d9e6ec';g.fillRect(1030,295,170,450);
+  g.strokeStyle='rgba(0,0,0,.05)';g.lineWidth=1/V.k;for(let x=0;x<=1200;x+=50){g.beginPath();g.moveTo(x,0);g.lineTo(x,1000);g.stroke()}for(let y=0;y<=1000;y+=50){g.beginPath();g.moveTo(0,y);g.lineTo(1200,y);g.stroke()}
+  g.fillStyle='rgba(120,120,130,.35)';for(const f of ME.fixed)g.fillRect(f[0],f[1],f[2],f[3]);
+  g.fillStyle='rgba(150,110,80,.45)';for(const q of seats)if(!edSeat(q)&&q.zone==='sauna')g.fillRect(q.x-22,q.y-14,44,28);
+  for(const [i,w] of D.walls.entries()){g.fillStyle=MATC[w[4]]||MATC.plaster;g.fillRect(w[0],w[1],w[2],w[3]);g.strokeStyle='rgba(40,30,30,.55)';g.lineWidth=1/V.k;g.strokeRect(w[0],w[1],w[2],w[3])}
+  for(const t of D.tubs){g.fillStyle='#b07a4a';g.fillRect(t[0]-8,t[1]-8,106,106);g.fillStyle='#4fb3d1';g.fillRect(t[0],t[1],90,90)}
+  for(const q of D.seats){const r=seatRect(q);g.fillStyle=q.t==='chair'?'#9b7148':'#a57a4e';g.fillRect(...r);g.fillStyle='#f1ece2';g.fillRect(r[0]+3,r[1]+3,r[2]-6,r[3]-6);
+    g.strokeStyle='#5e4128';g.lineWidth=3/V.k;g.beginPath();const hx=q.x-Math.sin(q.rot)*(q.t==='chair'?14:30),hy=q.y-Math.cos(q.rot)*(q.t==='chair'?14:30);g.moveTo(hx-Math.cos(q.rot)*10,hy+Math.sin(q.rot)*10);g.lineTo(hx+Math.cos(q.rot)*10,hy-Math.sin(q.rot)*10);g.stroke()}
+  for(const p of D.plants){g.fillStyle='#3f8a49';g.beginPath();g.arc(p[0],p[1],15,0,7);g.fill()}
+  g.textAlign='center';g.textBaseline='middle';g.font=`bold ${Math.max(10,12)}px Nunito,sans-serif`;for(const l of D.labels){g.fillStyle='rgba(15,42,64,.75)';g.fillText(l[2],l[0],l[1])}
+  g.font='10px Nunito,sans-serif';for(const [id,v] of Object.entries(D.spots)){g.strokeStyle='rgba(224,122,60,.6)';g.lineWidth=1.5/V.k;g.beginPath();g.moveTo(v[0],v[1]);g.lineTo(v[2],v[3]);g.stroke();g.fillStyle='#e07a3c';g.beginPath();g.arc(v[0],v[1],7,0,7);g.fill();
+    if(V.k>.55){g.fillStyle='#7a3f1a';g.fillText((ME.names[id]||'').split(' ')[0],v[0],v[1]-13)}}
+  g.fillStyle='rgba(59,143,208,.3)';g.fillRect(exitZ.x,exitZ.y,exitZ.w,exitZ.h);
+  if(ME.bad)for(const b of ME.bad){g.strokeStyle='#d33';g.lineWidth=3/V.k;g.beginPath();g.arc(b[0],b[1],14,0,7);g.stroke()}
+  const S0=ME.sel&&meSelRect();if(S0){g.strokeStyle='#1E5A8A';g.lineWidth=2.5/V.k;g.setLineDash([6/V.k,4/V.k]);g.strokeRect(S0[0]-3,S0[1]-3,S0[2]+6,S0[3]+6);g.setLineDash([]);
+    for(const hd of meHandles()){g.fillStyle='#fff';g.strokeStyle='#1E5A8A';g.lineWidth=2/V.k;g.beginPath();g.arc(hd.x,hd.y,9/V.k,0,7);g.fill();g.stroke()}}
+  g.restore()}
+function meSelRect(){const s=ME.sel,D=ME.d;if(!s)return null;if(s.ty==='wall'){const w=D.walls[s.i];return w&&[w[0],w[1],w[2],w[3]]}const it=meItems().find(q=>q.ty===s.ty&&(s.ty==='spot'?q.id===s.id:q.i===s.i));return it&&it.r}
+function meHandles(){const s=ME.sel;if(!s||s.ty!=='wall')return[];const w=ME.d.walls[s.i];if(!w)return[];
+  return w[2]>=w[3]?[{x:w[0],y:w[1]+w[3]/2,e:'x0'},{x:w[0]+w[2],y:w[1]+w[3]/2,e:'x1'}]:[{x:w[0]+w[2]/2,y:w[1],e:'y0'},{x:w[0]+w[2]/2,y:w[1]+w[3],e:'y1'}]}
+const snap5=v=>Math.round(v/5)*5;
+function wireMapEd(c){const P=new Map();let act=null;const W=e=>{const r=c.getBoundingClientRect(),V=ME.view;return[(e.clientX-r.left-V.ox)/V.k,(e.clientY-r.top-V.oy)/V.k,e.clientX-r.left,e.clientY-r.top]};
+  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);const [x,y,sx,sy]=W(e);P.set(e.pointerId,{sx,sy});
+    if(P.size===2){const [a,b]=[...P.values()];act={pinch:1,d0:Math.hypot(a.sx-b.sx,a.sy-b.sy),k0:ME.view.k,ox0:ME.view.ox,oy0:ME.view.oy,cx:(a.sx+b.sx)/2,cy:(a.sy+b.sy)/2};return}
+    for(const hd of meHandles())if(Math.hypot(hd.x-x,hd.y-y)<14/ME.view.k){meSnap();act={handle:hd.e,moved:0};return}
+    const hit=meItems().find(q=>x>=q.r[0]&&x<=q.r[0]+q.r[2]&&y>=q.r[1]&&y<=q.r[1]+q.r[3]);
+    if(hit){ME.sel={ty:hit.ty,i:hit.i,id:hit.id};meSnap();act={move:1,x0:x,y0:y,last:[x,y],moved:0};meProps();meDraw();return}
+    ME.sel=null;meProps();act={pan:1,sx0:sx,sy0:sy,ox0:ME.view.ox,oy0:ME.view.oy};meDraw()};
+  c.onpointermove=e=>{if(!P.has(e.pointerId)||!act)return;const [x,y,sx,sy]=W(e);P.set(e.pointerId,{sx,sy});const V=ME.view,D=ME.d;
+    if(act.pinch&&P.size===2){const [a,b]=[...P.values()],k=Math.max(.2,Math.min(4,act.k0*Math.hypot(a.sx-b.sx,a.sy-b.sy)/act.d0));V.ox=act.cx-(act.cx-act.ox0)*k/act.k0;V.oy=act.cy-(act.cy-act.oy0)*k/act.k0;V.k=k;meDraw();return}
+    if(act.pan){V.ox=act.ox0+sx-act.sx0;V.oy=act.oy0+sy-act.sy0;meDraw();return}
+    if(act.handle){const w=D.walls[ME.sel.i],X=snap5(x),Y=snap5(y);if(act.handle==='x0'){const r=w[0]+w[2];w[0]=Math.min(X,r-10);w[2]=r-w[0]}else if(act.handle==='x1')w[2]=Math.max(10,X-w[0]);else if(act.handle==='y0'){const b=w[1]+w[3];w[1]=Math.min(Y,b-10);w[3]=b-w[1]}else w[3]=Math.max(10,Y-w[1]);act.moved=1;meDraw();meProps(1);return}
+    if(act.move){const dx=snap5(x-act.x0)-snap5(act.last[0]-act.x0),dy=snap5(y-act.y0)-snap5(act.last[1]-act.y0);act.last=[x,y];if(!dx&&!dy)return;act.moved=1;meMove(ME.sel,dx,dy);meDraw();meProps(1)}};
+  const end=e=>{P.delete(e.pointerId);if(act&&(act.move||act.handle)){if(act.moved)meChanged();else ME.undo.pop()}if(!P.size)act=null};c.onpointerup=end;c.onpointercancel=end;
+  c.onwheel=e=>{e.preventDefault();const r=c.getBoundingClientRect(),V=ME.view,sx=e.clientX-r.left,sy=e.clientY-r.top,k=Math.max(.2,Math.min(4,V.k*(e.deltaY<0?1.12:1/1.12)));V.ox=sx-(sx-V.ox)*k/V.k;V.oy=sy-(sy-V.oy)*k/V.k;V.k=k;meDraw()};
+  const el=document.getElementById('mapEd');
+  el.querySelector('#meClose').onclick=()=>{el.classList.remove('on');removeEventListener('resize',ME.fit)};
+  el.querySelector('#meUndo').onclick=()=>{const u=ME.undo.pop();if(!u){meStat('Nothing to undo.');return}ME.d=JSON.parse(u);ME.sel=null;meProps();meChanged()};
+  el.querySelector('#meMore').onclick=()=>el.querySelector('#meMoreBox').classList.toggle('on');
+  el.querySelector('#meReset').onclick=()=>{if(!confirmDel('the original layout (this replaces your draft)'))return;meSnap();ME.d=JSON.parse(JSON.stringify({walls:MAP0.walls,tubs:MAP0.tubs,seats:MAP0.seats,plants:MAP0.plants,labels:MAP0.labels,spots:MAP0.spots}));ME.sel=null;meProps();meChanged();meStat('Back to the original layout. Save to website to make it live.')};
+  el.querySelector('#meWeb').onclick=async()=>{try{const r=await fetch('map.json',{cache:'no-store'});if(!r.ok){meStat('There is no map file on the website yet, so the game uses the original layout.');return}const j=await r.json();meSnap();ME.d={...mapLive(),...j};ME.sel=null;meProps();meChanged();meStat('Loaded the website version.')}catch(e){meStat('Could not load the website version.',1)}};
+  el.querySelector('#meDl').onclick=()=>{const b=new Blob([meJSON()],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='map.json';a.click()};
+  el.querySelector('#mePrev').onclick=()=>{try{localStorage.setItem('tributary.mapDraft',JSON.stringify(ME.d));localStorage.setItem('tributary.mapReturn','1')}catch(e){}location.hash='#mappreview';location.reload()};
+  el.querySelector('#meSave').onclick=meSave;
+  for(const b of el.querySelectorAll('[data-add]'))b.onclick=()=>meAdd(b.dataset.add)}
+function meMove(sel,dx,dy){const D=ME.d;if(sel.ty==='wall'){const w=D.walls[sel.i];w[0]+=dx;w[1]+=dy}else if(sel.ty==='tub'){const t=D.tubs[sel.i];t[0]+=dx;t[1]+=dy}else if(sel.ty==='seat'){const q=D.seats[sel.i];q.x+=dx;q.y+=dy}
+  else if(sel.ty==='plant'||sel.ty==='sign'){const a=(sel.ty==='plant'?D.plants:D.labels)[sel.i];a[0]+=dx;a[1]+=dy}else if(sel.ty==='spot'){const v=D.spots[sel.id];v[0]+=dx;v[1]+=dy;v[2]+=dx;v[3]+=dy}}
+function meAdd(k){const V=ME.view,c=document.getElementById('meC').getBoundingClientRect(),cx=snap5((c.width/2-V.ox)/V.k),cy=snap5((c.height/2-V.oy)/V.k),D=ME.d;meSnap();
+  if(k==='wall'){D.walls.push([cx-75,cy-5,150,10,'plaster']);ME.sel={ty:'wall',i:D.walls.length-1}}
+  else if(k==='lounge'||k==='chair'){D.seats.push({x:cx,y:cy,t:k,rot:0});ME.sel={ty:'seat',i:D.seats.length-1}}
+  else if(k==='tub'){D.tubs.push([cx-45,cy-45]);ME.sel={ty:'tub',i:D.tubs.length-1}}
+  else if(k==='plant'){D.plants.push([cx,cy]);ME.sel={ty:'plant',i:D.plants.length-1}}
+  else{D.labels.push([cx,cy,'NEW SIGN']);ME.sel={ty:'sign',i:D.labels.length-1}}
+  meProps();meChanged();meStat('Added in the middle of the view. Drag it into place.')}
+function meProps(light){const el=document.getElementById('meProps');if(!el)return;const s=ME.sel,D=ME.d;if(!s){el.innerHTML=`<span class="small">Tap something to select it. Drag empty space to pan; pinch or scroll to zoom. Grey blocks are fixed furniture.</span>`;return}
+  const num=(k,i,l,v)=>`<label class="mn">${l}<input type="number" step="5" data-n="${k}" data-ix="${i}" value="${Math.round(v)}"></label>`;let h='';
+  if(s.ty==='wall'){const w=D.walls[s.i];if(light){for(const [k,v] of[[0,w[0]],[1,w[1]],[2,w[2]],[3,w[3]]]){const inp=el.querySelector(`[data-n="w"][data-ix="${k}"]`);if(inp)inp.value=Math.round(v)}return}
+    h=`<b>Wall</b><select id="meMat">${MATS.map(([v,t])=>`<option value="${v}"${w[4]===v?' selected':''}>${t}</option>`).join('')}</select>${num('w',0,'x',w[0])}${num('w',1,'y',w[1])}${num('w',2,'width',w[2])}${num('w',3,'depth',w[3])}<button type="button" id="meRot">Turn 90°</button>`}
+  else if(s.ty==='seat'){const q=D.seats[s.i];h=`<b>${q.t==='chair'?'Chair':'Lounger'}</b><button type="button" id="meSeatT">Make it a ${q.t==='chair'?'lounger':'chair'}</button><button type="button" id="meRot">Turn 90°</button>`}
+  else if(s.ty==='tub')h=`<b>Cold plunge</b>`;else if(s.ty==='plant')h=`<b>Plant</b>`;
+  else if(s.ty==='sign'){const l=D.labels[s.i];h=`<b>Sign</b><input type="text" id="meSign" maxlength="24" value="${esc(l[2])}">`}
+  else if(s.ty==='spot')h=`<b>${esc(ME.names[s.id]||'Spot')}</b><span class="small">Where you tap to use it (the line points to what you face).</span>`;
+  if(light)return;
+  el.innerHTML=h+(s.ty!=='spot'?`<button type="button" id="meDup">Duplicate</button><button type="button" id="meDel" class="bad">Delete</button>`:'');
+  const mt=el.querySelector('#meMat');if(mt)mt.onchange=()=>{meSnap();D.walls[s.i][4]=mt.value;meChanged()};
+  for(const inp of el.querySelectorAll('[data-n="w"]'))inp.onchange=()=>{meSnap();const w=D.walls[s.i];w[+inp.dataset.ix]=Math.max(+inp.dataset.ix>=2?5:-50,+inp.value||0);meChanged()};
+  const ro=el.querySelector('#meRot');if(ro)ro.onclick=()=>{meSnap();if(s.ty==='wall'){const w=D.walls[s.i],cx=w[0]+w[2]/2,cy=w[1]+w[3]/2;[w[2],w[3]]=[w[3],w[2]];w[0]=snap5(cx-w[2]/2);w[1]=snap5(cy-w[3]/2)}else{const q=D.seats[s.i];q.rot=+((q.rot+Math.PI/2)%(Math.PI*2)).toFixed(4)}meChanged()};
+  const st=el.querySelector('#meSeatT');if(st)st.onclick=()=>{meSnap();const q=D.seats[s.i];q.t=q.t==='chair'?'lounge':'chair';meProps();meChanged()};
+  const sg=el.querySelector('#meSign');if(sg)sg.oninput=()=>{D.labels[s.i][2]=sg.value.toUpperCase();meChanged()};
+  const du=el.querySelector('#meDup');if(du)du.onclick=()=>{meSnap();const L={wall:D.walls,tub:D.tubs,seat:D.seats,plant:D.plants,sign:D.labels}[s.ty],o=JSON.parse(JSON.stringify(L[s.i]));if(Array.isArray(o)){o[0]+=20;o[1]+=20}else{o.x+=20;o.y+=20}L.push(o);ME.sel={ty:s.ty,i:L.length-1};meProps();meChanged()};
+  const de=el.querySelector('#meDel');if(de)de.onclick=()=>{meSnap();({wall:D.walls,tub:D.tubs,seat:D.seats,plant:D.plants,sign:D.labels})[s.ty].splice(s.i,1);ME.sel=null;meProps();meChanged()}}
+// can a guest still walk from the entrance to every spot, plunge and seat? (same 10 px grid and body radius as the game)
+function meCheck(){const D=ME.d,sol=[...D.walls.map(w=>w.slice(0,4)),...ME.fixed,...D.tubs.map(t=>[t[0]-8,t[1]-8,106,106]),...D.seats.map(seatRect)];
+  const hit=(x,y,r)=>{for(const w of sol){const cx=Math.max(w[0],Math.min(x,w[0]+w[2])),cy=Math.max(w[1],Math.min(y,w[1]+w[3]));if((x-cx)**2+(y-cy)**2<r*r)return true}return false};
+  const G=new Uint8Array(GW*GH);for(let j=0;j<GH;j++)for(let i=0;i<GW;i++)G[j*GW+i]=hit(i*CS+5,j*CS+5,12)?1:0;
+  const seen=new Uint8Array(GW*GH),q=[];const st=Math.floor(60/CS)*GW+Math.floor(880/CS);if(!G[st]){seen[st]=1;q.push(st)}
+  while(q.length){const n=q.pop(),x=n%GW,y=(n/GW)|0;for(const [dx,dy] of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const m=ny*GW+nx;if(!G[m]&&!seen[m]){seen[m]=1;q.push(m)}}}
+  const ok=(x,y)=>{const ci=Math.floor(x/CS),cj=Math.floor(y/CS);for(let dj=-2;dj<=2;dj++)for(let di=-2;di<=2;di++){const i=ci+di,j=cj+dj;if(i>=0&&j>=0&&i<GW&&j<GH&&seen[j*GW+i])return true}return false};
+  const bad=[],names=[];for(const [id,v] of Object.entries(D.spots))if(!ok(v[0],v[1])){bad.push([v[0],v[1]]);names.push(ME.names[id]||id)}
+  D.tubs.forEach(t=>{if(!ok(t[0]+45,t[1]-30)){bad.push([t[0]+45,t[1]-30]);names.push('a cold plunge')}});
+  ME.bad=bad;meDraw();if(names.length)meStat("Guests can't reach: "+[...new Set(names)].join(', ')+'. Open a gap in a wall or move things apart.',1);else meStat('Every spot and plunge can be reached from the entrance.')}
+function meJSON(){return JSON.stringify({version:1,updated:new Date().toISOString(),...ME.d},null,1)}
+async function meSave(){const tok=admTok();if(!tok){meStat('Add your GitHub key first (in the character editor, under GitHub key).',1);return}
+  const api=`https://api.github.com/repos/${REPO}/contents/${MPATH}`,h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};meStat('Saving…');
+  try{let sha;const g=await ghFetch(api+'?ref=main',{headers:h,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error('GitHub said '+g.status+' reading the map file.');
+    const body={message:'Update Tributary map from the map editor',content:btoa(unescape(encodeURIComponent(meJSON()))),branch:'main'};if(sha)body.sha=sha;
+    const r=await ghFetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){let m='';try{m=(await r.json()).message||''}catch(e){}throw new Error('GitHub refused the save ('+r.status+(m?': '+m:'')+').')}
+    ME.src='the website';try{localStorage.removeItem('tributary.mapDraft')}catch(e){}const e=document.getElementById('meSrc');if(e)e.textContent=' · saved';meStat('Saved. Everyone gets the new layout in about 1–2 minutes.')}catch(e){meStat(String(e.message||e),1)}}
 // ---- render loop ----
 const VIEWS=[{n:'Follow cam',d:4.3,look:1.35},{n:'Close cam',d:2.3,look:1.5},{n:'Overhead',d:15,p:1.12,look:0,fixed:1}];let view=0,camYaw=Math.PI,camPitch=.36,lastDrag=-9,zoom=1;
 const ct=new T.Vector3(12,0,10),cp=new T.Vector3(12,16,30),tmp=new T.Vector3(),tmp2=new T.Vector3();
@@ -2212,7 +2353,8 @@ function perfTick(dt){fpsT+=dt;fpsN++;lodT+=dt;
   if(lodT>.5&&P&&P.m){lodT=0;const near=PERF.fast?7:16;for(const c of [P,...staff,...guests]){if(!c.m)continue;const show=c===P||cam.position.distanceTo(c.m.g.position)<near;if(c.m.outsOn!==show){c.m.outsOn=show;for(const o of c.m.outs)o.visible=show}}}}
 function loop(now){requestAnimationFrame(loop);const dt=Math.min(.1,(now-last)/1000);if(dt<1/PERF.fps-.004)return;const step=Math.min(.05,dt);last=now;PERF.frame++;update(step);render(step,now);perfTick(dt)}
 requestAnimationFrame(loop);
-if(location.hash==='#admin')setTimeout(openAdmin,300);
+if(location.hash==='#admin')setTimeout(()=>{openAdmin();try{if(localStorage.getItem('tributary.mapReturn')){localStorage.removeItem('tributary.mapReturn');setTimeout(openMapEd,900)}}catch(e){}},300);
+if(/mappreview/.test(location.hash)){const b=document.createElement('div');b.id='mapBan';b.innerHTML='Previewing your draft map (not saved to the website yet) <button type="button">Back to the map editor</button>';document.body.appendChild(b);b.querySelector('button').onclick=()=>{location.hash='#admin';location.reload()}}
 }
 
 </script>
