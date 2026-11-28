@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-11-28T02:00:00Z",
+ "updated": "2026-11-28T18:07:25.539Z",
  "characters": [
   {
    "n": "Aiko",
@@ -20,14 +20,30 @@
    ],
    "hat": false,
    "body": {
-    "height": 1,
-    "shoulders": 1,
+    "height": 1.01,
+    "neck": 1,
+    "shoulders": 1.06,
     "chest": 1,
-    "waist": 1,
+    "bust": 0.9,
+    "ribs": 1,
+    "waist": 0.95,
+    "belly": 0.9,
+    "back": 1,
     "hips": 1,
-    "glutes": 1,
-    "arms": 1,
-    "legs": 1
+    "glutes": 0.94,
+    "gluteLift": 0.98,
+    "arms": 1.05,
+    "upperArm": 1.05,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1.08,
+    "calf": 1.1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1.11
    },
    "head": {
     "size": 1,
@@ -37,21 +53,176 @@
     "eyeGap": 1
    },
    "persona": "Aiko, 28, a cheerful graphic designer and Thursday regular. A purist about the routine: sauna, plunge, rest, repeat. Talks fast and bubbly, uses \"omg\" and lots of exclamation marks. Loves the top bench and eucalyptus oil. Hates people who skip the rest step.",
+   "def": 0.55,
+   "defg": {
+    "abs": true,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {
+    "torso": [
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      0.9934272278561244,
+      0.5,
+      1.7
+     ],
+     [
+      0.9818273302247589,
+      0.5064589216307709,
+      1.0915034824297862
+     ],
+     [
+      0.932573088441761,
+      0.5,
+      0.8941662692705167
+     ],
+     [
+      0.9702623040175186,
+      0.5246444298046878,
+      0.7622025213727232
+     ],
+     [
+      0.9448906207870219,
+      0.5214674067741257,
+      0.694161787661801
+     ],
+     [
+      0.8239221617596381,
+      0.5994166363723039,
+      0.826065882358256
+     ],
+     [
+      0.7679670426484559,
+      0.6573830861828305,
+      0.8523334968038797
+     ],
+     [
+      0.7795995543370101,
+      0.5,
+      0.9656299262754974
+     ],
+     [
+      0.861045623955242,
+      0.9797489808636893,
+      0.9907683954960177
+     ],
+     [
+      0.961021332388134,
+      1.0065414281117189,
+      1
+     ],
+     [
+      0.9914406953310082,
+      0.8678607753420959,
+      1
+     ],
+     [
+      1,
+      0.8526215326408719,
+      1
+     ],
+     [
+      1,
+      0.9837990780725324,
+      1
+     ],
+     [
+      1,
+      0.9974262087672319,
+      1
+     ],
+     [
+      1,
+      1.000050945713412,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ]
+    ],
+    "thigh": [
+     1,
+     0.9587534805872076,
+     0.8183449839340499,
+     0.7954954312105065,
+     0.8230525464434449,
+     0.8952594645869553,
+     0.9086760090939319,
+     0.9489414317273805,
+     0.9644718327911919,
+     0.9178338208429271,
+     1
+    ]
+   },
+   "nodes": [],
    "cut": {
+    "thk": 0.012,
+    "edges": {
+     "bh": [
+      0.04132749089038103,
+      0.07650162011328689,
+      0.09464444206863885,
+      0.1051252209587901,
+      0.11568535831758923,
+      0.1032990875133329,
+      0.07110252009151467
+     ],
+     "bl": [
+      -0.027392908521553905,
+      0.0031760433864662673,
+      0.051649569199062724,
+      0.0838857086336777,
+      0.11560586173307569,
+      0.14637319345688932,
+      0.10071853795048111
+     ],
+     "th": [
+      -0.005796159510172708,
+      0.04438446567953713,
+      -0.0008733611373513392,
+      0.007979673209706339,
+      0.02397868250761677,
+      0.022311322336189963,
+      0.019849919515151276
+     ],
+     "tl": [
+      0.09654993943468579,
+      0.05065697772345339,
+      0.10159187909737823,
+      0.08190081645270225,
+      0.052761072982976456,
+      0.045615112570635864,
+      0.03215688455286627
+     ]
+    },
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
     "strap": "thin",
     "back": 1.25,
-    "rise": 0.905,
-    "leg": 0.04,
+    "rise": 0.9,
+    "leg": 0.1,
     "len": 0,
     "loose": 0,
     "flare": 0.4,
     "band": 1,
     "string": 1,
     "ps": 1,
-    "trim": 0
+    "trim": true
    }
   },
   {
@@ -73,13 +244,29 @@
    "hat": true,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -89,7 +276,19 @@
     "eyeGap": 1
    },
    "persona": "Daniel, 31, a laid-back surf instructor from Tofino. Says \"dude\", \"stoked\" and \"no stress\". Loves sharing insider tips about which plunge is coldest and when the sauna is quietest. Easygoing, hard to annoy.",
+   "def": 0.45,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -116,7 +315,7 @@
    "skin": "#c48d68",
    "suit": "#f0a830",
    "acc": "#7a3a8a",
-   "swim": "one",
+   "swim": "bikini",
    "pat": "block",
    "street": [
     "#8a3a5a",
@@ -125,13 +324,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
-    "chest": 1,
+    "chest": 1.42,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -141,14 +356,119 @@
     "eyeGap": 1
    },
    "persona": "Priya, 34, a nutritionist and wellness enthusiast. Warm but a bit of a know-it-all about hydration, electrolytes, essential oils and contrast therapy. Speaks precisely and likes to give gentle advice. Always carrying a water bottle.",
+   "def": 0.49,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {
+    "torso": [
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      0.9948881175147349,
+      1,
+      1
+     ],
+     [
+      0.9854039587968306,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      0.9854039587968306,
+      1,
+      1
+     ],
+     [
+      0.9948881175147349,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1
+     ]
+    ]
+   },
+   "nodes": [],
    "cut": {
-    "topHi": 1.31,
+    "thk": 0.006,
+    "edges": {},
+    "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
     "strap": "thin",
-    "back": 1.05,
+    "back": 1.25,
     "rise": 0.905,
-    "leg": 0.06,
+    "leg": 0.04,
     "len": 0,
     "loose": 0,
     "flare": 0.4,
@@ -177,13 +497,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -193,7 +529,19 @@
     "eyeGap": 1
    },
    "persona": "Marco, 26, an upbeat personal trainer. Calls everyone \"bro\" or \"my friend\", hypes people up, loves the fire pit and talking about leg day. Loud, friendly, competitive about plunge times.",
+   "def": 0.85,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -229,13 +577,29 @@
    "hat": true,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -245,7 +609,19 @@
     "eyeGap": 1
    },
    "persona": "Yuki, 24, a quiet librarian who comes here to decompress. Gentle and shy, gives short, calm replies, sometimes just \"mm\" or a soft laugh. Dislikes loud people in the sauna. Secretly funny once comfortable.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.31,
     "topLo": 1.16,
     "neck": "straight",
@@ -281,13 +657,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -297,7 +689,19 @@
     "eyeGap": 1
    },
    "persona": "Gwen, 52, a retired school principal and stickler for rules. Notices everything, sighs at bad etiquette, and tells staff when people misbehave. Proper and a little stern, but softens if you are polite and follow the rules.",
+   "def": 0.35,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.36,
     "topLo": 1.16,
     "neck": "scoop",
@@ -333,13 +737,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -349,7 +769,19 @@
     "eyeGap": 1
    },
    "persona": "Hana, 30, a calm yoga teacher. Speaks slowly and kindly, talks about breathing and being present. Loves long sauna sessions and stretching on the patio. Never raises her voice.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.27,
     "topLo": 1.172,
     "neck": "straight",
@@ -385,13 +817,29 @@
    "hat": true,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -401,7 +849,19 @@
     "eyeGap": 1
    },
    "persona": "Leo, 22, a goofy skateboarder trying the cold plunge for the first time and being dramatic about it. Says \"bro\", \"no way\" and \"that was SO cold\". Easily impressed, jokes a lot, a little nervous about doing things right.",
+   "def": 0.4,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -437,13 +897,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -453,7 +929,19 @@
     "eyeGap": 1
    },
    "persona": "Grace, 33, a Chinese-Canadian ER nurse unwinding after a twelve-hour shift. Dry sense of humour, a bit tired, very caring. Notices if someone looks overheated and reminds them to drink water. Hates people dumping the whole bucket.",
+   "def": 0.2,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.325,
     "topLo": 1.16,
     "neck": "v",
@@ -489,13 +977,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -505,7 +1009,19 @@
     "eyeGap": 1
    },
    "persona": "Sam, 29, a competitive marathon runner who times every sauna and plunge session on a waterproof watch. Talks in numbers and personal bests. Friendly but intense, always challenging people to one more minute in the plunge.",
+   "def": 0.65,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -541,13 +1057,29 @@
    "hat": true,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -557,7 +1089,19 @@
     "eyeGap": 1
    },
    "persona": "Mei, 23, a design student who sketches the spa in her head and notices the light, the wood and the steam. Dreamy, artsy, compliments little details. Loves the fire pit at night.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.29,
     "topLo": 1.16,
     "neck": "v",
@@ -593,13 +1137,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -609,7 +1169,19 @@
     "eyeGap": 1
    },
    "persona": "Jonah, 67, a chatty retired commercial fisherman full of long stories about cold water on the BC coast. Calls people \"kiddo\", laughs at his own jokes, thinks the plunges are warm compared to the ocean in January.",
+   "def": 0.12,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -645,13 +1217,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -661,7 +1249,19 @@
     "eyeGap": 1
    },
    "persona": "Lucia, 41, a warm, talkative chef who rates every kombucha flavour out of ten and talks about food constantly. Generous with compliments, calls people \"honey\". Loves the patio heaters.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.32,
     "topLo": 1.16,
     "neck": "scoop",
@@ -697,13 +1297,29 @@
    "hat": true,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -713,7 +1329,19 @@
     "eyeGap": 1
    },
    "persona": "Theo, 27, a shy software developer who is slowly getting into sauna culture. Awkward but sweet, over-explains things, makes nerdy jokes, worries he is doing the routine wrong.",
+   "def": 0.3,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -749,13 +1377,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -765,7 +1409,19 @@
     "eyeGap": 1
    },
    "persona": "Minji, 35, a confident Korean-Canadian triathlete who swears by contrast therapy. Direct, motivating, a bit bossy. Gives firm advice like \"three rounds minimum\". Respects people who push themselves in the plunge.",
+   "def": 0.6,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.335,
     "topLo": 1.115,
     "neck": "scoop",
@@ -801,13 +1457,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -817,7 +1489,19 @@
     "eyeGap": 1
    },
    "persona": "Kai, 32, a laid-back musician who hums in the sauna and talks about the acoustics of the cedar. Chill, poetic, uses \"vibes\" a lot. Gets along with everyone.",
+   "def": 0.5,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": [],
    "cut": {
+    "thk": 0.006,
+    "edges": {},
     "topHi": 1.282,
     "topLo": 1.16,
     "neck": "straight",
@@ -853,13 +1537,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -868,7 +1568,17 @@
     "eyes": 1,
     "eyeGap": 1
    },
-   "persona": "Mika, the polite, upbeat front-desk staff member who handles check-ins, passes and wristband name tags. Professional, cheerful, a little strict about paying."
+   "persona": "Mika, the polite, upbeat front-desk staff member who handles check-ins, passes and wristband name tags. Professional, cheerful, a little strict about paying.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": []
   },
   {
    "n": "Ren",
@@ -889,13 +1599,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -904,7 +1630,17 @@
     "eyes": 1,
     "eyeGap": 1
    },
-   "persona": "Ren, an efficient, serious floor staff member who restocks towels and kombucha and keeps an eye on guests taking too much. Short sentences, dry humour, takes the rules seriously."
+   "persona": "Ren, an efficient, serious floor staff member who restocks towels and kombucha and keeps an eye on guests taking too much. Short sentences, dry humour, takes the rules seriously.",
+   "def": 0.3,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": []
   },
   {
    "n": "Sora",
@@ -925,13 +1661,29 @@
    "hat": false,
    "body": {
     "height": 1,
+    "neck": 1,
     "shoulders": 1,
     "chest": 1,
+    "bust": 1,
+    "ribs": 1,
     "waist": 1,
+    "belly": 1,
+    "back": 1,
     "hips": 1,
     "glutes": 1,
+    "gluteLift": 1,
     "arms": 1,
-    "legs": 1
+    "upperArm": 1,
+    "forearm": 1,
+    "legs": 1,
+    "thigh": 1,
+    "calf": 1,
+    "round": 1,
+    "hipRound": 1,
+    "bustWidth": 1,
+    "bustSpread": 1,
+    "gluteWidth": 1,
+    "gluteSpread": 1
    },
    "head": {
     "size": 1,
@@ -940,7 +1692,17 @@
     "eyes": 1,
     "eyeGap": 1
    },
-   "persona": "Sora, a friendly, relaxed floor staff member who looks after the patio, fire pit and sauna area. Chatty, gives tips, reminds people about sauna etiquette with a smile."
+   "persona": "Sora, a friendly, relaxed floor staff member who looks after the patio, fire pit and sauna area. Chatty, gives tips, reminds people about sauna etiquette with a smile.",
+   "def": 0.15,
+   "defg": {
+    "abs": 1,
+    "chest": 1,
+    "arms": 1,
+    "legs": 1,
+    "back": 1
+   },
+   "prof": {},
+   "nodes": []
   }
  ],
  "suits": []
